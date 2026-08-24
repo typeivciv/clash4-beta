@@ -1,16 +1,20 @@
-CLASH 4 — MOBILE BETA 0.13.0
+CLASH 4 — MOBILE BETA 0.13.2
 
-THIS FOLDER IS READY FOR STATIC HOSTING.
+LIVE BETA
+https://typeivciv.github.io/clash4-beta/
 
-Fastest deployment:
-1. Go to https://app.netlify.com/drop
-2. Drag this entire folder onto the page.
-3. Netlify will give you a public HTTPS link.
-4. Send that link to phone testers.
+UPLOAD
+Upload the CONTENTS of this folder to the root of:
+https://github.com/typeivciv/clash4-beta
 
-The game itself is index.html. Testers do NOT need the other files.
+The root of the repository should contain index.html directly.
+GitHub Pages will redeploy the same public URL after the commit reaches main.
 
-IMPORTANT
-- This is the Arcade/mobile beta test build.
-- The Private Duel/passcode backend exists in the development source but is not exposed in this public beta yet.
-- If you upload a newer beta later, use the new folder/version so testers can tell which build they are playing.
+NEW IN 0.13.2
+- Help > Send Feedback can open a prefilled GitHub Issue.
+- Reports automatically include beta version and browser/device environment.
+- Public-report privacy warning added.
+- GitHub issue templates added under .github/ISSUE_TEMPLATE/.
+- Share Report and Copy Report remain available for testers without GitHub accounts.
+
+No gameplay/rules/AI changes were made for this tester-workflow release.
