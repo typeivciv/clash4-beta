@@ -1,0 +1,66 @@
+name: Deploy AI Tuning Beta 0.13.3
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .deploy-ai-0133
+
+permissions:
+  contents: write
+
+jobs:
+  patch-beta:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply verified AI tuning patch
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          assert 'Mobile Beta 0.13.2' in s, 'Expected Beta 0.13.2 source page'
+          assert 'function normalPick(opts){' in s
+          assert 'function easyPick(opts){' in s
+          assert 'if(g[loc.r][loc.c]?.owner!==owner)return 0,best=1;' in s
+          s=s.replace('Mobile Beta 0.13.2','Mobile Beta 0.13.3')
+          s=s.replace('Mobile Beta 0.13.3 · Arcade RC1','Mobile Beta 0.13.3 · AI Tuning')
+          s=s.replace('if(g[loc.r][loc.c]?.owner!==owner)return 0,best=1;','if(g[loc.r][loc.c]?.owner!==owner)return 0;let best=1;')
+          start=s.index('function normalPick(opts){')
+          end=s.index('function easyPick(opts){',start)
+          tuned='''function normalPlanningBonus(o,beforeAi){
+            let b=structuralAfter(o.type,o.c);if(!b)return 0;
+            let after=threatProfile(b,A),bonus=0;
+            bonus+=Math.min(16,Math.max(0,after.threes-beforeAi.threes)*10);
+            bonus+=Math.min(8,Math.max(0,after.twos-beforeAi.twos)*2.5);
+            if(after.wins>=1&&beforeAi.wins===0)bonus+=6;
+            if(after.wins>=2&&beforeAi.wins<2)bonus+=10;
+            return Math.min(26,bonus)
+          }
+          function normalPick(opts){
+            if(!opts.length)return null;
+            let baseSorted=[...opts].sort((a,b)=>b.base-a.base),baseBest=baseSorted[0].base;
+            if(baseBest>=850)return hardBaselinePick(opts);
+            let beforeAi=threatProfile(s.board,A);
+            let sorted=opts.map(o=>({...o,normalScore:o.base+normalPlanningBonus(o,beforeAi)}))
+              .sort((a,b)=>(b.normalScore-a.normalScore)||(b.base-a.base));
+            let best=sorted[0].normalScore;
+            let pool=sorted.filter(o=>o.normalScore>=best-18).slice(0,5);
+            let weights=[6,4,2,1,1].slice(0,pool.length),total=weights.reduce((a,b)=>a+b,0),roll=Math.random()*total;
+            for(let i=0;i<pool.length;i++){roll-=weights[i];if(roll<=0)return pool[i]}
+            return pool[0]
+          }
+          '''
+          s=s[:start]+tuned+s[end:]
+          if '<option>AI / difficulty</option>' not in s:
+            s=s.replace('<option>Gameplay / rules</option>','<option>Gameplay / rules</option><option>AI / difficulty</option>')
+          p.write_text(s)
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Deploy Mobile Beta 0.13.3 AI tuning"
+          git push origin HEAD:main
