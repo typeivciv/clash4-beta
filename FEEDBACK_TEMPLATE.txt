@@ -1,5 +1,5 @@
 CLASH 4 MOBILE BETA FEEDBACK
-Build: Mobile Beta 0.13.0
+Build: Mobile Beta 0.13.2
 Phone:
 OS:
 Browser:
