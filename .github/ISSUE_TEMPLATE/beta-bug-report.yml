@@ -1,0 +1,64 @@
+name: Mobile Beta Bug Report
+description: Report a reproducible problem found while testing Clash 4.
+title: "[Beta] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing Clash 4. **GitHub Issues are public. Do not include private information.**
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - Mobile layout / UI
+        - Animation / timing
+        - Gameplay / rules
+        - Confusing / unclear
+        - Accessibility
+        - Performance
+        - Multiplayer / Private Duel
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: build
+    attributes:
+      label: Beta version
+      placeholder: Mobile Beta 0.13.2
+    validations:
+      required: true
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened?
+      description: Describe the problem as precisely as you can.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Opened Play
+        2. Dropped Rock in column 4
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Phone / browser
+      description: Paste the environment block from Help → Send Feedback when possible.
+      placeholder: Phone model, OS version, browser, viewport
+  - type: textarea
+    id: attachments
+    attributes:
+      label: Screenshot or screen recording
+      description: Drag files here if the problem is visual or timing-related.
