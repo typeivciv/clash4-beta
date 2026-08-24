@@ -1,0 +1,10 @@
+{
+  "name": "clash4-private-duel-alpha",
+  "version": "0.14.0",
+  "private": true,
+  "type": "module",
+  "engines": {"node": ">=18"},
+  "scripts": {
+    "start": "node server/duel-server.mjs"
+  }
+}
