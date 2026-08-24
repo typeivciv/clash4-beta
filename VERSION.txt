@@ -1,0 +1,3 @@
+Clash 4 Mobile Beta 0.13.0
+Base gameplay: Arcade RC1 / v0.13.0 Duel Foundation
+Purpose: external mobile Arcade playtesting

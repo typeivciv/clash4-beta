@@ -1,0 +1,28 @@
+CLASH 4 MOBILE BETA FEEDBACK
+Build: Mobile Beta 0.13.0
+Phone:
+OS:
+Browser:
+Orientation:
+Difficulty:
+
+What happened:
+
+What I expected:
+
+Steps to reproduce:
+1.
+2.
+3.
+
+How serious was it?
+[ ] Cosmetic
+[ ] Confusing
+[ ] Interrupted play
+[ ] Game-breaking
+
+Did it happen again?
+
+Screenshot/video attached? Yes / No
+
+Other comments about speed, controls, animations, or fun:
