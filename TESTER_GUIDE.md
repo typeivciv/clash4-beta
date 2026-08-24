@@ -1,38 +1,20 @@
-# Clash 4 — Mobile Beta Tester Guide
+# Clash 4 Mobile Beta 0.13.2 — Tester Guide
 
-Thanks for testing. The goal is not just to find crashes; it is to identify anything that feels confusing, slow, cramped, unfair, or visually wrong on a real phone.
+Open the live beta at **https://typeivciv.github.io/clash4-beta/** on your normal phone browser.
 
-## Before playing
-Record:
-- phone model
-- iPhone/Android
-- browser (Safari, Chrome, Brave, etc.)
-- portrait or landscape
-- build shown in the game: **Mobile Beta 0.13.0**
+## What to test
 
-## Please test
-1. Tap **Play** and complete at least one match.
-2. Try **Customize Match** and change at least one setting.
-3. Trigger several Rock/Paper/Scissors clashes if possible.
-4. Pay special attention to a 2–3 attack combat chain.
-5. Watch whether Human/AI column colors transition cleanly.
-6. Check whether combat results stay visible long enough to understand.
-7. Use **Final Board Review** and **Replay Finish**.
-8. Start a **Rematch**, then return **Home**.
-9. If practical, try a second difficulty.
+Play full matches and pay attention to mobile layout, column-selection handoff, combat readability, chained attacks, animation timing, post-match review, rematch, and returning Home.
 
-## Report anything that feels wrong
-Especially note:
-- text or controls cut off
-- unexpected empty space
-- board/checkers changing shape
-- action cards covering important controls
-- flicker or abrupt animation changes
-- Human/AI colors appearing to overlap
-- combat moving too quickly or too slowly
-- taps not registering
-- incorrect or confusing combat results
-- hidden enemy identity being exposed when it should not be
-- anything that requires unnecessary scrolling
+## Reporting a problem
 
-Screenshots or short screen recordings are extremely useful.
+1. Open **Help**.
+2. Tap **Send Feedback**.
+3. Choose an issue type and describe what happened.
+4. Add reproduction steps and what you expected.
+5. Tap **Open GitHub Issue** if you have a GitHub account. The report opens prefilled in the `typeivciv/clash4-beta` repository.
+6. Otherwise use **Share Report** or **Copy Report** and send it to the project owner.
+
+GitHub Issues are public. Do not include phone numbers, email addresses, passwords, account information, or other private information.
+
+Screenshots and short screen recordings are especially useful for visual/timing problems.
