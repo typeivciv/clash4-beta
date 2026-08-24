@@ -14,6 +14,7 @@ body:
         - Mobile layout / UI
         - Animation / timing
         - Gameplay / rules
+        - AI / difficulty
         - Confusing / unclear
         - Accessibility
         - Performance
@@ -25,7 +26,7 @@ body:
     id: build
     attributes:
       label: Beta version
-      placeholder: Mobile Beta 0.13.2
+      placeholder: Mobile Beta 0.13.3
     validations:
       required: true
   - type: textarea
