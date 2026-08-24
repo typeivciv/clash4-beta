@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: clash4-private-duel
+    runtime: node
+    plan: free
+    buildCommand: ""
+    startCommand: node server/duel-server.mjs
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: ALLOWED_ORIGIN
+        value: https://typeivciv.github.io
+      - key: MAX_ROOMS
+        value: 500
+      - key: RATE_LIMIT
+        value: 240
