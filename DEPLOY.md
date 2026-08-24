@@ -1,18 +1,15 @@
-# Deploying the Clash 4 mobile beta
+# Deploy Mobile Beta 0.13.2 to GitHub Pages
 
-## Easiest: Netlify Drop
-1. Open `https://app.netlify.com/drop` in a desktop browser.
-2. Drag the **Clash4-Mobile-Beta-0.13.0** folder onto the page.
-3. Wait for deployment.
-4. Open the generated HTTPS URL on your own phone once.
-5. Send that URL to testers.
+Repository: `typeivciv/clash4-beta`
+Live URL: `https://typeivciv.github.io/clash4-beta/`
 
-No build command, Node installation, or package manager is required for this Arcade beta.
+1. Unzip this package.
+2. Open the `clash4-beta` repository on GitHub.
+3. Upload the **contents** of this folder to the repository root, preserving the `.github/ISSUE_TEMPLATE/` folders.
+4. Replace the older beta files when prompted.
+5. Commit to `main` with a message such as `Deploy Mobile Beta 0.13.2 feedback workflow`.
+6. GitHub Pages will redeploy the same live URL automatically.
+7. Open the live URL in a private/incognito tab and confirm the footer says `Mobile Beta 0.13.2`.
+8. Open Help → Send Feedback and confirm Open GitHub Issue opens a prefilled issue draft.
 
-## Cloudflare Pages / GitHub Pages / Vercel
-Upload this folder as a static site and use `index.html` as the root page. No build step is required.
-
-## Updating the beta
-Prefer deploying a newly versioned folder/build instead of silently replacing the same file. This makes tester screenshots and bug reports traceable to a specific version.
-
-The included `_headers` file asks compatible hosts not to cache `index.html` aggressively and adds basic browser security headers.
+The `.github/ISSUE_TEMPLATE/` folder adds structured bug/suggestion forms to the repository's Issues tab.
