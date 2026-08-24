@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="description" content="Clash 4 mobile beta test build">
-<title>Clash 4 — Mobile Beta 0.13.0</title>
+<title>Clash 4 — Mobile Beta 0.13.2</title>
 
 
 
@@ -455,12 +455,18 @@ body.reducedMotion .justDropped,body.reducedMotion .winningDisc,body.reducedMoti
 
 .reviewActions .rematchAction{border-color:rgba(90,145,235,.68);background:#18345d;color:#f4f8ff}
 .reviewActions .homeAction{background:transparent}
+
+/* Mobile Beta 0.13.2 tester feedback tools */
+.betaFeedbackButton{min-height:40px;border:1px solid #536682;border-radius:10px;background:#142238;color:#eef4ff;padding:7px 11px;font-weight:850;cursor:pointer}
+.betaFeedbackOverlay{position:fixed;inset:0;z-index:90;display:none;place-items:center;padding:16px;background:rgba(2,5,10,.9);backdrop-filter:blur(6px)}
+.betaFeedbackOverlay.show{display:grid}.betaFeedbackCard{width:min(560px,100%);max-height:calc(100dvh - 24px);overflow:auto;border:1px solid #3a4a66;border-radius:18px;background:linear-gradient(180deg,#101826,#0b121e);box-shadow:0 24px 90px rgba(0,0,0,.55);padding:16px}.betaFeedbackHead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.betaFeedbackHead h2{margin:3px 0 0;font-size:24px}.betaFeedbackClose{min-width:44px;min-height:44px;border:1px solid #34435e;border-radius:10px;background:#131c2c;color:#eef4ff;font-size:22px}.betaFeedbackForm{display:grid;gap:10px;margin-top:14px}.betaFeedbackForm label{display:grid;gap:5px;color:#bac7d9;font-size:11px;font-weight:800}.betaFeedbackForm select,.betaFeedbackForm textarea{width:100%;border:1px solid #34435e;border-radius:10px;background:#0b1320;color:#eef4ff;padding:10px;font:inherit;font-size:16px}.betaFeedbackForm textarea{min-height:88px;resize:vertical}.betaEnv{border:1px solid #27364d;border-radius:10px;background:#0a111c;padding:9px;color:#8fa0b8;font-size:10px;line-height:1.4;overflow-wrap:anywhere}.betaFeedbackActions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}.betaFeedbackActions button{min-height:46px;border:1px solid #43536d;border-radius:10px;background:#15243a;color:#eef4ff;font-weight:850}.betaFeedbackStatus{min-height:18px;margin-top:8px;color:#9fb4d0;font-size:11px}.betaVersionPill{display:inline-flex;align-items:center;border:1px solid #364963;border-radius:999px;padding:4px 8px;color:#9fb0c7;font-size:9px;font-weight:850;letter-spacing:.06em;white-space:nowrap}
+@media(max-width:620px){.helpFooterActions{grid-template-columns:1fr 1fr}.betaFeedbackActions{grid-template-columns:1fr}.betaFeedbackCard{padding:14px}}
 </style>
 </head>
 <body>
 <div id="appRoot" class="app">
 <header>
-  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Mobile Beta 0.13.0 · Arcade RC1</div></div>
+  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Mobile Beta 0.13.2 · Arcade RC1</div></div>
   <div id="fogTurnPill" class="fogTurnPill neutral"><span class="fogTurnDot"></span><span id="fogTurnText">Setup</span></div>
   <div class="topActions">
     <div id="matchDifficultyBadge" class="matchDifficultyBadge" title="Difficulty is chosen before the match"><span>AI</span><strong id="matchDifficultyLabel">Normal</strong></div>
@@ -594,7 +600,7 @@ body.reducedMotion .justDropped,body.reducedMotion .winningDisc,body.reducedMoti
       <div class="homeTagline">Connect Four. Win the Clash.</div>
       <p class="homeLede">Build four in a row while Rock–Paper–Scissors combat, Decoys, and hidden enemy identities turn every column into a tactical gamble.</p>
       <div class="homeActions"><button id="homePlayButton" class="homePlay" type="button"><span>Play</span><small>Normal · Default colors · Random start</small></button><button id="homeCustomizeButton" class="homeCustomize" type="button"><span>Customize Match</span><small>Difficulty · first move · colors · tips</small></button><button id="homeRulesButton" class="homeSecondary" type="button">How to Play</button></div>
-      <div class="homeMeta"><span>Mobile Beta · 0.13.0</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
+      <div class="homeMeta"><span>Mobile Beta · 0.13.1</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
     </div>
     <div class="homeHero" aria-hidden="true"><div class="homeHeroGlow"></div><div class="heroBoard"><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">🪨</span></div><div class="heroHole"><span class="heroPiece ai ">📄</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">✂️</span></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"><span class="heroPiece player ">📄</span></div><div class="heroHole"><span class="heroPiece ai ">🪨</span></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"><span class="heroPiece ai ">✂️</span></div></div><div class="heroFog"></div></div>
   </section>
@@ -674,8 +680,9 @@ body.reducedMotion .justDropped,body.reducedMotion .winningDisc,body.reducedMoti
       </div>
     </div>
 <div class="helpFooter">
-      <span>Mobile Beta 0.13.0 · The game remembers actions. You remember identities.</span>
+      <span>Mobile Beta 0.13.2 · The game remembers actions. You remember identities.</span>
       <div class="helpFooterActions">
+        <button id="betaFeedbackButton" class="betaFeedbackButton" type="button">Send Feedback</button>
         <button id="helpGuideToggle">Turn On Guided Tips</button>
         <button id="helpBack">Back to Match</button>
       </div>
@@ -689,6 +696,25 @@ body.reducedMotion .justDropped,body.reducedMotion .winningDisc,body.reducedMoti
 
 
 
+
+<div id="betaFeedbackOverlay" class="betaFeedbackOverlay" aria-hidden="true">
+  <div class="betaFeedbackCard" role="dialog" aria-modal="true" aria-labelledby="betaFeedbackTitle">
+    <div class="betaFeedbackHead">
+      <div><div class="eyebrow">MOBILE BETA 0.13.1</div><h2 id="betaFeedbackTitle">Test Feedback</h2></div>
+      <button id="betaFeedbackClose" class="betaFeedbackClose" type="button" aria-label="Close feedback">×</button>
+    </div>
+    <form id="betaFeedbackForm" class="betaFeedbackForm">
+      <label>Issue type<select id="betaIssueType"><option>Gameplay / rules</option><option>Animation / timing</option><option>Layout / mobile</option><option>Confusing / unclear</option><option>Performance</option><option>Accessibility</option><option>Other</option></select></label>
+      <label>What happened?<textarea id="betaWhatHappened" required placeholder="Describe what you saw..."></textarea></label>
+      <label>Steps to reproduce<textarea id="betaSteps" placeholder="1. Started a match...\n2. Dropped...\n3. Then..."></textarea></label>
+      <label>What did you expect?<textarea id="betaExpected" placeholder="What should have happened instead?"></textarea></label>
+      <div id="betaEnv" class="betaEnv"></div>
+      <div class="betaEnv"><strong>Public report notice:</strong> GitHub Issues are public. Do not include your phone number, email address, account information, or other private information.</div>
+      <div class="betaFeedbackActions"><button id="betaGitHubIssue" type="button">Open GitHub Issue</button><button id="betaShareReport" type="button">Share Report</button><button id="betaCopyReport" type="button">Copy Report</button></div>
+      <div id="betaFeedbackStatus" class="betaFeedbackStatus" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
 
 <script>
 // Canonical app configuration, DOM contract, preferences, setup, and session lifecycle.
@@ -717,6 +743,8 @@ const M={rock:['Rock','🪨'],paper:['Paper','📄'],scissors:['Scissors','✂�
 
 function collectDom(ids){
   const refs={};
+
+
   for(const id of ids){
     const element=document.getElementById(id);
     if(!element)throw new Error(`Clash 4 UI contract missing #${id}`);
@@ -2539,5 +2567,98 @@ sidebarRematch.addEventListener('click',rematch);
 sidebarHome.addEventListener('click',init);
 init();
 </script>
+
+<script>
+(function(){
+  const BUILD='Mobile Beta 0.13.2';
+  const REPO_ISSUES='https://github.com/typeivciv/clash4-beta/issues/new';
+  const $=id=>document.getElementById(id);
+  const openBtn=$('betaFeedbackButton'), overlay=$('betaFeedbackOverlay'), closeBtn=$('betaFeedbackClose');
+  if(!openBtn||!overlay||!closeBtn)return;
+  let restoreFocus=null;
+  function environment(){
+    const vv=window.visualViewport;
+    return [
+      `Build: ${BUILD}`,
+      `Viewport: ${Math.round(vv?vv.width:innerWidth)}×${Math.round(vv?vv.height:innerHeight)} CSS px`,
+      `Screen: ${screen.width}×${screen.height}`,
+      `Pixel ratio: ${window.devicePixelRatio||1}`,
+      `Browser: ${navigator.userAgent}`
+    ].join('\n');
+  }
+  function report(){
+    return [
+      'CLASH 4 MOBILE BETA FEEDBACK',
+      '============================',
+      environment(),
+      `Issue type: ${$('betaIssueType').value}`,
+      '',
+      'WHAT HAPPENED',
+      $('betaWhatHappened').value.trim()||'(not provided)',
+      '',
+      'STEPS TO REPRODUCE',
+      $('betaSteps').value.trim()||'(not provided)',
+      '',
+      'EXPECTED',
+      $('betaExpected').value.trim()||'(not provided)'
+    ].join('\n');
+  }
+  function issueTitle(){
+    const type=$('betaIssueType').value;
+    const detail=$('betaWhatHappened').value.trim().replace(/\s+/g,' ').slice(0,72);
+    return `[Beta 0.13.2][${type}] ${detail||'Tester report'}`;
+  }
+  function githubUrl(){
+    const body=[
+      '## Beta tester report',
+      '',
+      '```text',
+      report(),
+      '```',
+      '',
+      '### Attachments',
+      'Add a screenshot or screen recording here if available.'
+    ].join('\n');
+    return `${REPO_ISSUES}?title=${encodeURIComponent(issueTitle())}&body=${encodeURIComponent(body)}`;
+  }
+  function open(){
+    restoreFocus=document.activeElement;
+    $('betaEnv').textContent=environment();
+    $('betaFeedbackStatus').textContent='';
+    overlay.classList.add('show'); overlay.setAttribute('aria-hidden','false');
+    setTimeout(()=>$('betaWhatHappened').focus(),0);
+  }
+  function close(){
+    overlay.classList.remove('show'); overlay.setAttribute('aria-hidden','true');
+    if(restoreFocus&&restoreFocus.focus)restoreFocus.focus();
+  }
+  openBtn.addEventListener('click',open); closeBtn.addEventListener('click',close);
+  overlay.addEventListener('click',e=>{if(e.target===overlay)close()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&overlay.classList.contains('show'))close()});
+  $('betaGitHubIssue').addEventListener('click',()=>{
+    if(!$('betaWhatHappened').value.trim()){
+      $('betaFeedbackStatus').textContent='Add a short description of what happened before opening the issue.';
+      $('betaWhatHappened').focus();
+      return;
+    }
+    const issueWindow=window.open(githubUrl(),'_blank','noopener,noreferrer');
+    $('betaFeedbackStatus').textContent=issueWindow?'GitHub opened with the report prefilled. Review it and press Submit new issue.':'Your browser blocked the new tab. Use Copy Report instead.';
+  });
+  $('betaCopyReport').addEventListener('click',async()=>{
+    try{await navigator.clipboard.writeText(report());$('betaFeedbackStatus').textContent='Report copied. Paste it into a text, email, Discord, or GitHub issue.'}
+    catch{ $('betaFeedbackStatus').textContent='Copy was blocked by this browser. Use Share Report instead.' }
+  });
+  $('betaShareReport').addEventListener('click',async()=>{
+    const text=report();
+    if(navigator.share){
+      try{await navigator.share({title:'Clash 4 Mobile Beta Feedback',text});$('betaFeedbackStatus').textContent='Share sheet opened.'}catch(err){if(err&&err.name!=='AbortError')$('betaFeedbackStatus').textContent='Could not open the share sheet.'}
+    }else{
+      try{await navigator.clipboard.writeText(text);$('betaFeedbackStatus').textContent='Sharing is unavailable here, so the report was copied instead.'}
+      catch{$('betaFeedbackStatus').textContent='Sharing is unavailable in this browser.'}
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
