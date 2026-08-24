@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="description" content="Clash 4 mobile beta test build">
-<title>Clash 4 — Mobile Beta 0.13.2</title>
+<title>Clash 4 — Mobile Beta 0.13.3</title>
 
 
 
@@ -456,7 +456,7 @@ body.reducedMotion .justDropped,body.reducedMotion .winningDisc,body.reducedMoti
 .reviewActions .rematchAction{border-color:rgba(90,145,235,.68);background:#18345d;color:#f4f8ff}
 .reviewActions .homeAction{background:transparent}
 
-/* Mobile Beta 0.13.2 tester feedback tools */
+/* Mobile Beta 0.13.3 tester feedback tools */
 .betaFeedbackButton{min-height:40px;border:1px solid #536682;border-radius:10px;background:#142238;color:#eef4ff;padding:7px 11px;font-weight:850;cursor:pointer}
 .betaFeedbackOverlay{position:fixed;inset:0;z-index:90;display:none;place-items:center;padding:16px;background:rgba(2,5,10,.9);backdrop-filter:blur(6px)}
 .betaFeedbackOverlay.show{display:grid}.betaFeedbackCard{width:min(560px,100%);max-height:calc(100dvh - 24px);overflow:auto;border:1px solid #3a4a66;border-radius:18px;background:linear-gradient(180deg,#101826,#0b121e);box-shadow:0 24px 90px rgba(0,0,0,.55);padding:16px}.betaFeedbackHead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.betaFeedbackHead h2{margin:3px 0 0;font-size:24px}.betaFeedbackClose{min-width:44px;min-height:44px;border:1px solid #34435e;border-radius:10px;background:#131c2c;color:#eef4ff;font-size:22px}.betaFeedbackForm{display:grid;gap:10px;margin-top:14px}.betaFeedbackForm label{display:grid;gap:5px;color:#bac7d9;font-size:11px;font-weight:800}.betaFeedbackForm select,.betaFeedbackForm textarea{width:100%;border:1px solid #34435e;border-radius:10px;background:#0b1320;color:#eef4ff;padding:10px;font:inherit;font-size:16px}.betaFeedbackForm textarea{min-height:88px;resize:vertical}.betaEnv{border:1px solid #27364d;border-radius:10px;background:#0a111c;padding:9px;color:#8fa0b8;font-size:10px;line-height:1.4;overflow-wrap:anywhere}.betaFeedbackActions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}.betaFeedbackActions button{min-height:46px;border:1px solid #43536d;border-radius:10px;background:#15243a;color:#eef4ff;font-weight:850}.betaFeedbackStatus{min-height:18px;margin-top:8px;color:#9fb4d0;font-size:11px}.betaVersionPill{display:inline-flex;align-items:center;border:1px solid #364963;border-radius:999px;padding:4px 8px;color:#9fb0c7;font-size:9px;font-weight:850;letter-spacing:.06em;white-space:nowrap}
@@ -466,7 +466,7 @@ body.reducedMotion .justDropped,body.reducedMotion .winningDisc,body.reducedMoti
 <body>
 <div id="appRoot" class="app">
 <header>
-  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Mobile Beta 0.13.2 · Arcade RC1</div></div>
+  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Mobile Beta 0.13.3 · AI Tuning</div></div>
   <div id="fogTurnPill" class="fogTurnPill neutral"><span class="fogTurnDot"></span><span id="fogTurnText">Setup</span></div>
   <div class="topActions">
     <div id="matchDifficultyBadge" class="matchDifficultyBadge" title="Difficulty is chosen before the match"><span>AI</span><strong id="matchDifficultyLabel">Normal</strong></div>
@@ -680,7 +680,7 @@ body.reducedMotion .justDropped,body.reducedMotion .winningDisc,body.reducedMoti
       </div>
     </div>
 <div class="helpFooter">
-      <span>Mobile Beta 0.13.2 · The game remembers actions. You remember identities.</span>
+      <span>Mobile Beta 0.13.3 · The game remembers actions. You remember identities.</span>
       <div class="helpFooterActions">
         <button id="betaFeedbackButton" class="betaFeedbackButton" type="button">Send Feedback</button>
         <button id="helpGuideToggle">Turn On Guided Tips</button>
@@ -704,7 +704,7 @@ body.reducedMotion .justDropped,body.reducedMotion .winningDisc,body.reducedMoti
       <button id="betaFeedbackClose" class="betaFeedbackClose" type="button" aria-label="Close feedback">×</button>
     </div>
     <form id="betaFeedbackForm" class="betaFeedbackForm">
-      <label>Issue type<select id="betaIssueType"><option>Gameplay / rules</option><option>Animation / timing</option><option>Layout / mobile</option><option>Confusing / unclear</option><option>Performance</option><option>Accessibility</option><option>Other</option></select></label>
+      <label>Issue type<select id="betaIssueType"><option>Gameplay / rules</option><option>AI / difficulty</option><option>Animation / timing</option><option>Layout / mobile</option><option>Confusing / unclear</option><option>Performance</option><option>Accessibility</option><option>Other</option></select></label>
       <label>What happened?<textarea id="betaWhatHappened" required placeholder="Describe what you saw..."></textarea></label>
       <label>Steps to reproduce<textarea id="betaSteps" placeholder="1. Started a match...\n2. Dropped...\n3. Then..."></textarea></label>
       <label>What did you expect?<textarea id="betaExpected" placeholder="What should have happened instead?"></textarea></label>
@@ -1428,7 +1428,7 @@ function pieceRunLength(board,id,owner){
   let loc=null;
   for(let c=0;c<COLS&&!loc;c++)for(let d=0;d<board[c].length;d++)if(board[c][d].id===id){loc={r:ROWS-1-d,c};break}
   if(!loc)return 0;
-  let g=gridOf(board);if(g[loc.r][loc.c]?.owner!==owner)return 0,best=1;
+  let g=gridOf(board);if(g[loc.r][loc.c]?.owner!==owner)return 0;let best=1;
   for(const[dr,dc]of[[0,1],[1,0],[1,1],[1,-1]]){
     let n=1;
     for(const sign of[-1,1])for(let k=1;k<=4;k++){
@@ -1784,12 +1784,25 @@ function hardBaselinePick(opts){
   if(s.moveNumber<8){let best=noisy[0].final,pool=noisy.filter(o=>o.final>=best-5);return pool[Math.floor(Math.random()*pool.length)]||noisy[0]}
   return noisy[0]
 }
+function normalPlanningBonus(o,beforeAi){
+  let b=structuralAfter(o.type,o.c);if(!b)return 0;
+  let after=threatProfile(b,A),bonus=0;
+  bonus+=Math.min(16,Math.max(0,after.threes-beforeAi.threes)*10);
+  bonus+=Math.min(8,Math.max(0,after.twos-beforeAi.twos)*2.5);
+  if(after.wins>=1&&beforeAi.wins===0)bonus+=6;
+  if(after.wins>=2&&beforeAi.wins<2)bonus+=10;
+  return Math.min(26,bonus)
+}
 function normalPick(opts){
   if(!opts.length)return null;
-  let sorted=[...opts].sort((a,b)=>b.base-a.base),best=sorted[0].base;
-  if(best>=850)return hardBaselinePick(opts);
-  let pool=sorted.slice(0,Math.min(8,sorted.length));
-  let weights=pool.map((_,i)=>Math.max(1,pool.length-i)),total=weights.reduce((a,b)=>a+b,0),roll=Math.random()*total;
+  let baseSorted=[...opts].sort((a,b)=>b.base-a.base),baseBest=baseSorted[0].base;
+  if(baseBest>=850)return hardBaselinePick(opts);
+  let beforeAi=threatProfile(s.board,A);
+  let sorted=opts.map(o=>({...o,normalScore:o.base+normalPlanningBonus(o,beforeAi)}))
+    .sort((a,b)=>(b.normalScore-a.normalScore)||(b.base-a.base));
+  let best=sorted[0].normalScore;
+  let pool=sorted.filter(o=>o.normalScore>=best-18).slice(0,5);
+  let weights=[6,4,2,1,1].slice(0,pool.length),total=weights.reduce((a,b)=>a+b,0),roll=Math.random()*total;
   for(let i=0;i<pool.length;i++){roll-=weights[i];if(roll<=0)return pool[i]}
   return pool[0]
 }
@@ -2570,7 +2583,7 @@ init();
 
 <script>
 (function(){
-  const BUILD='Mobile Beta 0.13.2';
+  const BUILD='Mobile Beta 0.13.3';
   const REPO_ISSUES='https://github.com/typeivciv/clash4-beta/issues/new';
   const $=id=>document.getElementById(id);
   const openBtn=$('betaFeedbackButton'), overlay=$('betaFeedbackOverlay'), closeBtn=$('betaFeedbackClose');
