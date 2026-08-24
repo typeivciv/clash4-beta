@@ -600,7 +600,7 @@ body.reducedMotion .justDropped,body.reducedMotion .winningDisc,body.reducedMoti
       <div class="homeTagline">Connect Four. Win the Clash.</div>
       <p class="homeLede">Build four in a row while Rock–Paper–Scissors combat, Decoys, and hidden enemy identities turn every column into a tactical gamble.</p>
       <div class="homeActions"><button id="homePlayButton" class="homePlay" type="button"><span>Play</span><small>Normal · Default colors · Random start</small></button><button id="homeCustomizeButton" class="homeCustomize" type="button"><span>Customize Match</span><small>Difficulty · first move · colors · tips</small></button><button id="homeRulesButton" class="homeSecondary" type="button">How to Play</button></div>
-      <div class="homeMeta"><span>Mobile Beta · 0.13.1</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
+      <div class="homeMeta"><span>Mobile Beta · 0.13.3</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
     </div>
     <div class="homeHero" aria-hidden="true"><div class="homeHeroGlow"></div><div class="heroBoard"><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">🪨</span></div><div class="heroHole"><span class="heroPiece ai ">📄</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">✂️</span></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"><span class="heroPiece player ">📄</span></div><div class="heroHole"><span class="heroPiece ai ">🪨</span></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"><span class="heroPiece ai ">✂️</span></div></div><div class="heroFog"></div></div>
   </section>
@@ -700,7 +700,7 @@ body.reducedMotion .justDropped,body.reducedMotion .winningDisc,body.reducedMoti
 <div id="betaFeedbackOverlay" class="betaFeedbackOverlay" aria-hidden="true">
   <div class="betaFeedbackCard" role="dialog" aria-modal="true" aria-labelledby="betaFeedbackTitle">
     <div class="betaFeedbackHead">
-      <div><div class="eyebrow">MOBILE BETA 0.13.1</div><h2 id="betaFeedbackTitle">Test Feedback</h2></div>
+      <div><div class="eyebrow">MOBILE BETA 0.13.3</div><h2 id="betaFeedbackTitle">Test Feedback</h2></div>
       <button id="betaFeedbackClose" class="betaFeedbackClose" type="button" aria-label="Close feedback">×</button>
     </div>
     <form id="betaFeedbackForm" class="betaFeedbackForm">
@@ -2619,7 +2619,7 @@ init();
   function issueTitle(){
     const type=$('betaIssueType').value;
     const detail=$('betaWhatHappened').value.trim().replace(/\s+/g,' ').slice(0,72);
-    return `[Beta 0.13.2][${type}] ${detail||'Tester report'}`;
+    return `[Beta 0.13.3][${type}] ${detail||'Tester report'}`;
   }
   function githubUrl(){
     const body=[
