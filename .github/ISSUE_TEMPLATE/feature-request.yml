@@ -1,0 +1,34 @@
+name: Beta Suggestion
+description: Suggest an improvement after testing Clash 4.
+title: "[Suggestion] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Suggestions are welcome. Please describe the player problem first, then the change you think would help.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Mobile UI
+        - Game flow
+        - Animation / feedback
+        - Rules / balance
+        - Accessibility
+        - Private Duel / multiplayer
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What player problem are you trying to solve?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Suggested change
+    validations:
+      required: true
