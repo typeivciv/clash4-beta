@@ -1,0 +1,32 @@
+<section id="duelLobbyPanel" class="introScreen duelLobbyScreen" aria-label="Private Duel lobby">
+  <div class="introTopline"><button id="duelBackButton" class="introBack" type="button">← Home</button><span class="introStepLabel">Private Duel · Alpha</span></div>
+  <div class="duelLobbyHead">
+    <div><div class="eyebrow">PRIVATE DUEL</div><h2 class="setupTitle">Play another person</h2><p class="setupSub">Create a private room, share the code, and keep your opponent's identities hidden on their device.</p></div>
+    <span id="duelConnectionBadge" class="duelConnectionBadge offline">Server not set</span>
+  </div>
+  <div id="duelEntryPanel" class="duelEntryPanel">
+    <div class="duelChoiceGrid">
+      <button id="duelCreateButton" class="duelChoiceCard" type="button"><strong>Create Lobby</strong><small>Generate a private 6-character room code</small></button>
+      <button id="duelJoinModeButton" class="duelChoiceCard" type="button"><strong>Join Lobby</strong><small>Enter a code from the other player</small></button>
+    </div>
+    <div id="duelJoinForm" class="duelJoinForm" hidden>
+      <label><span>Room Code</span><input id="duelCodeInput" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" maxlength="6" placeholder="ABC123" aria-label="Private Duel room code"></label>
+      <div><button id="duelJoinButton" class="duelPrimary" type="button">Join Room</button><button id="duelJoinCancel" class="duelSecondary" type="button">Cancel</button></div>
+    </div>
+    <div class="duelServerBox">
+      <div><strong>Multiplayer server</strong><small id="duelServerNotice">A public Duel server is required when testing across different phones.</small></div>
+      <div class="duelServerRow"><input id="duelServerInput" type="url" placeholder="https://your-duel-server.example" aria-label="Duel server URL"><button id="duelSaveServerButton" type="button">Save</button></div>
+    </div>
+    <div id="duelEntryStatus" class="duelEntryStatus" role="status" aria-live="polite"></div>
+  </div>
+  <div id="duelWaitingPanel" class="duelWaitingPanel" hidden>
+    <div class="duelRoomCodeBlock"><span>ROOM CODE</span><strong id="duelLobbyCode">------</strong><button id="duelCopyCode" type="button">Copy Code</button></div>
+    <div class="duelWaitingCopy"><strong id="duelLobbyStatus">Waiting for opponent…</strong><span id="duelWaitingCopy">Share the room code with the other player.</span></div>
+    <div class="duelReadyGrid">
+      <div class="duelReadySeat self"><span>YOU</span><strong id="duelSeatLabel">Player 1</strong><i id="duelYouReady">Not ready</i></div>
+      <div class="duelReadySeat"><span>OPPONENT</span><strong>Remote player</strong><i id="duelOpponentReady">Waiting…</i></div>
+    </div>
+    <button id="duelReadyButton" class="duelReadyButton" type="button">I'm Ready</button>
+    <button id="duelLeaveButton" class="duelLeaveButton" type="button">Leave Lobby</button>
+  </div>
+</section>
