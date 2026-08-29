@@ -11,7 +11,9 @@ on:
       - 'src/js/14-duel-bindings.js'
       - 'src/styles/50-private-duel.css'
       - 'src/ui/private-duel-lobby.html'
+      - 'tools/build_private_duel_alpha.py'
       - 'tests/test-duel-*.mjs'
+      - 'tests/test-private-duel-build.mjs'
       - '.github/workflows/duel-alpha-ci.yml'
   pull_request:
     paths:
@@ -22,7 +24,12 @@ on:
       - 'src/js/14-duel-bindings.js'
       - 'src/styles/50-private-duel.css'
       - 'src/ui/private-duel-lobby.html'
+      - 'tools/build_private_duel_alpha.py'
       - 'tests/test-duel-*.mjs'
+      - 'tests/test-private-duel-build.mjs'
+
+permissions:
+  contents: write
 
 jobs:
   duel-alpha:
@@ -40,7 +47,24 @@ jobs:
           node --check src/js/12-duel-projection.js
           node --check src/js/13-duel-client.js
           node --check src/js/14-duel-bindings.js
+          python3 -m py_compile tools/build_private_duel_alpha.py
       - name: Client ordering contract
         run: node tests/test-duel-client-contract.mjs
       - name: Server update-history integration
         run: node tests/test-duel-server-history.mjs
+      - name: Build isolated Alpha client
+        run: python3 tools/build_private_duel_alpha.py
+      - name: Generated client contract
+        run: node tests/test-private-duel-build.mjs
+      - name: Publish Pages staging client
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          if [ -n "$(git status --porcelain -- private-duel-alpha.html)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add private-duel-alpha.html
+            git commit -m "Build Private Duel Alpha 0.14.1 staging client"
+            git push
+          else
+            echo "Staging client already matches canonical sources."
+          fi
