@@ -64,14 +64,14 @@ globalThis.openDuelLobby=openDuelLobby;
 function showDuelWaiting(){setVisible(duelEntryPanel,false);setVisible(duelWaitingPanel,true);duelLobbyCode.textContent=duelSession.code||'------';duelSeatLabel.textContent=duelSession.seat===H?'Player 1':'Player 2';queueFit()}
 async function duelCreateLobby(){
   duelStatus('Creating room…');if(!await duelHealthCheck())return;
-  try{const p=await duelRequest('/api/lobbies',{method:'POST',body:{},token:''});duelSession.code=p.code;duelSession.token=p.token;duelSession.seat=p.seat;duelSession.phase='lobby';saveDuelSession();showDuelWaiting();duelWaitingCopy.textContent='Share the room code with the other player.';duelStartPolling();await duelPollOnce()}
+  try{const p=await duelRequest('/api/lobbies',{method:'POST',body:{},token:''});duelSession.code=p.code;duelSession.token=p.token;duelSession.seat=p.seat;duelSession.phase='lobby';saveDuelSession();showDuelWaiting();duelWaitingCopy.textContent='Share the room code with the other player.';await duelPollOnce();duelStartPolling()}
   catch(e){duelStatus(humanizeDuelError(e.message),{error:true})}
 }
 async function duelJoinLobby(){
   const code=duelCodeInput.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);duelCodeInput.value=code;
   if(code.length!==6){duelStatus('Enter the full 6-character room code.',{error:true});return}
   duelStatus('Joining room…');if(!await duelHealthCheck())return;
-  try{const p=await duelRequest(`/api/lobbies/${encodeURIComponent(code)}/join`,{method:'POST',body:{},token:''});duelSession.code=p.code;duelSession.token=p.token;duelSession.seat=p.seat;duelSession.phase='lobby';saveDuelSession();showDuelWaiting();duelWaitingCopy.textContent='Connected. Both players must press Ready.';duelStartPolling();await duelPollOnce()}
+  try{const p=await duelRequest(`/api/lobbies/${encodeURIComponent(code)}/join`,{method:'POST',body:{},token:''});duelSession.code=p.code;duelSession.token=p.token;duelSession.seat=p.seat;duelSession.phase='lobby';saveDuelSession();showDuelWaiting();duelWaitingCopy.textContent='Connected. Both players must press Ready.';await duelPollOnce();duelStartPolling()}
   catch(e){duelStatus(humanizeDuelError(e.message),{error:true})}
 }
 async function duelRestoreSession(){
@@ -84,7 +84,7 @@ async function duelReady(){
   try{const p=await duelRequest(`/api/lobbies/${duelSession.code}/ready`,{method:'POST',body:{}});duelApplyPayload(p)}
   catch(e){duelReadyButton.disabled=false;duelReadyButton.textContent="I'm Ready";duelStatus(humanizeDuelError(e.message),{error:true})}
 }
-function duelStartPolling(){duelStopPolling();duelSession.polling=true;const loop=async()=>{if(!duelSession.polling)return;try{await duelPollOnce()}catch(e){if(e.status===404||e.status===401){duelStopPolling();duelStatus(humanizeDuelError(e.message),{error:true});return}}duelSession.pollTimer=setTimeout(loop,DUEL_POLL_MS)};duelSession.pollTimer=setTimeout(loop,120)}
+function duelStartPolling(){duelStopPolling();duelSession.polling=true;const loop=async()=>{if(!duelSession.polling)return;let delay=DUEL_POLL_MS;try{await duelPollOnce()}catch(e){if(e.status===404||e.status===401){duelStopPolling();duelStatus(humanizeDuelError(e.message),{error:true});return}updateDuelConnectionBadge('error');if(e.status===429)delay=2000}duelSession.pollTimer=setTimeout(loop,delay)};duelSession.pollTimer=setTimeout(loop,DUEL_POLL_MS)}
 async function duelPollOnce(){if(!duelSession.code||!duelSession.token)return;const p=await duelRequest(`/api/lobbies/${duelSession.code}`);duelApplyPayload(p);return p}
 
 function duelMapOwner(owner){if(owner!==H&&owner!==A)return owner;return duelSession.seat===A?other(owner):owner}
@@ -115,8 +115,11 @@ function duelBeginActive(p){
   duelSession.active=true;duelSession.phase='active';duelSession.handledVersion=p.version;duelSession.version=Math.max(duelSession.version,p.version);duelSession.deferredPayload=null;
   setMatchControllerMode('duel',{owner:H});
   resetMatchRuntime(H,{isReady:true});humanColor=presetColor('blue');aiColor=presetColor('orange');applyColors();
-  s=duelProjectedStateToUi(p.state);coinOverlay.classList.remove('show');busy=false;ready=true;postMatchView='none';publicMoveHistory=[];recentInteractions=[];finishReplay=null;
-  render();queueFit();
+  s=duelProjectedStateToUi(p.state);coinOverlay.classList.remove('show');busy=false;ready=true;publicMoveHistory=[];recentInteractions=[];finishReplay=null;
+  const restored=(s.moveNumber||0)>0,terminal=!!(s.winner||s.draw);postMatchView=terminal?'summary':'none';
+  quickStarterBanner.hidden=true;render();queueFit();
+  if(terminal){duelStopPolling();msg('Private Duel restored — match complete.');return}
+  if(restored){quickStarterTitle.textContent='MATCH RESTORED';quickStarterCopy.textContent=s.turn===H?'Your turn · private session resumed':'Opponent turn · private session resumed';quickStarterBanner.hidden=false;scheduleTimer('quickStarter',()=>{quickStarterBanner.hidden=true},1250);msg(s.turn===H?'Private Duel restored — your turn.':'Private Duel restored — opponent turn.');return}
   quickStarterTitle.textContent=s.turn===H?'YOU START':'OPPONENT STARTS';quickStarterCopy.textContent='Private Duel · first player selected randomly';quickStarterBanner.hidden=false;scheduleTimer('quickStarter',()=>{quickStarterBanner.hidden=true},1250);
   msg(s.turn===H?'Private Duel — you move first.':'Private Duel — opponent moves first.');
 }
@@ -125,7 +128,7 @@ function duelFinishNetworkPresentation(events,column){
     busy=false;
     const deferred=duelSession.deferredPayload;duelSession.deferredPayload=null;
     if(deferred&&deferred.version>duelSession.handledVersion){duelApplyPayload(deferred);return}
-    if(s.winner||s.draw){postMatchView='summary';finishReplay=null;render();return}
+    if(s.winner||s.draw){duelStopPolling();postMatchView='summary';finishReplay=null;render();return}
     continueTurnController()
   };
   if(events.length)playEvents(events,done,column);else done()
