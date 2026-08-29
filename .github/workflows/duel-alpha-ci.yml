@@ -1,0 +1,46 @@
+name: Private Duel Alpha CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/**'
+      - 'src/js/10-rules.js'
+      - 'src/js/12-duel-projection.js'
+      - 'src/js/13-duel-client.js'
+      - 'src/js/14-duel-bindings.js'
+      - 'src/styles/50-private-duel.css'
+      - 'src/ui/private-duel-lobby.html'
+      - 'tests/test-duel-*.mjs'
+      - '.github/workflows/duel-alpha-ci.yml'
+  pull_request:
+    paths:
+      - 'server/**'
+      - 'src/js/10-rules.js'
+      - 'src/js/12-duel-projection.js'
+      - 'src/js/13-duel-client.js'
+      - 'src/js/14-duel-bindings.js'
+      - 'src/styles/50-private-duel.css'
+      - 'src/ui/private-duel-lobby.html'
+      - 'tests/test-duel-*.mjs'
+
+jobs:
+  duel-alpha:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Syntax checks
+        run: |
+          node --check server/duel-server.mjs
+          node --check src/js/10-rules.js
+          node --check src/js/12-duel-projection.js
+          node --check src/js/13-duel-client.js
+          node --check src/js/14-duel-bindings.js
+      - name: Client ordering contract
+        run: node tests/test-duel-client-contract.mjs
+      - name: Server update-history integration
+        run: node tests/test-duel-server-history.mjs
