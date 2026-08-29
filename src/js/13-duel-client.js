@@ -76,8 +76,11 @@ async function duelJoinLobby(){
 }
 async function duelRestoreSession(){
   showDuelWaiting();duelWaitingCopy.textContent='Restoring this private session…';
-  try{await duelPollOnce();duelStartPolling()}
-  catch{duelClearActiveSession();resetDuelLobbyUi();duelStatus('The previous room could not be restored. Create or join a new one.',{error:true})}
+  try{await duelPollOnce();if(!(duelSession.active&&(s.winner||s.draw)))duelStartPolling()}
+  catch(e){
+    if(e.status===404||e.status===401){duelClearActiveSession();resetDuelLobbyUi();duelStatus('The previous room could not be restored. Create or join a new one.',{error:true});return}
+    updateDuelConnectionBadge('error');duelWaitingCopy.textContent='Connection interrupted. Keeping this private session and retrying…';duelStartPolling()
+  }
 }
 async function duelReady(){
   duelReadyButton.disabled=true;duelReadyButton.textContent='Ready ✓';
