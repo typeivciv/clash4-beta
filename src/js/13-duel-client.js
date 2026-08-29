@@ -4,7 +4,7 @@
 const DUEL_SERVER_KEY='clash4-duel-server-v1';
 const DUEL_SESSION_KEY='clash4-duel-session-v1';
 const DUEL_POLL_MS=800;
-let duelSession={server:'',code:'',token:'',seat:null,phase:'idle',version:-1,handledVersion:-1,pollTimer:null,polling:false,active:false,pendingLocal:null,deferredPayload:null};
+let duelSession={server:'',code:'',token:'',seat:null,phase:'idle',version:-1,handledVersion:-1,pollTimer:null,polling:false,active:false,pendingLocal:null,deferredPayloads:[]};
 
 function normalizeDuelServer(value){return String(value||'').trim().replace(/\/+$/,'')}
 function initialDuelServer(){
@@ -23,7 +23,7 @@ function saveDuelServer(value){
 function saveDuelSession(){try{sessionStorage.setItem(DUEL_SESSION_KEY,JSON.stringify({server:duelSession.server,code:duelSession.code,token:duelSession.token,seat:duelSession.seat}))}catch{}}
 function loadDuelSession(){try{return JSON.parse(sessionStorage.getItem(DUEL_SESSION_KEY)||'null')}catch{return null}}
 function duelClearActiveSession(){
-  duelStopPolling();duelSession={...duelSession,code:'',token:'',seat:null,phase:'idle',version:-1,handledVersion:-1,active:false,pendingLocal:null,deferredPayload:null};
+  duelStopPolling();duelSession={...duelSession,code:'',token:'',seat:null,phase:'idle',version:-1,handledVersion:-1,active:false,pendingLocal:null,deferredPayloads:[]};
   try{sessionStorage.removeItem(DUEL_SESSION_KEY)}catch{}
 }
 globalThis.duelClearActiveSession=duelClearActiveSession;
@@ -57,7 +57,7 @@ function resetDuelLobbyUi(){
 function openDuelLobby(){
   setMatchControllerMode('duel',{owner:H});setIntroScreen('duel');resetDuelLobbyUi();duelServerInput.value=duelSession.server;
   const saved=loadDuelSession();
-  if(saved?.server&&saved?.code&&saved?.token){duelSession={...duelSession,...saved,active:false,phase:'lobby'};duelServerInput.value=duelSession.server;duelRestoreSession();return}
+  if(saved?.server&&saved?.code&&saved?.token){duelSession={...duelSession,...saved,active:false,phase:'lobby',deferredPayloads:[]};duelServerInput.value=duelSession.server;duelRestoreSession();return}
   duelHealthCheck()
 }
 globalThis.openDuelLobby=openDuelLobby;
@@ -88,7 +88,11 @@ async function duelReady(){
   catch(e){duelReadyButton.disabled=false;duelReadyButton.textContent="I'm Ready";duelStatus(humanizeDuelError(e.message),{error:true})}
 }
 function duelStartPolling(){duelStopPolling();duelSession.polling=true;const loop=async()=>{if(!duelSession.polling)return;let delay=DUEL_POLL_MS;try{await duelPollOnce()}catch(e){if(e.status===404||e.status===401){duelStopPolling();duelStatus(humanizeDuelError(e.message),{error:true});return}updateDuelConnectionBadge('error');if(e.status===429)delay=2000}duelSession.pollTimer=setTimeout(loop,delay)};duelSession.pollTimer=setTimeout(loop,DUEL_POLL_MS)}
-async function duelPollOnce(){if(!duelSession.code||!duelSession.token)return;const p=await duelRequest(`/api/lobbies/${duelSession.code}`);duelApplyPayload(p);return p}
+async function duelPollOnce(){
+  if(!duelSession.code||!duelSession.token)return;
+  const since=duelSession.active&&duelSession.handledVersion>=0?`?since=${duelSession.handledVersion}`:'';
+  const p=await duelRequest(`/api/lobbies/${duelSession.code}${since}`);duelApplyPayload(p);return p
+}
 
 function duelMapOwner(owner){if(owner!==H&&owner!==A)return owner;return duelSession.seat===A?other(owner):owner}
 function duelMapCooldown(cd){return cd?{...cd,protectedOwner:duelMapOwner(cd.protectedOwner),blockedOwner:duelMapOwner(cd.blockedOwner)}:cd}
@@ -115,7 +119,7 @@ function updateDuelWaiting(p){
   if(me?.ready&&opp?.ready)duelWaitingCopy.textContent='Both ready. Randomizing the first player…'
 }
 function duelBeginActive(p){
-  duelSession.active=true;duelSession.phase='active';duelSession.handledVersion=p.version;duelSession.version=Math.max(duelSession.version,p.version);duelSession.deferredPayload=null;
+  duelSession.active=true;duelSession.phase='active';duelSession.handledVersion=p.version;duelSession.version=Math.max(duelSession.version,p.version);duelSession.deferredPayloads=[];
   setMatchControllerMode('duel',{owner:H});
   resetMatchRuntime(H,{isReady:true});humanColor=presetColor('blue');aiColor=presetColor('orange');applyColors();
   s=duelProjectedStateToUi(p.state);coinOverlay.classList.remove('show');busy=false;ready=true;publicMoveHistory=[];recentInteractions=[];finishReplay=null;
@@ -126,11 +130,21 @@ function duelBeginActive(p){
   quickStarterTitle.textContent=s.turn===H?'YOU START':'OPPONENT STARTS';quickStarterCopy.textContent='Private Duel · first player selected randomly';quickStarterBanner.hidden=false;scheduleTimer('quickStarter',()=>{quickStarterBanner.hidden=true},1250);
   msg(s.turn===H?'Private Duel — you move first.':'Private Duel — opponent moves first.');
 }
+function enqueueDuelPayload(p){
+  if(!p||!Number.isFinite(Number(p.version))||p.version<=duelSession.handledVersion)return;
+  const existing=duelSession.deferredPayloads.findIndex(x=>x.version===p.version);
+  if(existing>=0)duelSession.deferredPayloads[existing]=p;else duelSession.deferredPayloads.push(p);
+  duelSession.deferredPayloads.sort((a,b)=>a.version-b.version)
+}
+function nextDeferredDuelPayload(){
+  while(duelSession.deferredPayloads.length&&duelSession.deferredPayloads[0].version<=duelSession.handledVersion)duelSession.deferredPayloads.shift();
+  return duelSession.deferredPayloads.shift()||null
+}
 function duelFinishNetworkPresentation(events,column){
   const done=()=>{
     busy=false;
-    const deferred=duelSession.deferredPayload;duelSession.deferredPayload=null;
-    if(deferred&&deferred.version>duelSession.handledVersion){duelApplyPayload(deferred);return}
+    const deferred=nextDeferredDuelPayload();
+    if(deferred){duelAcceptActivePayload(deferred);return}
     if(s.winner||s.draw){duelStopPolling();postMatchView='summary';finishReplay=null;render();return}
     continueTurnController()
   };
@@ -148,6 +162,19 @@ function duelApplyActiveUpdate(p){
     duelSession.pendingLocal=null;dropPresentation={before:pending.before,owner:H,type:pending.type,column:pending.column,targetRow:dropTargetRow(pending.before,pending.column),moveNumber:after.moveNumber,duration:TIMING.drop};render();emitFeedback('drop');scheduleTimer('drop',()=>{dropPresentation=null;render();duelFinishNetworkPresentation(events,lm.column)},TIMING.drop)
   }else{duelSession.pendingLocal=null;render();duelFinishNetworkPresentation(events,lm?.column??null)}
 }
+function duelAcceptActivePayload(p){
+  if(p.version<=duelSession.handledVersion)return;
+  if(busy&&!duelSession.pendingLocal){enqueueDuelPayload(p);return}
+  duelApplyActiveUpdate(p)
+}
+function duelResyncSnapshot(p){
+  clearPresentationTimers();activePresentation=null;dropPresentation=null;overlay.classList.remove('show');
+  duelSession.deferredPayloads=[];duelSession.pendingLocal=null;
+  s=duelProjectedStateToUi(p.state);duelSession.handledVersion=p.version;busy=false;hoverCol=null;
+  postMatchView=s.winner||s.draw?'summary':'none';render();
+  if(s.winner||s.draw){duelStopPolling();msg('Private Duel resynchronized — match complete.');return}
+  msg('Private Duel resynchronized after a longer connection gap.');continueTurnController()
+}
 function duelApplyPayload(p){
   const incomingVersion=Number(p?.version);
   updateDuelConnectionBadge('online');
@@ -156,12 +183,13 @@ function duelApplyPayload(p){
   duelSession.version=Math.max(duelSession.version,incomingVersion);duelSession.phase=p.phase;
   if(p.phase!=='active'){updateDuelWaiting(p);return}
   if(!duelSession.active){duelBeginActive(p);return}
-  if(busy&&!duelSession.pendingLocal&&incomingVersion>duelSession.handledVersion){
-    const deferred=duelSession.deferredPayload;
-    if(!deferred||incomingVersion>=deferred.version)duelSession.deferredPayload=p;
+  if(p.historyGap){duelResyncSnapshot(p);return}
+  if(Array.isArray(p.updates)&&p.updates.length){
+    const updates=[...p.updates].sort((a,b)=>a.version-b.version);
+    for(const update of updates)duelAcceptActivePayload({phase:'active',version:update.version,state:update.state,events:update.events||[]});
     return
   }
-  duelApplyActiveUpdate(p)
+  duelAcceptActivePayload(p)
 }
 async function duelMove(owner,type,c){
   if(owner!==H||matchMode!=='duel'||!duelSession.active)return;
