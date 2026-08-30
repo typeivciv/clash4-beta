@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="description" content="Clash 4 mobile beta test build">
-<title>Clash 4 — Fog of War · Duel Modes Alpha 0.15.4</title>
+<title>Clash 4 — Fog of War · Duel Modes Alpha 0.15.5</title>
 
 
 
@@ -603,13 +603,31 @@ html.pass-privacy-active{overflow:hidden}
 .duelAcceptRow[hidden]{display:none!important}
 .duelRelayNote{margin:10px 2px 0;padding:9px 10px;border:1px solid rgba(45,212,191,.22);border-radius:10px;background:rgba(8,34,38,.34);color:#8fb6b2;font-size:9px;line-height:1.45}
 .duelRelayNote strong{color:#bdf8ef}
+/* 0.15.5 Direct Duel independent player colors. */
+.duelColorSetup{display:grid;gap:9px;padding:12px;border:1px solid #34445b;border-radius:14px;background:linear-gradient(155deg,rgba(18,29,47,.92),rgba(10,18,31,.92))}
+.duelColorSetup[hidden]{display:none!important}
+.duelColorHead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.duelColorHead>div:first-child{display:grid;gap:2px}
+.duelColorHead span{font-size:8px;letter-spacing:.12em;color:#7f91aa;font-weight:900}
+.duelColorHead strong{font-size:12px;color:#e8f0fb}
+.duelOpponentColor{display:flex;align-items:center;gap:6px;padding:6px 8px;border:1px solid #38475d;border-radius:999px;background:#0b1422;color:#9eb0c7;font-size:9px;font-weight:800}
+.duelOpponentColor i{display:block;width:12px;height:12px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
+.duelColorSwatches{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
+.duelColorChoice{min-width:0;display:grid;justify-items:center;gap:4px;padding:7px 3px;border:1px solid #35445a;border-radius:10px;background:#101a29;color:#93a5bb;font-size:8px;font-weight:800;cursor:pointer}
+.duelColorChoice i{display:block;width:23px;height:23px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(255,255,255,.13),0 2px 7px rgba(0,0,0,.28)}
+.duelColorChoice:hover{border-color:#7086a4;filter:brightness(1.06)}
+.duelColorChoice.selected{border-color:#9db9dc;background:#17263a;color:#eef5ff;box-shadow:inset 0 0 0 1px rgba(157,185,220,.2)}
+.duelColorChoice:disabled{cursor:default;opacity:.72}
+.duelColorStatus{margin:0;color:#7f91aa;font-size:9px;line-height:1.4;text-align:center}
+.duelColorStatus.error{color:#ffb67c}
+@media(max-width:560px){.duelColorSwatches{grid-template-columns:repeat(4,minmax(0,1fr))}.duelColorHead{align-items:flex-start}.duelOpponentColor{flex:0 0 auto}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
 </head>
 <body>
 <div id="appRoot" class="app">
 <header>
-  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Arcade RC1 · Duel Modes Alpha 0.15.4</div></div>
+  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Arcade RC1 · Duel Modes Alpha 0.15.5</div></div>
   <div id="fogTurnPill" class="fogTurnPill neutral"><span class="fogTurnDot"></span><span id="fogTurnText">Setup</span></div>
   <div class="topActions">
     <div id="matchDifficultyBadge" class="matchDifficultyBadge" title="Difficulty is chosen before the match"><span>AI</span><strong id="matchDifficultyLabel">Normal</strong></div>
@@ -743,7 +761,7 @@ html.pass-privacy-active{overflow:hidden}
       <div class="homeTagline">Connect Four. Win the Clash.</div>
       <p class="homeLede">Build four in a row while Rock–Paper–Scissors combat, Decoys, and hidden enemy identities turn every column into a tactical gamble.</p>
       <div class="homeActions"><button id="homePlayButton" class="homePlay" type="button"><span>Play</span><small>Normal · Default colors · Random start</small></button><button id="homeDuelButton" class="homeDuel" type="button"><span>Duel</span><small>Direct P2P · Pass &amp; Play · Online Room · Alpha</small></button><button id="homeCustomizeButton" class="homeCustomize" type="button"><span>Customize Match</span><small>Difficulty · first move · colors · tips</small></button><button id="homeRulesButton" class="homeSecondary" type="button">How to Play</button></div>
-      <div class="homeMeta"><span>Duel Modes Alpha · 0.15.4</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
+      <div class="homeMeta"><span>Duel Modes Alpha · 0.15.5</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
     </div>
     <div class="homeHero" aria-hidden="true"><div class="homeHeroGlow"></div><div class="heroBoard"><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">🪨</span></div><div class="heroHole"><span class="heroPiece ai ">📄</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">✂️</span></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"><span class="heroPiece player ">📄</span></div><div class="heroHole"><span class="heroPiece ai ">🪨</span></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"><span class="heroPiece ai ">✂️</span></div></div><div class="heroFog"></div></div>
   </section>
@@ -2629,6 +2647,108 @@ directBindPeerJsConnection=function(conn){
 };
 globalThis.directAlphaRouteKind=directAlphaRouteKind;
 
+// Duel 0.15.5: independent Direct Duel colors + one-scan link sharing.
+// Each seat owns its own color choice. The exact same preset cannot be locked by both
+// players because board ownership must remain visually distinguishable.
+'use strict';
+let duelSeatColors={human:'blue',ai:'orange'};
+const DUEL_COLOR_IDS=new Set(COLOR_PRESETS.map(p=>p.id));
+
+function duelResetSeatColors(){duelSeatColors={human:'blue',ai:'orange'}}
+function duelColorPreset(id){return COLOR_PRESETS.find(p=>p.id===id)||COLOR_PRESETS[0]}
+function duelLocalSeat(){return directDuel?.seat||duelSession?.seat||H}
+function duelRemoteSeat(){return other(duelLocalSeat())}
+function duelColorsConflict(){return duelSeatColors[H]===duelSeatColors[A]}
+function duelApplySeatColors(){
+  const mine=duelColorPreset(duelSeatColors[duelLocalSeat()]),theirs=duelColorPreset(duelSeatColors[duelRemoteSeat()]);
+  humanColor=makeColor(mine.hex,mine.label,mine.id);aiColor=makeColor(theirs.hex,theirs.label,theirs.id);applyColors()
+}
+globalThis.duelApplySeatColors=duelApplySeatColors;
+
+function duelEnsureColorUi(){
+  let panel=document.getElementById('duelColorSetup');if(panel)return panel;
+  panel=document.createElement('section');panel.id='duelColorSetup';panel.className='duelColorSetup';panel.hidden=true;
+  panel.innerHTML=`<div class="duelColorHead"><div><span>YOUR COLOR</span><strong>Choose independently</strong></div><div id="duelOpponentColor" class="duelOpponentColor">Opponent · Orange</div></div><div id="duelColorSwatches" class="duelColorSwatches" role="group" aria-label="Choose your Duel color"></div><p id="duelColorStatus" class="duelColorStatus">Both players choose their own color before Ready.</p>`;
+  duelReadyButton.before(panel);return panel
+}
+function duelRenderColorUi(){
+  const panel=duelEnsureColorUi();const eligible=!!directDuel?.active&&!duelSession?.active;panel.hidden=!eligible;if(!eligible)return;
+  const mine=duelSeatColors[duelLocalSeat()],theirs=duelSeatColors[duelRemoteSeat()],locked=!!directDuel.ready?.[duelLocalSeat()];
+  const swatches=document.getElementById('duelColorSwatches');swatches.innerHTML='';
+  for(const p of COLOR_PRESETS){
+    const b=document.createElement('button');b.type='button';b.className='duelColorChoice'+(mine===p.id?' selected':'');b.disabled=locked;
+    b.setAttribute('aria-pressed',String(mine===p.id));b.setAttribute('aria-label',`Use ${p.label}`);
+    b.innerHTML=`<i style="background:${p.hex}"></i><span>${p.label}</span>`;b.addEventListener('click',()=>duelChooseOwnColor(p.id));swatches.appendChild(b)
+  }
+  const opp=duelColorPreset(theirs),oppEl=document.getElementById('duelOpponentColor');oppEl.innerHTML=`<i style="background:${opp.hex}"></i><span>Opponent · ${opp.label}</span>`;
+  const status=document.getElementById('duelColorStatus'),conflict=duelColorsConflict();
+  status.textContent=conflict?'Both players selected the same color. One player must choose another before Ready.':locked?'Your color is locked for this match.':'Choose any color; your opponent chooses independently on their device.';
+  status.classList.toggle('error',conflict);
+  duelReadyButton.disabled=locked||conflict;
+  if(!locked)duelReadyButton.textContent="I'm Ready"
+}
+function duelChooseOwnColor(id){
+  if(!directDuel?.active||duelSession?.active||!DUEL_COLOR_IDS.has(id)||directDuel.ready?.[duelLocalSeat()])return;
+  duelSeatColors[duelLocalSeat()]=id;duelApplySeatColors();directSend({kind:'color',color:id});duelRenderColorUi()
+}
+
+const directOpenPanelBeforeDuelColors=directOpenPanel;
+directOpenPanel=function(){duelResetSeatColors();const result=directOpenPanelBeforeDuelColors();const panel=duelEnsureColorUi();panel.hidden=true;return result};
+globalThis.directOpenPanel=directOpenPanel;
+
+const directEnterReadyRoomBeforeDuelColors=directEnterReadyRoom;
+directEnterReadyRoom=function(){
+  const result=directEnterReadyRoomBeforeDuelColors();duelApplySeatColors();duelRenderColorUi();directSend({kind:'color',color:duelSeatColors[duelLocalSeat()]});return result
+};
+
+const directHandleMessageBeforeDuelColors=directHandleMessage;
+directHandleMessage=function(data){
+  if(data?.kind==='color'&&DUEL_COLOR_IDS.has(data.color)&&directDuel?.active&&!duelSession?.active){duelSeatColors[duelRemoteSeat()]=data.color;duelApplySeatColors();duelRenderColorUi();return}
+  return directHandleMessageBeforeDuelColors(data)
+};
+
+const directDuelReadyBeforeDuelColors=directDuelReady;
+directDuelReady=function(){
+  if(directDuel?.active){
+    if(duelColorsConflict()){duelRenderColorUi();directSetStatus('Choose different player colors before both players press Ready.',{error:true});return}
+    directSend({kind:'color',color:duelSeatColors[duelLocalSeat()]})
+  }
+  const result=directDuelReadyBeforeDuelColors();duelRenderColorUi();return result
+};
+globalThis.directDuelReady=directDuelReady;
+
+const directTryStartBeforeDuelColors=directTryStart;
+directTryStart=function(){
+  if(directDuel?.active&&duelColorsConflict()){duelRenderColorUi();return}
+  return directTryStartBeforeDuelColors()
+};
+
+const duelBeginActiveBeforeDuelColors=duelBeginActive;
+duelBeginActive=function(payload){
+  const result=duelBeginActiveBeforeDuelColors(payload);
+  if(directDuel?.active){duelApplySeatColors();const panel=duelEnsureColorUi();panel.hidden=true;render();queueFit()}
+  return result
+};
+
+// Nearby QR and text sharing are the same invite. Keep the raw peer id hidden, but expose
+// Copy Link / Text or Share Link beneath the QR so Player 1 can invite someone remotely.
+const directNearbyStageBeforeShareLinks=directNearbyStage;
+directNearbyStage=function(options={}){
+  const result=directNearbyStageBeforeShareLinks(options);const title=String(options.title||'');
+  const label=directEl('duelDirectSignal')?.closest('.duelSignalLabel'),actions=directEl('duelDirectShare')?.parentElement;
+  if(title.includes('Scan once to join')){
+    if(label)label.hidden=true;if(actions)actions.hidden=false;
+    const copyBtn=directEl('duelDirectCopy'),shareBtn=directEl('duelDirectShare'),copy=directEl('duelDirectStageCopy');
+    if(copyBtn)copyBtn.textContent='Copy Link';if(shareBtn)shareBtn.textContent='Text / Share Link';
+    if(copy)copy.textContent='Player 2 can scan this QR with the normal Camera app or open the same Clash 4 invite link you send by text, Messages, Discord, or another app.'
+  }else if(directDuel?.pairing==='nearby'){
+    if(actions)actions.hidden=true
+  }
+  return result
+};
+
+duelEnsureColorUi();
+
 // AI evaluation and decision policy. Hidden-information rules remain bounded here.
 function projectedScore(board,owner,c){
   if(board[c].length>=ROWS)return-Infinity;
@@ -3583,7 +3703,7 @@ init();
 
 <script>
 (function(){
-  const BUILD='Duel Modes Alpha 0.15.4';
+  const BUILD='Duel Modes Alpha 0.15.5';
   const REPO_ISSUES='https://github.com/typeivciv/clash4-beta/issues/new';
   const $=id=>document.getElementById(id);
   const openBtn=$('betaFeedbackButton'), overlay=$('betaFeedbackOverlay'), closeBtn=$('betaFeedbackClose');
@@ -3619,7 +3739,7 @@ init();
   function issueTitle(){
     const type=$('betaIssueType').value;
     const detail=$('betaWhatHappened').value.trim().replace(/\s+/g,' ').slice(0,72);
-    return `[Duel Modes 0.15.4][${type}] ${detail||'Tester report'}`;
+    return `[Duel Modes 0.15.5][${type}] ${detail||'Tester report'}`;
   }
   function githubUrl(){
     const body=[
