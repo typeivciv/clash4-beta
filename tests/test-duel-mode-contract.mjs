@@ -14,17 +14,23 @@ for(const token of [
   'unpackDirectSignal',
   "kind:'offer'",
   "kind:'answer'",
+  "async function directJoinSignal(raw,pairing='remote')",
+  "directJoinSignal(value,'nearby')",
+  "directJoinSignal(value,'remote')",
+  'directClosePeer();duelStopPolling();duelClearActiveSession()',
+  'duelCopyCode.hidden=true',
   'directScanSignal',
   'BarcodeDetector',
   'globalThis.jsQR',
   'directAuthorityMove',
   'localDuelPayload'
 ])assert.ok(direct.includes(token),`Direct Duel contract missing ${token}`);
-assert.ok(!direct.includes("fetch("),'Direct Duel transport must not call the Clash 4 HTTP server');
+assert.ok(!direct.includes('fetch('),'Direct Duel transport must not call the Clash 4 HTTP server');
 
-for(const token of ['passDuelOverlay','passShowHandoff','projectDuelState(passDuel.state,passDuel.viewer','applyLocalDuelMove','passDuelMove'])assert.ok(pass.includes(token),`Pass & Play contract missing ${token}`);
+for(const token of ['passDuelOverlay','passShowHandoff','projectDuelState(passDuel.state,passDuel.viewer','applyLocalDuelMove','passDuelMove','publicMoveHistory=[];recentInteractions=[]'])assert.ok(pass.includes(token),`Pass & Play contract missing ${token}`);
 for(const token of ['if(passDuel.active)','if(directDuel.active)','return duelMove(owner,type,column)'])assert.ok(router.includes(token),`transport router missing ${token}`);
 for(const id of ['duelDirectMode','duelPassMode','duelOnlineMode','duelDirectNearby','duelDirectRemote','duelDirectScanInvite','duelDirectJoin'])assert.ok(lobby.includes(`id="${id}"`),`Duel hub missing ${id}`);
+assert.ok(lobby.includes('Direct Duel is intended for trusted opponents'),'Direct Duel trust model must be visible in Alpha UI');
 
 for(const [name,source] of [['direct',direct],['pass',pass],['router',router]]){
   try{new Function(source)}catch(error){throw new Error(`${name} module syntax failed: ${error.message}`)}
