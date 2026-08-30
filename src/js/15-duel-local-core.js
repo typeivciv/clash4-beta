@@ -9,7 +9,7 @@ function makeLocalDuelState(starter=H){
     aiKnow:{},aiOpponentModel:{humanMoves:0,proactiveBlocks:0,immediateBlocks:0,counterThreatMoves:0},cooldowns:[],lastMove:null
   }
 }
-function randomDuelStarter(){return crypto?.getRandomValues?((crypto.getRandomValues(new Uint8Array(1))[0]&1)?A:H):(Math.random()<.5?H:A)}
+function randomDuelStarter(){const api=globalThis.crypto;return api?.getRandomValues?((api.getRandomValues(new Uint8Array(1))[0]&1)?A:H):(Math.random()<.5?H:A)}
 function applyLocalDuelMove(st,owner,type,column){
   if(!st||st.winner||st.draw)return{error:'match-complete'};
   if(st.turn!==owner)return{error:'not-your-turn'};
