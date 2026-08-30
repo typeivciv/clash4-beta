@@ -1,0 +1,31 @@
+/* Duel 0.15.6 post-match result presentation. */
+.duelResultAnimation{position:relative;width:104px;height:104px;margin:0 auto 10px;display:grid;place-items:center;isolation:isolate}
+.duelResultAnimation[hidden]{display:none!important}
+.duelResultHalo{position:absolute;inset:8px;border-radius:50%;border:1px solid color-mix(in srgb,var(--blue) 58%,transparent);box-shadow:0 0 28px color-mix(in srgb,var(--blue) 28%,transparent),inset 0 0 24px rgba(255,255,255,.035);opacity:.72}
+.duelResultCore{position:relative;z-index:2;width:64px;height:64px;display:grid;place-items:center;border-radius:50%;border:2px solid rgba(255,255,255,.58);background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.32),transparent 30%),var(--blue-piece);color:var(--blue-piece-text,#fff);box-shadow:0 0 0 5px rgba(255,255,255,.045),0 12px 34px rgba(0,0,0,.38),0 0 24px color-mix(in srgb,var(--blue) 44%,transparent)}
+.duelResultCore span{font-family:var(--fog-display,Inter,sans-serif);font-size:29px;font-weight:950;line-height:1}
+.duelResultSparks{position:absolute;inset:0;z-index:1;pointer-events:none}
+.duelResultSparks i{--a:calc(var(--spark)*36deg);position:absolute;left:50%;top:50%;width:5px;height:13px;margin:-6px 0 0 -2px;border-radius:999px;background:var(--blue);opacity:0;transform:rotate(var(--a)) translateY(-38px) scaleY(.5);transform-origin:50% 6px}
+.end.duel-result-enter .postMatchSummaryCard{animation:duel-result-card-in 520ms cubic-bezier(.2,.82,.2,1) both}
+.duel-result-win .duelResultCore{background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.38),transparent 30%),var(--blue-piece);box-shadow:0 0 0 5px rgba(255,255,255,.05),0 12px 34px rgba(0,0,0,.38),0 0 34px color-mix(in srgb,var(--blue) 64%,transparent)}
+.duel-result-win .duelResultHalo{border-color:color-mix(in srgb,var(--blue) 80%,#fff);box-shadow:0 0 38px color-mix(in srgb,var(--blue) 42%,transparent),inset 0 0 28px color-mix(in srgb,var(--blue) 12%,transparent)}
+.duel-result-win .duelResultAnimation.play .duelResultCore{animation:duel-win-core 760ms cubic-bezier(.18,.88,.28,1.22) both}
+.duel-result-win .duelResultAnimation.play .duelResultHalo{animation:duel-win-halo 900ms ease-out both}
+.duel-result-win .duelResultAnimation.play .duelResultSparks i{animation:duel-win-spark 820ms ease-out both;animation-delay:calc(var(--spark)*32ms)}
+.duel-result-loss .duelResultCore{background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.22),transparent 30%),var(--orange-piece);color:var(--orange-piece-text,#fff);border-color:color-mix(in srgb,var(--orange) 72%,#fff);box-shadow:0 12px 34px rgba(0,0,0,.42),0 0 25px color-mix(in srgb,var(--orange) 35%,transparent)}
+.duel-result-loss .duelResultHalo{border-color:color-mix(in srgb,var(--orange) 58%,transparent);box-shadow:0 0 30px color-mix(in srgb,var(--orange) 24%,transparent)}
+.duel-result-loss .duelResultAnimation.play .duelResultCore{animation:duel-loss-core 620ms cubic-bezier(.22,.68,.28,1) both}
+.duel-result-loss .duelResultAnimation.play .duelResultHalo{animation:duel-loss-halo 700ms ease-out both}
+.duel-result-loss .postMatchSummaryCard{box-shadow:0 28px 90px rgba(0,0,0,.58),inset 0 1px 0 rgba(255,255,255,.035),0 0 0 1px color-mix(in srgb,var(--orange) 20%,transparent)}
+.duel-result-draw .duelResultCore{background:linear-gradient(135deg,var(--blue-piece) 0 48%,#26334a 49% 51%,var(--orange-piece) 52% 100%);color:#fff;box-shadow:0 12px 34px rgba(0,0,0,.4),0 0 26px rgba(190,205,235,.2)}
+.duel-result-draw .duelResultHalo{border-color:rgba(190,205,235,.42);box-shadow:0 0 30px rgba(190,205,235,.14)}
+.duel-result-draw .duelResultAnimation.play .duelResultCore{animation:duel-draw-core 700ms ease-out both}
+@keyframes duel-result-card-in{0%{transform:translateY(12px) scale(.975);opacity:.15}100%{transform:translateY(0) scale(1);opacity:1}}
+@keyframes duel-win-core{0%{transform:scale(.68) rotate(-10deg);opacity:.25}45%{transform:scale(1.18) rotate(4deg);opacity:1}70%{transform:scale(.97) rotate(-1deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes duel-win-halo{0%{transform:scale(.52);opacity:0}45%{opacity:1}100%{transform:scale(1.25);opacity:.72}}
+@keyframes duel-win-spark{0%{opacity:0;transform:rotate(var(--a)) translateY(-28px) scaleY(.35)}28%{opacity:1}100%{opacity:0;transform:rotate(var(--a)) translateY(-57px) scaleY(1)}}
+@keyframes duel-loss-core{0%{transform:scale(1.08);filter:brightness(1.32)}30%{transform:scale(.92) translateY(3px)}65%{transform:scale(1.01) translateY(0)}100%{transform:scale(1);filter:none}}
+@keyframes duel-loss-halo{0%{transform:scale(.9);opacity:.9}100%{transform:scale(1.18);opacity:.35}}
+@keyframes duel-draw-core{0%{transform:rotate(-12deg) scale(.82);opacity:.35}55%{transform:rotate(5deg) scale(1.08);opacity:1}100%{transform:rotate(0) scale(1)}}
+body.reducedMotion .duelResultAnimation *,body.reducedMotion .end.duel-result-enter .postMatchSummaryCard{animation:none!important}
+@media(max-width:520px){.duelResultAnimation{width:86px;height:86px;margin-bottom:7px}.duelResultCore{width:54px;height:54px}.duelResultCore span{font-size:25px}.duelResultSparks i{transform:rotate(var(--a)) translateY(-31px) scaleY(.5)}}
