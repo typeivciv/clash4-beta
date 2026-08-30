@@ -42,7 +42,11 @@ for(const forbidden of ['/api/direct/signals','/api/lobbies','/move','projectDue
 for(const token of ['DIRECT_ALPHA_TURN_SERVERS',"turn:openrelay.metered.ca:80","turn:openrelay.metered.ca:443","turn:openrelay.metered.ca:443?transport=tcp","username:'openrelayproject'","credential:'openrelayproject'",'function directAlphaRouteKind(conn)',"candidateType==='relay'",'Connected · relay fallback','encrypted TURN relay'])assert.ok(turn.includes(token),`Alpha TURN contract missing ${token}`);
 assert.ok(!turn.includes('/api/lobbies'),'TURN fallback must not route gameplay through the Clash 4 game server');
 
-for(const token of ["let duelSeatColors={human:'blue',ai:'orange'}",'function duelChooseOwnColor(id)',"directSend({kind:'color',color:id})","data?.kind==='color'",'function duelColorsConflict()','Both players selected the same color','duelApplySeatColors()','Copy Link','Text / Share Link','scan this QR with the normal Camera app or open the same Clash 4 invite link you send by text'])assert.ok(colors.includes(token),`Duel color/share contract missing ${token}`);
+for(const token of [
+  "let duelSeatColors={human:'blue',ai:'orange'}",'function duelChooseOwnColor(id)',"directSend({kind:'color',color:id})","data?.kind==='color'",'function duelColorsConflict()','Both players selected the same color','duelApplySeatColors()',
+  'function duelHasLiveNearbyInvite()',"directPeerSession?.role==='host'","value.includes(`#${DIRECT_PEER_JOIN_PARAM}=`)","copyBtn.textContent='Copy Link'","shareBtn.textContent='Share Link'",'scan this QR with the normal Camera app or open the same Clash 4 invite link you send by text'
+])assert.ok(colors.includes(token),`Duel color/share contract missing ${token}`);
+assert.ok(!colors.includes("title.includes('Scan once to join')"),'share controls must be keyed to actual host invite state, not mutable heading copy');
 assert.ok(!colors.includes('bestContrast('),'Direct Duel colors must be independently selected, not auto-derived from the other player');
 assert.ok(!colors.includes('fetch('),'color/share extension must stay on the existing Direct transport');
 
@@ -54,7 +58,7 @@ assert.ok(!postmatch.includes("b.textContent='New Duel'"),'new-opponent action m
 assert.ok(!postmatch.includes("b.textContent='Play Someone Else'"),'new-opponent action must communicate invitation rather than matchmaking');
 for(const token of ['.duelResultAnimation','duel-result-win','duel-result-loss','duel-result-draw','Shared result alignment','text-align:center','@keyframes duel-win-title','@keyframes duel-loss-title','@keyframes duel-win-rays','@keyframes duel-loss-card','body.reducedMotion'])assert.ok(postmatchCss.includes(token),`post-match CSS contract missing ${token}`);
 
-for(const token of ["const ALPHA_TESTER_VERSION='0.16.1'",'function alphaTesterInfo()','function alphaConnectionHelp()','function alphaReportProblem()','function alphaReportTemplate()','navigator.share','Build URL: ${safeUrl}','location.origin}${location.pathname}${location.search}'])assert.ok(tester.includes(token),`Alpha tester utility missing ${token}`);
+for(const token of ["const ALPHA_TESTER_VERSION='0.16.2'",'function alphaTesterInfo()','function alphaConnectionHelp()','function alphaReportProblem()','function alphaReportTemplate()','navigator.share','Build URL: ${safeUrl}','location.origin}${location.pathname}${location.search}'])assert.ok(tester.includes(token),`Alpha tester utility missing ${token}`);
 assert.ok(!tester.includes('location.hash'),'tester diagnostics must not copy the live PeerJS invite hash');
 for(const token of ['.alphaTesterNotice','.alphaPrimaryModes','.alphaMoreOptions','.alphaTesterChecklist','.alphaTesterBar','.alphaTesterModal'])assert.ok(testerCss.includes(token),`Alpha tester CSS missing ${token}`);
 
@@ -72,4 +76,4 @@ assert.ok(lobby.includes('Network fallback:'),'Direct UI must disclose the Alpha
 assert.ok(lobby.includes('Direct Duel is intended for trusted opponents'),'Direct Duel trust model must remain visible in Alpha UI');
 
 for(const [name,source] of [['direct',direct],['nearby',nearby],['turn',turn],['colors',colors],['postmatch',postmatch],['tester',tester],['pass',pass],['router',router]]){try{new Function(source)}catch(error){throw new Error(`${name} module syntax failed: ${error.message}`)}}
-console.log('PASS Multiplayer Alpha 0.16.1 tester package + centered dramatic Arcade/Duel results + invite-only new-opponent action + Direct recovery + TURN + rematch + Pass & Play contracts');
+console.log('PASS Multiplayer Alpha 0.16.2 tester package + resilient Copy/Share Link + centered dramatic Arcade/Duel results + invite-only new-opponent action + Direct recovery + TURN + rematch + Pass & Play contracts');
