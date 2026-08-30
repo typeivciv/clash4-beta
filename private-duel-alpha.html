@@ -2463,22 +2463,33 @@ function directNearbyStage({title,copy,status,showQr=true}){
   const titleEl=directEl('duelDirectStageTitle'),copyEl=directEl('duelDirectStageCopy'),qr=directEl('duelDirectQr');
   if(titleEl)titleEl.textContent=title;if(copyEl)copyEl.textContent=copy;if(qr)qr.hidden=!showQr;directSetStatus(status||'');queueFit()
 }
+function directSyncPairingServiceUi(){const input=directEl('duelDirectServerInput');if(input)input.value=directSignalServer()}
+function directSavePairingService(){
+  const input=directEl('duelDirectServerInput');if(!input)return;saveDuelServer(input.value);directSyncPairingServiceUi();directSetStatus(duelSession.server?'Pairing service saved.':'Pairing service cleared.',{error:!duelSession.server})
+}
 
 const directClosePeerBeforeOneScan=directClosePeer;
 directClosePeer=function(options={}){directResetSignalSession();return directClosePeerBeforeOneScan(options)};
 globalThis.directClosePeer=directClosePeer;
+const directOpenPanelBeforeOneScan=directOpenPanel;
+directOpenPanel=function(){const result=directOpenPanelBeforeOneScan();directSyncPairingServiceUi();return result};
+globalThis.directOpenPanel=directOpenPanel;
 
 async function directCreateNearby(){
   const server=directSignalServer();directOpenPanel();
-  if(!server){directSetStatus('Nearby one-scan pairing needs the lightweight Pairing service. Set the Multiplayer server once under Online Room, then return here.',{error:true});return}
+  if(!server){directSetStatus('Save the Pairing service above once, then tap Nearby · One Scan again.',{error:true});return}
   directDuel.pairing='nearby';directDuel.signalKind='offer';
   directNearbyStage({title:'Preparing one-scan invite…',copy:'Player 2 will scan one QR with the normal Camera app. No return QR is required.',status:'Creating a short-lived pairing session…',showQr:false});
   try{
     const pc=makeDirectPeer('host'),offer=await pc.createOffer();await pc.setLocalDescription(offer);await directWaitForIce(pc);
     const created=await directSignalRequest(server,'/api/direct/signals',{method:'POST',body:{offer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp}}});
     directSignalSession={server,id:created.id,hostToken:created.hostToken,joinToken:created.joinToken,pollTimer:null,deadline:Date.now()+Math.min(Number(created.ttlMs)||DIRECT_SIGNAL_TIMEOUT_MS,DIRECT_SIGNAL_TIMEOUT_MS)};
-    const link=directNearbyJoinLink(directSignalSession),qr=directEl('duelDirectQr');if(qr){qr.hidden=false;directRenderQr(link)}
+    const link=directNearbyJoinLink(directSignalSession),qr=directEl('duelDirectQr');
+    if(qr){qr.hidden=false;directRenderQr(link)}
+    const signalField=directEl('duelDirectSignal');if(signalField)signalField.value=link;
+    if(!globalThis.QRCode)directNearbyManualUi(true);
     directNearbyStage({title:'Player 2 · Scan once to join',copy:'Use the normal Camera app and tap the Clash 4 link. Player 2 will open directly into pairing, and both phones will connect automatically.',status:'Waiting for Player 2 to scan…',showQr:true});
+    if(!globalThis.QRCode)directNearbyManualUi(true);
     directPollNearbyAnswer()
   }catch(e){directSetStatus(`Could not create one-scan pairing: ${e.message||'unknown error'}`,{error:true});directClosePeer()}
 }
@@ -2505,15 +2516,17 @@ async function directJoinNearbyFromLink(descriptor){
   }catch(e){directSetStatus(`Could not join this Nearby Duel: ${e.message||'pairing failed'}`,{error:true});directClosePeer()}
 }
 
-async function directHandleNearbyLaunch(){
-  const descriptor=directReadNearbyJoin();if(!descriptor)return false;directClearNearbyJoinHash();await directJoinNearbyFromLink(descriptor);return true
-}
+async function directHandleNearbyLaunch(){const descriptor=directReadNearbyJoin();if(!descriptor)return false;directClearNearbyJoinHash();await directJoinNearbyFromLink(descriptor);return true}
 
 const directCreateManual=directCreate;
 directCreate=async function(pairing='nearby'){return pairing==='nearby'?directCreateNearby():directCreateManual(pairing)};
 globalThis.directCreate=directCreate;
 
-function directBootNearbySignalUx(){setTimeout(()=>directHandleNearbyLaunch(),0)}
+function directBootNearbySignalUx(){
+  directSyncPairingServiceUi();directEl('duelDirectSaveServer')?.addEventListener('click',directSavePairingService);
+  directEl('duelDirectServerInput')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();directSavePairingService()}});
+  setTimeout(()=>directHandleNearbyLaunch(),0)
+}
 globalThis.directNearbyJoinLink=directNearbyJoinLink;
 globalThis.directHandleNearbyLaunch=directHandleNearbyLaunch;
 globalThis.directBootNearbySignalUx=directBootNearbySignalUx;
