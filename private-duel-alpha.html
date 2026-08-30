@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="description" content="Clash 4 mobile beta test build">
-<title>Clash 4 — Fog of War · Duel Modes Alpha 0.15.12</title>
+<title>Clash 4 — Fog of War · Duel Modes Alpha 0.15.13</title>
 
 
 
@@ -658,7 +658,7 @@ body.reducedMotion .duelResultAnimation *,body.reducedMotion .end.duel-result-en
 <body>
 <div id="appRoot" class="app">
 <header>
-  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Arcade RC1 · Duel Modes Alpha 0.15.12</div></div>
+  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Arcade RC1 · Duel Modes Alpha 0.15.13</div></div>
   <div id="fogTurnPill" class="fogTurnPill neutral"><span class="fogTurnDot"></span><span id="fogTurnText">Setup</span></div>
   <div class="topActions">
     <div id="matchDifficultyBadge" class="matchDifficultyBadge" title="Difficulty is chosen before the match"><span>AI</span><strong id="matchDifficultyLabel">Normal</strong></div>
@@ -792,7 +792,7 @@ body.reducedMotion .duelResultAnimation *,body.reducedMotion .end.duel-result-en
       <div class="homeTagline">Connect Four. Win the Clash.</div>
       <p class="homeLede">Build four in a row while Rock–Paper–Scissors combat, Decoys, and hidden enemy identities turn every column into a tactical gamble.</p>
       <div class="homeActions"><button id="homePlayButton" class="homePlay" type="button"><span>Play</span><small>Normal · Default colors · Random start</small></button><button id="homeDuelButton" class="homeDuel" type="button"><span>Duel</span><small>Direct P2P · Pass &amp; Play · Online Room · Alpha</small></button><button id="homeCustomizeButton" class="homeCustomize" type="button"><span>Customize Match</span><small>Difficulty · first move · colors · tips</small></button><button id="homeRulesButton" class="homeSecondary" type="button">How to Play</button></div>
-      <div class="homeMeta"><span>Duel Modes Alpha · 0.15.12</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
+      <div class="homeMeta"><span>Duel Modes Alpha · 0.15.13</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
     </div>
     <div class="homeHero" aria-hidden="true"><div class="homeHeroGlow"></div><div class="heroBoard"><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">🪨</span></div><div class="heroHole"><span class="heroPiece ai ">📄</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">✂️</span></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"><span class="heroPiece player ">📄</span></div><div class="heroHole"><span class="heroPiece ai ">🪨</span></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"><span class="heroPiece ai ">✂️</span></div></div><div class="heroFog"></div></div>
   </section>
@@ -2487,12 +2487,13 @@ function bindPrivateDuelUi(){
 }
 globalThis.bindPrivateDuelUi=bindPrivateDuelUi;
 
-// Nearby Direct Duel one-scan UX using PeerJS Cloud only for connection brokering.
+// Direct Duel one-scan UX using PeerJS Cloud only for connection brokering.
 // The QR carries the host peer ID in a Clash 4 HTTPS deep link. After the WebRTC data
 // connection opens, PeerJS signaling is disconnected and gameplay remains peer-to-peer.
 'use strict';
 const DIRECT_PEER_JOIN_PARAM='c4peer';
-const DIRECT_PEER_TIMEOUT_MS=90_000;
+const DIRECT_PEER_ATTEMPT_TIMEOUT_MS=90_000;
+const DIRECT_HOST_INVITE_TTL_MS=5*60_000;
 let directPeerSession={peer:null,conn:null,role:null,opened:false,deadline:0,timer:null,lastIce:'new',lastConnection:'new'};
 let directNearbyRetryPeerId='';
 
@@ -2563,6 +2564,7 @@ function directReleaseFailedConnection(conn,{close=false}={}){
   if(close){try{conn.close()}catch{}}
 }
 function directHostInviteStillLive(){return directPeerSession.role==='host'&&!!directPeerSession.peer&&!directPeerSession.opened&&Date.now()<directPeerSession.deadline}
+function directPeerTimeoutForRole(role){return role==='host'?DIRECT_HOST_INVITE_TTL_MS:DIRECT_PEER_ATTEMPT_TIMEOUT_MS}
 function directPeerChannelAdapter(conn){
   const channel={readyState:'connecting',onopen:null,onmessage:null,onclose:null,onerror:null,__peerJsConn:conn,
     send(value){conn.send(value)},close(){try{conn.close()}catch{}}};
@@ -2621,9 +2623,10 @@ function directRetireHostInvite({title='Invite expired',copy='This invite is no 
   directNearbyStage({title,copy,status,showQr:false});directRefreshInviteUi(true)
 }
 function directCreatePeer(role){
-  if(!globalThis.Peer)throw new Error('Nearby pairing library did not load. Refresh and try again.');
+  if(!globalThis.Peer)throw new Error('Direct pairing library did not load. Refresh and try again.');
   directSetPeerRole(role);
-  const peer=new Peer(undefined,{debug:0,config:DIRECT_RTC_CONFIG});directPeerSession.peer=peer;directPeerSession.deadline=Date.now()+DIRECT_PEER_TIMEOUT_MS;
+  const timeout=directPeerTimeoutForRole(role),peer=new Peer(undefined,{debug:0,config:DIRECT_RTC_CONFIG});
+  directPeerSession.peer=peer;directPeerSession.deadline=Date.now()+timeout;
   peer.on('error',error=>{
     if(directPeerSession.opened)return;
     const failedRole=directPeerSession.role;directConnectionBadge('error','Pairing failed');directSetStatus(directPeerErrorMessage(error),{error:true});directShowRecoveryForRole(failedRole)
@@ -2634,13 +2637,13 @@ function directCreatePeer(role){
     directSetStatus(interruptedRole==='guest'?'Pairing was interrupted. Change networks if needed, then tap Retry Connection.':'Pairing broker was interrupted. If this invite no longer accepts retries, refresh it.',{error:true});directShowRecoveryForRole(interruptedRole)
   });
   directPeerSession.timer=setTimeout(()=>{if(!directPeerSession.opened){
-    const role=directPeerSession.role,sawIce=directPeerSession.lastIce&&directPeerSession.lastIce!=='new';
-    directConnectionBadge('error','Pairing timed out');
-    if(role==='host'){
-      directRetireHostInvite({title:'Pairing timed out',copy:'Player 2 did not connect within 90 seconds. Refresh Invite creates a completely new QR code and share link.',status:sawIce?'The invite window expired after a failed network attempt. Refresh to create a new invite.':'The old QR and link are retired. Refresh to create a new invite.'});return
+    const activeRole=directPeerSession.role,sawIce=directPeerSession.lastIce&&directPeerSession.lastIce!=='new';
+    directConnectionBadge('error',activeRole==='host'?'Invite expired':'Pairing timed out');
+    if(activeRole==='host'){
+      directRetireHostInvite({title:'Invite expired',copy:'This Direct invite stayed active for 5 minutes without a successful connection. Refresh Invite creates a completely new QR code and share link.',status:sawIce?'The recovery window expired after one or more failed network attempts. Refresh to create a new invite.':'The old QR and link are retired. Refresh to create a new invite.'});return
     }
-    directSetStatus(sawIce?directPeerRouteFailureMessage():'Direct pairing timed out before the phones found each other. Change networks if needed, then tap Retry Connection.',{error:true});directPeerReset();directRetryConnectionUi(!!directNearbyRetryPeerId)
-  }},DIRECT_PEER_TIMEOUT_MS);
+    directSetStatus(sawIce?directPeerRouteFailureMessage():'This connection attempt timed out after 90 seconds. Change networks if needed, then tap Retry Connection while Player 1’s invite is still active.',{error:true});directPeerReset();directRetryConnectionUi(!!directNearbyRetryPeerId)
+  }},timeout);
   return peer
 }
 
@@ -2657,7 +2660,7 @@ async function directCreateNearby(){
     peer.on('open',id=>{
       const link=directNearbyJoinLink(id),qr=directEl('duelDirectQr'),field=directEl('duelDirectSignal');
       if(field)field.value=link;if(qr){qr.hidden=false;directRenderQr(link)}
-      directNearbyStage({title:'Player 2 · Scan or open link',copy:'Player 2 can scan this QR with the Camera app or open the Clash 4 link you send. Failed attempts do not consume the invite: Player 2 can change networks and retry the same link while it remains active.',status:'Waiting for Player 2…',showQr:true});
+      directNearbyStage({title:'Player 2 · Scan or open link',copy:'This invite stays active for 5 minutes. Player 2 can scan the QR or open the shared link. If a network blocks the first attempt, switch networks and retry the same invite — no resend is required.',status:'Waiting for Player 2 · invite active for 5 minutes…',showQr:true});
       directRefreshInviteUi(true);
       if(!globalThis.QRCode)directNearbyManualUi(true)
     })
@@ -2677,7 +2680,7 @@ async function directJoinNearbyFromPeerId(hostPeerId){
   // guest retry target. Save this invite only after that cleanup so Player 2 can
   // recover from ICE/network failure without rescanning the QR or reopening the link.
   directOpenPanel();directNearbyRetryPeerId=hostPeerId;directRecoveryActions();directPeerReset();
-  directNearbyStage({title:'Joining Player 1…',copy:'Clash 4 is connecting directly to Player 1. If you change networks, you can retry this same invite without rescanning while it remains active.',status:'Opening the peer-to-peer connection…',showQr:false});
+  directNearbyStage({title:'Joining Player 1…',copy:'Clash 4 is connecting directly to Player 1. If you change networks, you can retry this same invite without rescanning while Player 1’s 5-minute invite remains active.',status:'Opening the peer-to-peer connection…',showQr:false});
   try{
     const peer=directCreatePeer('guest');
     peer.on('open',()=>{
@@ -3994,7 +3997,7 @@ init();
 
 <script>
 (function(){
-  const BUILD='Duel Modes Alpha 0.15.12';
+  const BUILD='Duel Modes Alpha 0.15.13';
   const REPO_ISSUES='https://github.com/typeivciv/clash4-beta/issues/new';
   const $=id=>document.getElementById(id);
   const openBtn=$('betaFeedbackButton'), overlay=$('betaFeedbackOverlay'), closeBtn=$('betaFeedbackClose');
@@ -4030,7 +4033,7 @@ init();
   function issueTitle(){
     const type=$('betaIssueType').value;
     const detail=$('betaWhatHappened').value.trim().replace(/\s+/g,' ').slice(0,72);
-    return `[Duel Modes 0.15.12][${type}] ${detail||'Tester report'}`;
+    return `[Duel Modes 0.15.13][${type}] ${detail||'Tester report'}`;
   }
   function githubUrl(){
     const body=[
