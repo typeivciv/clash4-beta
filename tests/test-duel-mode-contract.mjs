@@ -16,39 +16,39 @@ for(const token of [
   "kind:'offer'",
   "kind:'answer'",
   "async function directJoinSignal(raw,pairing='remote')",
-  "directJoinSignal(value,'nearby')",
   "directJoinSignal(value,'remote')",
   'directClosePeer();duelStopPolling();duelClearActiveSession()',
   'duelCopyCode.hidden=true',
-  'directScanSignal',
-  'BarcodeDetector',
-  'globalThis.jsQR',
   'directAuthorityMove',
   'localDuelPayload'
 ])assert.ok(direct.includes(token),`Direct Duel contract missing ${token}`);
-assert.ok(!direct.includes('fetch('),'Direct Duel transport must not call the Clash 4 HTTP server');
+assert.ok(!direct.includes('fetch('),'core WebRTC transport must not call the Clash 4 HTTP game server');
 
 for(const token of [
-  "DIRECT_LINK_PARAM='c4direct'",
-  'function directNearbyLink(signal)',
-  'location.origin}${location.pathname}#${DIRECT_LINK_PARAM}=',
-  "if(parsed.kind==='offer'){await directJoinSignal(signal,'nearby')",
-  "if(parsed.kind==='answer'){directShowReturnLinkLanding(signal)",
-  'BroadcastChannel',
-  'DIRECT_RETURN_KEY',
-  'directTryBridgedAnswer',
-  'Player 2: use your normal Camera app.',
-  '2 · Scan Player 2 Return QR',
-  'directBootNearbyQrUx();'
-])assert.ok(nearby.includes(token),`Nearby QR contract missing ${token}`);
-assert.ok(!nearby.includes('fetch('),'Nearby QR helper must not introduce a signaling/game server');
+  "DIRECT_JOIN_PARAM='c4join'",
+  'function directNearbyJoinLink({server,id,joinToken})',
+  'location.origin}${location.pathname}#${DIRECT_JOIN_PARAM}=',
+  "directSignalRequest(server,'/api/direct/signals'",
+  '/api/direct/signals/${encodeURIComponent(session.id)}/answer',
+  'function directCreateNearby()',
+  'function directJoinNearbyFromLink(descriptor)',
+  'No return QR is required.',
+  'normal Camera app',
+  'directBootNearbySignalUx();'
+])assert.ok(nearby.includes(token),`Nearby one-scan contract missing ${token}`);
+assert.ok(nearby.includes('fetch('),'Nearby one-scan pairing must use the signaling service');
+for(const forbidden of ['/api/lobbies','/move','projectDuelState','applyLocalDuelMove','resolveRaw','BroadcastChannel','DIRECT_RETURN_KEY','Scan Player 2 Return QR']){
+  assert.ok(!nearby.includes(forbidden),`Nearby pairing must stay out of gameplay/old return-QR path: ${forbidden}`)
+}
 
 for(const token of ['passDuelOverlay','passShowHandoff','projectDuelState(passDuel.state,passDuel.viewer','applyLocalDuelMove','passDuelMove','publicMoveHistory=[];recentInteractions=[]'])assert.ok(pass.includes(token),`Pass & Play contract missing ${token}`);
 for(const token of ['if(passDuel.active)','if(directDuel.active)','return duelMove(owner,type,column)'])assert.ok(router.includes(token),`transport router missing ${token}`);
-for(const id of ['duelDirectMode','duelPassMode','duelOnlineMode','duelDirectNearby','duelDirectRemote','duelDirectScanInvite','duelDirectJoin'])assert.ok(lobby.includes(`id="${id}"`),`Duel hub missing ${id}`);
+for(const id of ['duelDirectMode','duelPassMode','duelOnlineMode','duelDirectNearby','duelDirectRemote','duelDirectJoin'])assert.ok(lobby.includes(`id="${id}"`),`Duel hub missing ${id}`);
+assert.ok(!lobby.includes('id="duelDirectScanInvite"'),'Nearby one-scan flow must not expose an in-app first-scan button');
+assert.ok(lobby.includes('Player 1 shows one QR'),'Nearby card must explain the single-scan flow');
 assert.ok(lobby.includes('Direct Duel is intended for trusted opponents'),'Direct Duel trust model must be visible in Alpha UI');
 
 for(const [name,source] of [['direct',direct],['nearby',nearby],['pass',pass],['router',router]]){
   try{new Function(source)}catch(error){throw new Error(`${name} module syntax failed: ${error.message}`)}
 }
-console.log('PASS Direct Duel + Nearby QR + Pass & Play transport contracts');
+console.log('PASS Direct Duel + one-scan Nearby signaling + Pass & Play transport contracts');
