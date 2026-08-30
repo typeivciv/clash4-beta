@@ -1,93 +1,100 @@
-// Nearby Direct Duel QR UX: turn raw WebRTC signaling blobs into Clash 4 deep links.
-// The first QR can be scanned with the phone's normal Camera app. The return QR is still
-// two-way signaling (required without a signaling server), but Clash 4 makes the handoff explicit.
+// Nearby Direct Duel one-scan UX.
+// A tiny HTTP signaling service exchanges only the WebRTC offer/answer. Once the DataChannel
+// opens, gameplay is peer-to-peer and the service is no longer on the match path.
 'use strict';
-const DIRECT_LINK_PARAM='c4direct';
-const DIRECT_RETURN_KEY='clash4-direct-return-v1';
-const DIRECT_RETURN_CHANNEL='clash4-direct-return-v1';
-const DIRECT_SIGNAL_PATTERN=/C4D1\.[DJ]\.[A-Za-z0-9_-]+/;
-let directReturnChannel=null;
+const DIRECT_JOIN_PARAM='c4join';
+const DIRECT_SIGNAL_POLL_MS=450;
+const DIRECT_SIGNAL_TIMEOUT_MS=2*60*1000;
+let directSignalSession={server:'',id:'',hostToken:'',joinToken:'',pollTimer:null,deadline:0};
 
-function directSignalOnly(value){const match=String(value||'').match(DIRECT_SIGNAL_PATTERN);return match?match[0]:''}
-function directNearbyLink(signal){
-  const clean=directSignalOnly(signal);if(!clean)return String(signal||'');
-  return `${location.origin}${location.pathname}#${DIRECT_LINK_PARAM}=${clean}`
+function directSignalDescriptorEncode(value){return bytesToB64Url(new TextEncoder().encode(JSON.stringify(value)))}
+function directSignalDescriptorDecode(value){try{return JSON.parse(new TextDecoder().decode(b64UrlToBytes(value)))}catch{return null}}
+function directSignalServer(){return normalizeDuelServer(duelSession.server||initialDuelServer())}
+function directNearbyJoinLink({server,id,joinToken}){
+  const descriptor=directSignalDescriptorEncode({v:1,server:normalizeDuelServer(server),id,joinToken});
+  return `${location.origin}${location.pathname}#${DIRECT_JOIN_PARAM}=${descriptor}`
 }
-function directLaunchSignal(){
-  const raw=String(location.hash||'').replace(/^#/,'');if(!raw)return'';
-  const params=new URLSearchParams(raw),value=params.get(DIRECT_LINK_PARAM);return directSignalOnly(value||raw)
+function directReadNearbyJoin(){
+  const raw=String(location.hash||'').replace(/^#/,'');if(!raw)return null;
+  const params=new URLSearchParams(raw),encoded=params.get(DIRECT_JOIN_PARAM);if(!encoded)return null;
+  const value=directSignalDescriptorDecode(encoded);if(!value||value.v!==1||!value.server||!value.id||!value.joinToken)return null;
+  const server=normalizeDuelServer(value.server);if(!/^https:\/\//i.test(server)&&!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(server))return null;
+  return{server,id:String(value.id).toUpperCase(),joinToken:String(value.joinToken)}
 }
-function directClearLaunchHash(){
-  if(!location.hash.includes(DIRECT_LINK_PARAM))return;
+function directClearNearbyJoinHash(){
+  if(!location.hash.includes(`${DIRECT_JOIN_PARAM}=`))return;
   try{history.replaceState(null,'',`${location.pathname}${location.search}`)}catch{}
 }
-function directNearbyFallbackVisible(show){
-  const label=directEl('duelDirectSignal')?.closest('.duelSignalLabel'),actions=directEl('duelDirectCopy')?.parentElement;
-  if(label)label.hidden=!show;if(actions)actions.hidden=!show
+async function directSignalRequest(server,path,{method='GET',token='',body=null}={}){
+  const headers={'content-type':'application/json'};if(token)headers.authorization=`Bearer ${token}`;
+  const response=await fetch(normalizeDuelServer(server)+path,{method,headers,body:body===null?undefined:JSON.stringify(body),cache:'no-store'});
+  let data={};try{data=await response.json()}catch{}
+  if(!response.ok){const error=new Error(data.error||`http-${response.status}`);error.status=response.status;throw error}
+  return data
+}
+function directStopSignalPolling(){if(directSignalSession.pollTimer)clearTimeout(directSignalSession.pollTimer);directSignalSession.pollTimer=null}
+function directResetSignalSession(){directStopSignalPolling();directSignalSession={server:'',id:'',hostToken:'',joinToken:'',pollTimer:null,deadline:0}}
+function directNearbyManualUi(show){
+  const label=directEl('duelDirectSignal')?.closest('.duelSignalLabel'),actions=directEl('duelDirectCopy')?.parentElement,accept=directEl('duelDirectAcceptRow');
+  if(label)label.hidden=!show;if(actions)actions.hidden=!show;if(accept)accept.hidden=!show
+}
+function directNearbyStage({title,copy,status,showQr=true}){
+  directEl('duelDirectActions').hidden=true;directEl('duelDirectStage').hidden=false;directNearbyManualUi(false);
+  const titleEl=directEl('duelDirectStageTitle'),copyEl=directEl('duelDirectStageCopy'),qr=directEl('duelDirectQr');
+  if(titleEl)titleEl.textContent=title;if(copyEl)copyEl.textContent=copy;if(qr)qr.hidden=!showQr;directSetStatus(status||'');queueFit()
 }
 
-const directRenderQrBase=directRenderQr;
-directRenderQr=function(text){
-  const clean=directSignalOnly(text),qrText=clean&&directDuel.pairing==='nearby'?directNearbyLink(clean):text;
-  return directRenderQrBase(qrText)
-};
+const directClosePeerBeforeOneScan=directClosePeer;
+directClosePeer=function(options={}){directResetSignalSession();return directClosePeerBeforeOneScan(options)};
+globalThis.directClosePeer=directClosePeer;
 
-const directShowSignalBase=directShowSignal;
-directShowSignal=function(signal,kind,pairing){
-  directShowSignalBase(signal,kind,pairing);
-  if(pairing!=='nearby'){directNearbyFallbackVisible(true);return}
-  directNearbyFallbackVisible(false);
-  const title=directEl('duelDirectStageTitle'),copy=directEl('duelDirectStageCopy'),accept=directEl('duelDirectAcceptRow');
-  if(kind==='offer'){
-    if(title)title.textContent='1 · Player 2 scans this QR';
-    if(copy)copy.textContent='Player 2: use your normal Camera app. Tap the Clash 4 link it finds. Clash 4 will open and create the return QR automatically.';
-    if(accept)accept.hidden=false;
-    const scan=directEl('duelDirectScanReturn');if(scan)scan.textContent='2 · Scan Player 2 Return QR';
-    directSetStatus('Keep this screen open. After Player 2 joins, tap the return-scan button below.')
-  }else{
-    if(title)title.textContent='2 · Show this Return QR to Player 1';
-    if(copy)copy.textContent="Player 1: go back to the original Clash 4 screen and tap ‘Scan Player 2 Return QR’, then scan this code. Do not close Player 2's screen.";
-    if(accept)accept.hidden=true;
-    directSetStatus('Return QR ready. Player 1 finishes pairing from their original Clash 4 screen.')
-  }
-};
-
-function directPostReturnSignal(signal){
-  const clean=directSignalOnly(signal);if(!clean)return false;const packet={kind:'answer',signal:clean,ts:Date.now()};
-  try{localStorage.setItem(DIRECT_RETURN_KEY,JSON.stringify(packet))}catch{}
-  try{directReturnChannel?.postMessage(packet)}catch{}
-  return true
-}
-async function directTryBridgedAnswer(signal){
-  const clean=directSignalOnly(signal);if(!clean||directDuel.role!=='host'||!directDuel.pc)return false;
-  try{const parsed=await unpackDirectSignal(clean);if(parsed.kind!=='answer')return false;await directAcceptAnswer(clean);directSetStatus('Return QR received. Connecting directly…');return true}catch{return false}
-}
-function directInstallReturnBridge(){
-  if('BroadcastChannel'in globalThis){
-    try{directReturnChannel=new BroadcastChannel(DIRECT_RETURN_CHANNEL);directReturnChannel.onmessage=e=>{if(e.data?.kind==='answer')directTryBridgedAnswer(e.data.signal)}}catch{}
-  }
-  addEventListener('storage',e=>{if(e.key!==DIRECT_RETURN_KEY||!e.newValue)return;try{const packet=JSON.parse(e.newValue);if(packet?.kind==='answer')directTryBridgedAnswer(packet.signal)}catch{}})
-}
-function directShowReturnLinkLanding(signal){
-  directPostReturnSignal(signal);
-  directOpenPanel();directEl('duelDirectActions').hidden=true;directEl('duelDirectStage').hidden=false;directNearbyFallbackVisible(false);
-  const qr=directEl('duelDirectQr'),accept=directEl('duelDirectAcceptRow'),title=directEl('duelDirectStageTitle'),copy=directEl('duelDirectStageCopy');
-  if(qr)qr.innerHTML='<div class="duelReturnHint">✓</div>';if(accept)accept.hidden=true;
-  if(title)title.textContent='Return QR received';
-  if(copy)copy.textContent="Go back to Player 1's original Clash 4 tab. If it is still open, the response was sent there automatically. If it does not connect, use that screen's ‘Scan Player 2 Return QR’ button instead.";
-  directSetStatus('Do not continue from this extra tab; the original Player 1 tab owns the WebRTC connection.')
-}
-async function directHandleNearbyLaunch(){
-  const signal=directLaunchSignal();if(!signal)return false;directClearLaunchHash();
+async function directCreateNearby(){
+  const server=directSignalServer();directOpenPanel();
+  if(!server){directSetStatus('Nearby one-scan pairing needs the lightweight Pairing service. Set the Multiplayer server once under Online Room, then return here.',{error:true});return}
+  directDuel.pairing='nearby';directDuel.signalKind='offer';
+  directNearbyStage({title:'Preparing one-scan invite…',copy:'Player 2 will scan one QR with the normal Camera app. No return QR is required.',status:'Creating a short-lived pairing session…',showQr:false});
   try{
-    const parsed=await unpackDirectSignal(signal);
-    if(parsed.kind==='offer'){await directJoinSignal(signal,'nearby');return true}
-    if(parsed.kind==='answer'){directShowReturnLinkLanding(signal);return true}
-  }catch(e){openDuelHub();directSetStatus(e.message||'This Clash 4 QR could not be opened.',{error:true})}
-  return false
+    const pc=makeDirectPeer('host'),offer=await pc.createOffer();await pc.setLocalDescription(offer);await directWaitForIce(pc);
+    const created=await directSignalRequest(server,'/api/direct/signals',{method:'POST',body:{offer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp}}});
+    directSignalSession={server,id:created.id,hostToken:created.hostToken,joinToken:created.joinToken,pollTimer:null,deadline:Date.now()+Math.min(Number(created.ttlMs)||DIRECT_SIGNAL_TIMEOUT_MS,DIRECT_SIGNAL_TIMEOUT_MS)};
+    const link=directNearbyJoinLink(directSignalSession),qr=directEl('duelDirectQr');if(qr){qr.hidden=false;directRenderQr(link)}
+    directNearbyStage({title:'Player 2 · Scan once to join',copy:'Use the normal Camera app and tap the Clash 4 link. Player 2 will open directly into pairing, and both phones will connect automatically.',status:'Waiting for Player 2 to scan…',showQr:true});
+    directPollNearbyAnswer()
+  }catch(e){directSetStatus(`Could not create one-scan pairing: ${e.message||'unknown error'}`,{error:true});directClosePeer()}
 }
-function directBootNearbyQrUx(){directInstallReturnBridge();setTimeout(()=>directHandleNearbyLaunch(),0)}
-globalThis.directNearbyLink=directNearbyLink;
+globalThis.directCreateNearby=directCreateNearby;
+
+async function directPollNearbyAnswer(){
+  directStopSignalPolling();const session=directSignalSession;if(!session.id||!session.hostToken||directDuel.role!=='host'||!directDuel.pc)return;
+  if(Date.now()>session.deadline){directSetStatus('Pairing invite expired. Create a new Nearby Duel and scan the new QR.',{error:true});return}
+  try{
+    const result=await directSignalRequest(session.server,`/api/direct/signals/${encodeURIComponent(session.id)}/answer`,{token:session.hostToken});
+    if(result.ready&&result.answer){directStopSignalPolling();await directDuel.pc.setRemoteDescription(result.answer);directSetStatus('Player 2 found. Finishing the direct connection…');return}
+  }catch(e){if(e.status===404){directSetStatus('Pairing invite expired. Create a new Nearby Duel.',{error:true});return}}
+  directSignalSession.pollTimer=setTimeout(directPollNearbyAnswer,DIRECT_SIGNAL_POLL_MS)
+}
+
+async function directJoinNearbyFromLink(descriptor){
+  directOpenPanel();directDuel.pairing='nearby';directDuel.signalKind='answer';
+  directNearbyStage({title:'Joining Player 1…',copy:'The QR already contains everything needed to find the temporary pairing session. Keep this screen open.',status:'Receiving Player 1’s WebRTC offer…',showQr:false});
+  try{
+    const result=await directSignalRequest(descriptor.server,`/api/direct/signals/${encodeURIComponent(descriptor.id)}`,{token:descriptor.joinToken});
+    const pc=makeDirectPeer('guest');await pc.setRemoteDescription(result.offer);const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await directWaitForIce(pc);
+    await directSignalRequest(descriptor.server,`/api/direct/signals/${encodeURIComponent(descriptor.id)}/answer`,{method:'POST',token:descriptor.joinToken,body:{answer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp}}});
+    directSetStatus('Pairing response sent. Connecting directly to Player 1…')
+  }catch(e){directSetStatus(`Could not join this Nearby Duel: ${e.message||'pairing failed'}`,{error:true});directClosePeer()}
+}
+
+async function directHandleNearbyLaunch(){
+  const descriptor=directReadNearbyJoin();if(!descriptor)return false;directClearNearbyJoinHash();await directJoinNearbyFromLink(descriptor);return true
+}
+
+const directCreateManual=directCreate;
+directCreate=async function(pairing='nearby'){return pairing==='nearby'?directCreateNearby():directCreateManual(pairing)};
+globalThis.directCreate=directCreate;
+
+function directBootNearbySignalUx(){setTimeout(()=>directHandleNearbyLaunch(),0)}
+globalThis.directNearbyJoinLink=directNearbyJoinLink;
 globalThis.directHandleNearbyLaunch=directHandleNearbyLaunch;
-globalThis.directBootNearbyQrUx=directBootNearbyQrUx;
-directBootNearbyQrUx();
+globalThis.directBootNearbySignalUx=directBootNearbySignalUx;
+directBootNearbySignalUx();
