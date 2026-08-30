@@ -4,6 +4,7 @@ import fs from 'node:fs';
 const direct=fs.readFileSync('src/js/16-duel-direct-webrtc.js','utf8');
 const nearby=fs.readFileSync('src/js/19-duel-nearby-qr.js','utf8');
 const turn=fs.readFileSync('src/js/20-duel-turn-alpha.js','utf8');
+const colors=fs.readFileSync('src/js/21-duel-colors-share.js','utf8');
 const pass=fs.readFileSync('src/js/17-duel-pass-play.js','utf8');
 const router=fs.readFileSync('src/js/18-duel-router.js','utf8');
 const lobby=fs.readFileSync('src/ui/private-duel-lobby.html','utf8');
@@ -62,6 +63,21 @@ for(const token of [
 ])assert.ok(turn.includes(token),`Alpha TURN contract missing ${token}`);
 assert.ok(!turn.includes('/api/lobbies'),'TURN fallback must not route gameplay through the Clash 4 game server');
 
+for(const token of [
+  "let duelSeatColors={human:'blue',ai:'orange'}",
+  'function duelChooseOwnColor(id)',
+  "directSend({kind:'color',color:id})",
+  "data?.kind==='color'",
+  'function duelColorsConflict()',
+  'Both players selected the same color',
+  'duelApplySeatColors()',
+  'Copy Link',
+  'Text / Share Link',
+  'scan this QR with the normal Camera app or open the same Clash 4 invite link you send by text'
+])assert.ok(colors.includes(token),`Duel color/share contract missing ${token}`);
+assert.ok(!colors.includes('bestContrast('),'Direct Duel colors must be independently selected, not auto-derived from the other player');
+assert.ok(!colors.includes('fetch('),'color/share extension must stay on the existing Direct transport');
+
 for(const token of ['passDuelOverlay','passShowHandoff','projectDuelState(passDuel.state,passDuel.viewer','applyLocalDuelMove','passDuelMove','publicMoveHistory=[];recentInteractions=[]'])assert.ok(pass.includes(token),`Pass & Play contract missing ${token}`);
 for(const token of ['if(passDuel.active)','if(directDuel.active)','return duelMove(owner,type,column)'])assert.ok(router.includes(token),`transport router missing ${token}`);
 for(const id of ['duelDirectMode','duelPassMode','duelOnlineMode','duelDirectNearby','duelDirectRemote','duelDirectJoin'])assert.ok(lobby.includes(`id="${id}"`),`Duel hub missing ${id}`);
@@ -71,7 +87,7 @@ assert.ok(lobby.includes('Player 1 shows one QR'),'Nearby card must explain the 
 assert.ok(lobby.includes('Alpha relay fallback'),'Direct UI must disclose the staging TURN relay fallback');
 assert.ok(lobby.includes('Direct Duel is intended for trusted opponents'),'Direct Duel trust model must be visible in Alpha UI');
 
-for(const [name,source] of [['direct',direct],['nearby',nearby],['turn',turn],['pass',pass],['router',router]]){
+for(const [name,source] of [['direct',direct],['nearby',nearby],['turn',turn],['colors',colors],['pass',pass],['router',router]]){
   try{new Function(source)}catch(error){throw new Error(`${name} module syntax failed: ${error.message}`)}
 }
-console.log('PASS Direct Duel + one-scan Nearby + Alpha TURN fallback + Pass & Play contracts');
+console.log('PASS Direct Duel + one-scan Nearby + TURN + independent colors/share links + Pass & Play contracts');
