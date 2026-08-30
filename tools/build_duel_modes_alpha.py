@@ -5,6 +5,7 @@ import runpy
 ROOT=Path(__file__).resolve().parents[1]
 BASE_BUILDER=ROOT/'tools/build_private_duel_alpha.py'
 OUT=ROOT/'private-duel-alpha.html'
+TESTER_OUT=ROOT/'multiplayer-alpha.html'
 NEARBY_QR=ROOT/'src/js/19-duel-nearby-qr.js'
 TURN_ALPHA=ROOT/'src/js/20-duel-turn-alpha.js'
 DUEL_COLORS=ROOT/'src/js/21-duel-colors-share.js'
@@ -62,4 +63,5 @@ if 'duelResultAnimationKey' in html:raise SystemExit('Duel post-match module alr
 if 'ALPHA_TESTER_VERSION' in html:raise SystemExit('Alpha tester module already present; refusing duplicate injection')
 html=html.replace(anchor,nearby+turn+colors+postmatch+tester+anchor,1)
 OUT.write_text(html,encoding='utf-8')
-print(f'Built Multiplayer Alpha {VERSION} tester package with validated Direct recovery + tester tools + simplified multiplayer entry into {OUT.name}')
+TESTER_OUT.write_text(html,encoding='utf-8')
+print(f'Built Multiplayer Alpha {VERSION} tester package into {OUT.name} and {TESTER_OUT.name}')
