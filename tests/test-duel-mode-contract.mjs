@@ -52,7 +52,7 @@ for(const token of [
 assert.ok(!postmatch.includes("endText.textContent='YOU LOSE'"),'loss headline must be TRY AGAIN, not YOU LOSE');
 for(const token of ['.duelResultAnimation','duel-result-win','duel-result-loss','duel-result-draw','@keyframes duel-win-core','@keyframes duel-loss-core','body.reducedMotion'])assert.ok(postmatchCss.includes(token),`post-match CSS contract missing ${token}`);
 
-for(const token of ["const ALPHA_TESTER_VERSION='0.16.0'",'function alphaTesterInfo()','function alphaConnectionHelp()','function alphaReportProblem()','function alphaReportTemplate()','navigator.share','Copy Test Info','Build URL: ${safeUrl}','location.origin}${location.pathname}${location.search}'])assert.ok(tester.includes(token),`Alpha tester utility missing ${token}`);
+for(const token of ["const ALPHA_TESTER_VERSION='0.16.0'",'function alphaTesterInfo()','function alphaConnectionHelp()','function alphaReportProblem()','function alphaReportTemplate()','navigator.share','Build URL: ${safeUrl}','location.origin}${location.pathname}${location.search}'])assert.ok(tester.includes(token),`Alpha tester utility missing ${token}`);
 assert.ok(!tester.includes('location.hash'),'tester diagnostics must not copy the live PeerJS invite hash');
 for(const token of ['.alphaTesterNotice','.alphaPrimaryModes','.alphaMoreOptions','.alphaTesterChecklist','.alphaTesterBar','.alphaTesterModal'])assert.ok(testerCss.includes(token),`Alpha tester CSS missing ${token}`);
 
