@@ -166,7 +166,10 @@ globalThis.directRefreshNearbyInvite=directRefreshNearbyInvite;
 
 async function directJoinNearbyFromPeerId(hostPeerId){
   if(!/^[A-Za-z0-9_-]{1,128}$/.test(String(hostPeerId||'')))return;
-  directNearbyRetryPeerId=hostPeerId;directOpenPanel();directRecoveryActions();directPeerReset();
+  // directOpenPanel() performs a full Direct cleanup, including clearing a previous
+  // guest retry target. Save this invite only after that cleanup so Player 2 can
+  // recover from ICE/network failure without rescanning the QR or reopening the link.
+  directOpenPanel();directNearbyRetryPeerId=hostPeerId;directRecoveryActions();directPeerReset();
   directNearbyStage({title:'Joining Player 1…',copy:'Clash 4 is connecting directly to Player 1. If you change networks, you can retry this same invite without rescanning while it remains active.',status:'Opening the peer-to-peer connection…',showQr:false});
   try{
     const peer=directCreatePeer('guest');
