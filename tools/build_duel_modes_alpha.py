@@ -6,7 +6,7 @@ ROOT=Path(__file__).resolve().parents[1]
 BASE_BUILDER=ROOT/'tools/build_private_duel_alpha.py'
 OUT=ROOT/'private-duel-alpha.html'
 NEARBY_QR=ROOT/'src/js/19-duel-nearby-qr.js'
-VERSION='0.15.2'
+VERSION='0.15.3'
 
 runpy.run_path(str(BASE_BUILDER),run_name='__main__')
 html=OUT.read_text(encoding='utf-8')
@@ -29,4 +29,4 @@ if 'function directCreateNearby()' in html:
     raise SystemExit('Nearby PeerJS module already present; refusing duplicate injection')
 html=html.replace(anchor,module+anchor,1)
 OUT.write_text(html,encoding='utf-8')
-print(f'Built Duel Modes Alpha {VERSION} with one-scan Nearby PeerJS pairing into {OUT.name}')
+print(f'Built Duel Modes Alpha {VERSION} with diagnosed one-scan Nearby PeerJS pairing into {OUT.name}')
