@@ -1,68 +1,114 @@
-# Clash 4 — Private Duel Alpha 0.14.1
+# Clash 4 — Duel Modes Alpha 0.15.0
 
-The public GitHub Pages beta remains Mobile Beta 0.13.3 / game v0.13.1 AI Tuning. Private Duel is now built and published separately so multiplayer testing cannot destabilize the public Arcade entry point.
+The public GitHub Pages beta remains Mobile Beta 0.13.3 / game v0.13.1 AI Tuning. Duel development is built and published separately so multiplayer work cannot destabilize the public Arcade entry point.
 
 ## Staging client
 
-Private Duel Alpha 0.14.1:
+Duel Modes Alpha 0.15.0:
 
 `https://typeivciv.github.io/clash4-beta/private-duel-alpha.html`
 
-The staging client is generated reproducibly from the frozen public `index.html` plus canonical Duel source modules. GitHub Actions validates syntax, DOM uniqueness, client ordering contracts, server update-history recovery, and Fog projection before publishing the staging artifact.
+The staging client is generated reproducibly from the frozen public `index.html` plus canonical Duel source modules. GitHub Actions validates syntax, DOM uniqueness, server update-history recovery, local authority/Fog parity, Direct/Pass transport contracts, and the generated client before publishing.
 
-Private Duel flow:
+## Duel modes
 
-Home → Private Duel → Create / Join → six-character room code → Waiting Room → both Ready → random starter → authoritative two-player match.
+### Direct Duel — WebRTC peer-to-peer
 
-The Node service in `server/duel-server.mjs` owns the full game state and sends viewer-specific Fog-of-War projections. Decoy contact does not reveal an opponent R/P/S identity.
+Direct Duel does not use the Clash 4 game server. After pairing, moves travel through an ordered/reliable WebRTC DataChannel directly between the two browsers.
 
-0.14.1 also adds ordered missed-update recovery: the server keeps a bounded recent version history and clients request updates since their last handled version. This prevents a lost move response followed by a fast opponent move from silently skipping the first move's presentation/events. A client that falls farther behind than the retained history performs an explicit state resync instead of replaying incomplete history.
+Two pairing experiences use the same transport:
 
-## Deploy the Alpha backend
+- **Nearby:** Player 1 creates an offer QR. Player 2 scans it and shows a return QR. Player 1 scans the return QR to complete the manual WebRTC handshake.
+- **Long Distance:** Player 1 shares/copies the offer through Messages, Discord, email, or another app. Player 2 opens it, creates a response, and sends that response back. Player 1 pastes the response to connect.
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2Ftypeivciv%2Fclash4-beta)
+Public STUN is used for peer discovery/NAT traversal. There is currently no TURN relay. Some restrictive carrier, corporate, VPN, or firewall configurations can therefore block Direct Duel; **Online Room** remains the reliability fallback.
 
-The repository already includes `render.yaml` and `package.json`, so the backend can be deployed as an HTTPS Render Web Service without adding runtime npm dependencies.
+Direct Duel deliberately has no Clash 4 signaling server. The two-way QR/share exchange is the signaling channel.
 
-After deployment:
+#### Direct Duel trust model
 
-1. Wait for the Render service to report healthy.
-2. Open `<your-render-service-url>/api/health` and confirm it returns an `ok: true` response.
-3. Copy the HTTPS service URL only, without `/api/health`.
-4. Open the 0.14.1 staging client on both phones.
-5. Paste the service URL into **Multiplayer server** and press **Save** on each phone.
-6. Phone A: **Create Lobby** and share the six-character code.
-7. Phone B: **Join Lobby** with that code.
-8. Mark both players **Ready** and confirm the same match starts with opposite local `You` / remote `Opponent` views.
-9. Test at least one normal R/P/S clash, one chained combat sequence, and one Decoy contact from both seats.
-10. Deliberately background/refresh one phone once to verify session restore and missed-update recovery.
+0.15.0 uses Player 1's browser as the authoritative Direct Duel host. The normal UI receives viewer-specific Fog projections, including Decoy-contact privacy, but the host browser necessarily contains the canonical match state in memory. Direct Duel is therefore intended for trusted/casual opponents during Alpha. A technically sophisticated host could inspect local browser memory/devtools.
 
-### Render free-tier note
+**Online Room** provides stronger hidden-state enforcement because neither player's browser owns the authoritative full state. A future cheat-resistant P2P protocol would require a cryptographic hidden-state/commitment design and is outside the 0.15.0 scope.
 
-A free Render Web Service can spin down after 15 minutes without inbound traffic. The first request after a spin-down can take roughly a minute while the service wakes. Once the Alpha clients are polling during an active test, those HTTP requests count as inbound traffic and should keep the service awake.
+### Pass & Play — one device
 
-## Promotion gate
+Pass & Play is completely offline and uses the same canonical rules engine locally. The device shows an opaque privacy wall between every turn:
 
-Do **not** replace the public Pages `index.html` with Private Duel until all of the following pass on two real phones:
+Player turn → move/combat presentation → hide board → pass device → next player confirms identity → render that player's Fog projection.
 
-- server health endpoint is reachable over HTTPS
-- Create → Join → both Ready works reliably
-- random starter agrees on both devices
-- local and remote moves stay synchronized
-- a lost/delayed response does not roll the board backward or skip recoverable move events
-- session restore survives temporary network failure without destroying a valid room token
-- opponent hidden R/P/S identities stay hidden outside legitimate combat reveals
-- Decoy contact does not leak the opposing R/P/S identity
-- final board review reveals both sides correctly after the match
-- no horizontal overflow or unusable controls on either phone
-- leaving a Duel returns cleanly to Home / Duel entry without contaminating Arcade state
+Viewer-relative combat/move presentation history is cleared at handoff so one player's `You` / `Opponent` presentation cannot be inherited by the next viewer. The completed match reveals the final board normally.
 
-## Alpha limitations
+### Online Room — server-authoritative fallback
 
-- rooms are in memory and disappear on server restart
-- polling transport rather than WebSockets
-- no same-room rematch
-- no explicit disconnect/forfeit flow
-- Duel Replay Finish remains disabled pending a privacy-safe synchronized replay record
+The existing 0.14.1 server mode remains available inside the Duel hub:
 
-These remain deliberate Alpha limitations. Same-room Rematch and reconnect/disconnect UX are the next feature candidates only after the real two-phone network gate passes.
+Create / Join → six-character room code → Waiting Room → both Ready → random starter → authoritative two-player match.
+
+`server/duel-server.mjs` owns full game state and sends viewer-specific Fog projections. Ordered missed-update recovery remains active through bounded server version history and `?since=<version>` polling. A client that falls behind retained history performs an explicit state resync rather than replaying incomplete events.
+
+## Shared architecture
+
+All three modes reuse the same rules and Fog contracts instead of maintaining separate game implementations:
+
+- `src/js/10-rules.js` — canonical move/combat/Connect Four rules
+- `src/js/12-duel-projection.js` — viewer-specific hidden-information projection
+- `src/js/13-duel-client.js` — Online Room HTTP/session/order transport
+- `src/js/15-duel-local-core.js` — local authoritative adapter for non-server modes
+- `src/js/16-duel-direct-webrtc.js` — WebRTC/manual-signaling transport
+- `src/js/17-duel-pass-play.js` — one-device privacy handoff transport
+- `src/js/18-duel-router.js` — common match-controller transport seam
+- `src/js/14-duel-bindings.js` — Duel UI bindings
+
+## Online Room backend
+
+The repository still includes `render.yaml` and `package.json` for deploying the optional Online Room backend as an HTTPS Render Web Service. Direct Duel and Pass & Play do not depend on that backend.
+
+## 0.15.0 real-device promotion gate
+
+Do **not** replace the public Pages `index.html` until the following pass on real devices:
+
+### Direct Duel — nearby
+
+- Phone A creates a Nearby Direct Duel and displays an offer QR.
+- Phone B scans the offer QR and displays a return QR.
+- Phone A scans the return QR without destroying its original peer connection.
+- WebRTC DataChannel reports connected on both phones.
+- Both Ready states synchronize and both devices agree on the random starter.
+- normal move, normal R/P/S combat, chained combat, cooldown/Fortified behavior, Clashmate where reachable, and Decoy contact stay synchronized.
+- hidden opponent R/P/S types remain absent from the rendered opposing view.
+- final board reveal is correct.
+- disconnecting a phone produces a clear Direct Duel interruption state.
+
+### Direct Duel — long distance
+
+- share/copy offer → remote paste → share/copy response → host paste establishes the same Direct Duel connection.
+- remote pairing copy correctly says **send response back**, not nearby QR instructions.
+- failed P2P connection leaves Online Room available as fallback.
+
+### Pass & Play
+
+- random starter receives the device first.
+- opaque handoff completely covers the prior board/inventory.
+- each player sees their own inventory and only their own Fog projection.
+- viewer-relative move/combat history does not cross the handoff boundary.
+- full match and final reveal work without network access.
+
+### Regression
+
+- Online Room's existing ordering/recovery behavior still passes.
+- leaving any Duel mode returns cleanly to the Duel hub/Home.
+- Arcade public behavior is unchanged.
+- no horizontal overflow or unusable controls at phone widths.
+
+## Current limitations
+
+- Direct Duel has no TURN relay, so some networks cannot establish P2P.
+- Direct Duel is host-authoritative and intended for trusted opponents during Alpha.
+- Manual serverless signaling requires a two-way offer/answer exchange.
+- QR rendering/scanning uses browser-side helper libraries; Copy/Share/Paste is the fallback.
+- Online Room rooms are in memory and disappear on backend restart.
+- Online Room still polls rather than using WebSockets.
+- no same-session rematch yet.
+- no formal reconnect/forfeit state machine yet.
+- Duel Replay Finish remains disabled pending a privacy-safe synchronized replay design.
