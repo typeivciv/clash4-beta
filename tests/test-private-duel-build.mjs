@@ -8,7 +8,7 @@ assert.ok(publicIndex.includes('<title>Clash 4 — Mobile Beta 0.13.3</title>'),
 assert.ok(!publicIndex.includes('id="homeDuelButton"'),'public beta must not expose unfinished Duel UI');
 
 for(const required of [
-  'Duel Modes Alpha 0.15.5',
+  'Duel Modes Alpha 0.15.6',
   'id="homeDuelButton"',
   'id="duelLobbyPanel"',
   'id="duelDirectMode"',
@@ -44,6 +44,18 @@ for(const required of [
   'Copy Link',
   "data?.kind==='color'",
   'Both players selected the same color',
+  'duelResultAnimationKey',
+  'finishReplay={steps:recentInteractions.slice(-2).map(cloneInteractionForReplay)}',
+  'function duelPostMatchReplayControls()',
+  'function duelPostMatchAnimate()',
+  'DUEL VICTORY',
+  'DUEL DEFEAT',
+  'DUEL DRAW',
+  '#restartBottom,#reviewRestart,#sidebarRematch',
+  'globalThis.duelRouteNewDuel?.()',
+  '.duelResultAnimation',
+  '@keyframes duel-win-core',
+  '@keyframes duel-loss-core',
   '.duelColorSwatches',
   '.duelDirectQr[hidden]',
   '.duelSignalLabel[hidden]',
@@ -53,8 +65,7 @@ for(const required of [
   'qrcodejs@1.0.0/qrcode.min.js',
   'jsqr@1.4.0/dist/jsQR.js',
   'peerjs@1.5.5/dist/peerjs.min.js',
-  'bindPrivateDuelUi();',
-  "const replayDisabled=duelMode||!finishReplay?.steps?.length||replayPhase!=='idle';"
+  'bindPrivateDuelUi();'
 ])assert.ok(alpha.includes(required),`generated Alpha missing: ${required}`);
 
 for(const obsolete of ['DIRECT_RETURN_KEY','directShowReturnLinkLanding','2 · Scan Player 2 Return QR','/api/direct/signals','id="duelDirectServerInput"']){
@@ -73,4 +84,4 @@ for(let i=0;i<scripts.length;i++){
   catch(error){throw new Error(`generated script ${i+1} failed syntax: ${error.message}`)}
 }
 
-console.log(`PASS generated Duel Modes Alpha 0.15.5 build (${ids.length} unique DOM ids, ${scripts.length} script blocks)`);
+console.log(`PASS generated Duel Modes Alpha 0.15.6 build (${ids.length} unique DOM ids, ${scripts.length} script blocks)`);
