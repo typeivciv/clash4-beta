@@ -88,11 +88,23 @@ for(const token of [
   'event.stopImmediatePropagation()',
   'globalThis.duelRouteNewDuel?.()',
   'function duelPostMatchAnimate()',
+  "endText.textContent='YOU WIN'",
+  "endText.textContent='YOU LOSE'",
+  "endReason.textContent='TRY AGAIN · Review the finish or start a New Duel.'",
   "'DUEL VICTORY'",
   "'DUEL DEFEAT'",
   "'DUEL DRAW'"
 ])assert.ok(postmatch.includes(token),`Duel post-match contract missing ${token}`);
 for(const token of ['.duelResultAnimation','duel-result-win','duel-result-loss','duel-result-draw','@keyframes duel-win-core','@keyframes duel-loss-core','body.reducedMotion'])assert.ok(postmatchCss.includes(token),`Duel post-match CSS contract missing ${token}`);
+
+for(const token of [
+  'function duelResetCompletedMatchUi()',
+  'resetMatchRuntime(H,{isReady:false})',
+  "coinOverlay.classList.add('show')",
+  'function duelReturnToModeHub()',
+  "setMatchControllerMode('duel',{owner:H})",
+  'openDuelHub()'
+])assert.ok(router.includes(token),`Duel router reset contract missing ${token}`);
 
 for(const token of ['passDuelOverlay','passShowHandoff','projectDuelState(passDuel.state,passDuel.viewer','applyLocalDuelMove','passDuelMove','publicMoveHistory=[];recentInteractions=[]'])assert.ok(pass.includes(token),`Pass & Play contract missing ${token}`);
 for(const token of ['if(passDuel.active)','if(directDuel.active)','return duelMove(owner,type,column)'])assert.ok(router.includes(token),`transport router missing ${token}`);
@@ -106,4 +118,4 @@ assert.ok(lobby.includes('Direct Duel is intended for trusted opponents'),'Direc
 for(const [name,source] of [['direct',direct],['nearby',nearby],['turn',turn],['colors',colors],['postmatch',postmatch],['pass',pass],['router',router]]){
   try{new Function(source)}catch(error){throw new Error(`${name} module syntax failed: ${error.message}`)}
 }
-console.log('PASS Direct Duel + one-scan Nearby + TURN + colors/share + replay/results + Pass & Play contracts');
+console.log('PASS Direct Duel + one-scan Nearby + TURN + colors/share + replay/results + atomic New Duel reset + Pass & Play contracts');
