@@ -85,33 +85,35 @@ for(const token of [
   'recentInteractions.slice(-2).map(cloneInteractionForReplay)',
   'function duelPostMatchReplayControls()',
   'function duelPostMatchActionControls()',
+  "if(matchMode==='arcade')",
+  "b.textContent='Rematch'",
+  "b.textContent='Home'",
   'function duelForceTerminalSummary()',
   'function duelArmTerminalGuard()',
   'setTimeout(()=>{duelTerminalGuard=null;duelForceTerminalSummary()},6500)',
   'const directBindChannelBeforePostMatch=directBindChannel',
   "directConnectionBadge('offline','Duel complete')",
-  "button.hidden=false",
   "#restartBottom,#reviewRestart,#sidebarRematch",
   "#homeBottom,#reviewHome,#sidebarHome",
   'event.stopImmediatePropagation()',
   'globalThis.duelRouteNewDuel?.()',
   'function duelPostMatchAnimate()',
+  "const visible=(s.winner||s.draw)&&postMatchView==='summary'&&!busy",
   "endText.textContent='YOU WIN'",
-  "endText.textContent='YOU LOSE'",
-  "mobileContextTitle.textContent='YOU LOSE · TRY AGAIN'",
-  "endReason.textContent='TRY AGAIN · Review the finish or challenge them again.'",
-  "'DUEL VICTORY'",
-  "'DUEL DEFEAT'",
-  "'DUEL DRAW'",
+  "endText.textContent='TRY AGAIN'",
+  "mobileContextTitle.textContent='TRY AGAIN'",
+  "opponent=typeof opponentUiLabel==='function'?opponentUiLabel():(duel?'Opponent':'AI')",
+  "return duel?'DUEL VICTORY':'VICTORY'",
+  "return duel?'DUEL DEFEAT':'DEFEAT'",
   "kind:'rematch-request'",
   "kind:'rematch-start'",
   'function duelRequestDirectRematch()',
   'function directTryStartRematch()',
   'function duelStartDirectRematch(payload)',
-  "remoteVoted?'Accept Rematch':base",
-  "s.winner===H?'Rematch':s.draw?'Rematch':'Try Again'"
-])assert.ok(postmatch.includes(token),`Duel post-match contract missing ${token}`);
-for(const token of ['.duelResultAnimation','duel-result-win','duel-result-loss','duel-result-draw','@keyframes duel-win-core','@keyframes duel-loss-core','body.reducedMotion'])assert.ok(postmatchCss.includes(token),`Duel post-match CSS contract missing ${token}`);
+  "remoteVoted?'Accept Rematch':'Rematch'"
+])assert.ok(postmatch.includes(token),`Unified post-match contract missing ${token}`);
+assert.ok(!postmatch.includes("endText.textContent='YOU LOSE'"),'loss headline must be TRY AGAIN, not YOU LOSE');
+for(const token of ['.duelResultAnimation','duel-result-win','duel-result-loss','duel-result-draw','@keyframes duel-win-core','@keyframes duel-loss-core','body.reducedMotion'])assert.ok(postmatchCss.includes(token),`post-match CSS contract missing ${token}`);
 
 for(const token of [
   'function duelResetCompletedMatchUi()',
@@ -135,4 +137,4 @@ assert.ok(lobby.includes('Direct Duel is intended for trusted opponents'),'Direc
 for(const [name,source] of [['direct',direct],['nearby',nearby],['turn',turn],['colors',colors],['postmatch',postmatch],['pass',pass],['router',router]]){
   try{new Function(source)}catch(error){throw new Error(`${name} module syntax failed: ${error.message}`)}
 }
-console.log('PASS Direct Duel + one-scan Nearby + TURN + colors/share + terminal-safe replay/results + rematch/New Duel split + Pass & Play contracts');
+console.log('PASS Direct Duel + one-scan Nearby + TURN + colors/share + unified Arcade/Direct results + rematch/New Duel split + Pass & Play contracts');
