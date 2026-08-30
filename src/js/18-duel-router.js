@@ -12,14 +12,14 @@ function duelResetCompletedMatchUi(){
   try{end.classList.remove('show','duel-result-win','duel-result-loss','duel-result-draw','duel-result-enter')}catch{};
   try{coinOverlay.classList.add('show')}catch{}
 }
-function duelReturnToModeHub(){
+function duelReturnToModeHub({notify=true}={}){
   // Clear the terminal game before transport teardown. Otherwise a late render can
   // resurrect the completed result screen while the Duel hub is opening.
   duelResetCompletedMatchUi();
-  try{directClosePeer({notify:true})}catch{};try{passReset()}catch{};try{duelClearActiveSession()}catch{};try{duelStopPolling()}catch{};
+  try{directClosePeer({notify})}catch{};try{passReset()}catch{};try{duelClearActiveSession()}catch{};try{duelStopPolling()}catch{};
   setMatchControllerMode('duel',{owner:H});coinOverlay.classList.add('show');openDuelHub();queueFit()
 }
-function duelRouteNewDuel(){duelReturnToModeHub()}
+function duelRouteNewDuel(){duelReturnToModeHub({notify:true})}
 globalThis.duelRouteReady=duelRouteReady;
 globalThis.duelRouteMove=duelRouteMove;
 globalThis.duelLeaveAllToHome=duelLeaveAllToHome;
