@@ -8,7 +8,7 @@ assert.ok(publicIndex.includes('<title>Clash 4 — Mobile Beta 0.13.3</title>'),
 assert.ok(!publicIndex.includes('id="homeDuelButton"'),'public beta must not expose unfinished Duel UI');
 
 for(const required of [
-  'Duel Modes Alpha 0.15.7',
+  'Duel Modes Alpha 0.15.8',
   'id="homeDuelButton"',
   'id="duelLobbyPanel"',
   'id="duelDirectMode"',
@@ -45,12 +45,17 @@ for(const required of [
   "data?.kind==='color'",
   'Both players selected the same color',
   'duelResultAnimationKey',
-  'finishReplay={steps:recentInteractions.slice(-2).map(cloneInteractionForReplay)}',
+  'function duelBuildFinishReplay()',
   'function duelPostMatchReplayControls()',
   'function duelPostMatchActionControls()',
   'function duelPostMatchAnimate()',
+  'function duelForceTerminalSummary()',
+  'function duelArmTerminalGuard()',
+  'const directBindChannelBeforePostMatch=directBindChannel',
+  "directConnectionBadge('offline','Duel complete')",
   "endText.textContent='YOU WIN'",
   "endText.textContent='YOU LOSE'",
+  "mobileContextTitle.textContent='YOU LOSE · TRY AGAIN'",
   "endReason.textContent='TRY AGAIN · Review the finish or challenge them again.'",
   'DUEL VICTORY',
   'DUEL DEFEAT',
@@ -65,6 +70,7 @@ for(const required of [
   '#restartBottom,#reviewRestart,#sidebarRematch',
   '#homeBottom,#reviewHome,#sidebarHome',
   'globalThis.duelRouteNewDuel?.()',
+  "(M[p.type]?.[1]||'?')",
   '.duelResultAnimation',
   '@keyframes duel-win-core',
   '@keyframes duel-loss-core',
@@ -96,4 +102,4 @@ for(let i=0;i<scripts.length;i++){
   catch(error){throw new Error(`generated script ${i+1} failed syntax: ${error.message}`)}
 }
 
-console.log(`PASS generated Duel Modes Alpha 0.15.7 build (${ids.length} unique DOM ids, ${scripts.length} script blocks)`);
+console.log(`PASS generated Duel Modes Alpha 0.15.8 build (${ids.length} unique DOM ids, ${scripts.length} script blocks)`);
