@@ -109,13 +109,13 @@ jobs:
       - name: Publish Pages staging client
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          if [ -n "$(git status --porcelain -- private-duel-alpha.html)" ]; then
+          if [ -n "$(git status --porcelain -- private-duel-alpha.html multiplayer-alpha.html)" ]; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add private-duel-alpha.html
+            git add private-duel-alpha.html multiplayer-alpha.html
             git commit -m "Build Multiplayer Alpha 0.16.0 tester package"
             git pull --rebase origin main
             git push
           else
-            echo "Staging client already matches canonical sources."
+            echo "Staging clients already match canonical sources."
           fi
