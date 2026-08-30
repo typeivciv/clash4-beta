@@ -90,3 +90,4 @@ function directBootNearbyQrUx(){directInstallReturnBridge();setTimeout(()=>direc
 globalThis.directNearbyLink=directNearbyLink;
 globalThis.directHandleNearbyLaunch=directHandleNearbyLaunch;
 globalThis.directBootNearbyQrUx=directBootNearbyQrUx;
+directBootNearbyQrUx();
