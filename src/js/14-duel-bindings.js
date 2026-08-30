@@ -1,8 +1,7 @@
-// Private Duel DOM event bindings. The HTML build must provide the Duel IDs
-// and load src/js/13-duel-client.js before this binder is invoked.
+// Duel DOM event bindings. The Alpha build loads transport modules before this binder.
 function bindPrivateDuelUi(){
-  homeDuelButton.addEventListener('click',openDuelLobby);
-  duelBackButton.addEventListener('click',()=>{duelStopPolling();setMatchControllerMode('arcade',{owner:H});setIntroScreen('home')});
+  homeDuelButton.addEventListener('click',openDuelHub);
+  duelBackButton.addEventListener('click',duelLeaveAllToHome);
   duelCreateButton.addEventListener('click',duelCreateLobby);
   duelJoinModeButton.addEventListener('click',()=>{setVisible(duelJoinForm,true);duelCodeInput.focus()});
   duelJoinCancel.addEventListener('click',()=>{setVisible(duelJoinForm,false);duelStatus('')});
@@ -11,11 +10,14 @@ function bindPrivateDuelUi(){
   duelCodeInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();duelJoinLobby()}});
   duelSaveServerButton.addEventListener('click',()=>saveDuelServer(duelServerInput.value));
   duelServerInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveDuelServer(duelServerInput.value)}});
-  duelReadyButton.addEventListener('click',duelReady);
+  duelReadyButton.addEventListener('click',duelRouteReady);
   duelCopyCode.addEventListener('click',async()=>{
+    if(directDuel.active)return;
     try{await navigator.clipboard.writeText(duelSession.code);duelCopyCode.textContent='Copied ✓';setTimeout(()=>duelCopyCode.textContent='Copy Code',1200)}
     catch{duelWaitingCopy.textContent=`Room code: ${duelSession.code}`}
   });
-  duelLeaveButton.addEventListener('click',duelLeaveToHome)
+  duelLeaveButton.addEventListener('click',duelLeaveAllToHome);
+  document.getElementById('duelOnlineBack')?.addEventListener('click',directShowHub);
+  bindDirectDuelUi();bindPassPlayUi()
 }
 globalThis.bindPrivateDuelUi=bindPrivateDuelUi;
