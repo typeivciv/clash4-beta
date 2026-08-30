@@ -1,8 +1,9 @@
-// Duel 0.15.7: atomic New Duel, peer-preserving rematch, replay, and animated results.
+// Duel 0.15.8: peer-preserving rematch, replay, terminal guard, and animated results.
 'use strict';
 let duelResultAnimationKey='';
 let directRematchVotes={human:false,ai:false};
 let directRematchStarting=false;
+let duelTerminalGuard=null;
 
 function duelPostMatchEnsureVisual(){
   const card=globalThis.end?.querySelector?.('.postMatchSummaryCard');
@@ -17,13 +18,16 @@ function duelPostMatchOutcome(){return s.draw?'draw':s.winner===H?'win':'loss'}
 function duelPostMatchCopy(outcome){
   if(outcome==='win'){
     endText.textContent='YOU WIN';
-    endReason.textContent=s.winReason==='clashmate'?'CLASHMATE · You forced the winning position.':'Victory secured · Your Connect Four is locked in.'
+    endReason.textContent=s.winReason==='clashmate'?'CLASHMATE · You forced the winning position.':'Victory secured · Your Connect Four is locked in.';
+    mobileContextKicker.textContent='DUEL VICTORY';mobileContextTitle.textContent='YOU WIN';mobileContextCopy.textContent='Review the finish, replay it, or challenge them again.'
   }else if(outcome==='loss'){
     endText.textContent='YOU LOSE';
-    endReason.textContent='TRY AGAIN · Review the finish or challenge them again.'
+    endReason.textContent='TRY AGAIN · Review the finish or challenge them again.';
+    mobileContextKicker.textContent='DUEL DEFEAT';mobileContextTitle.textContent='YOU LOSE · TRY AGAIN';mobileContextCopy.textContent='Review the finish, learn from it, and run it back.'
   }else{
     endText.textContent='DRAW';
-    endReason.textContent='No winner this time · Review the board or run it back.'
+    endReason.textContent='No winner this time · Review the board or run it back.';
+    mobileContextKicker.textContent='DUEL DRAW';mobileContextTitle.textContent='DRAW';mobileContextCopy.textContent='Review the finish or challenge them again.'
   }
 }
 function duelPostMatchAnimate(){
@@ -57,10 +61,27 @@ function duelPostMatchActionControls(){
     for(const b of newDuelButtons){b.textContent='New Duel';b.disabled=false}
   }else{
     for(const b of rematchButtons){b.textContent='New Duel';b.disabled=false}
+    for(const b of newDuelButtons){b.textContent='New Duel';b.disabled=false}
   }
+}
+function duelBuildFinishReplay(){
+  if(finishReplay?.steps?.length)return;
+  const steps=recentInteractions.slice(-2).map(cloneInteractionForReplay);if(steps.length)finishReplay={steps}
+}
+function duelForceTerminalSummary(){
+  if(matchMode!=='duel'||!(s.winner||s.draw)||replayPhase!=='idle')return false;
+  if(duelTerminalGuard){clearTimeout(duelTerminalGuard);duelTerminalGuard=null}
+  clearPresentationTimers();activePresentation=null;dropPresentation=null;busy=false;hoverCol=null;
+  duelStopPolling();duelBuildFinishReplay();postMatchView='summary';directResetRematchVotes();render();queueFit();return true
+}
+globalThis.duelForceTerminalSummary=duelForceTerminalSummary;
+function duelArmTerminalGuard(){
+  if(matchMode!=='duel'||!(s.winner||s.draw)||!busy||replayPhase!=='idle'||duelTerminalGuard)return;
+  duelTerminalGuard=setTimeout(()=>{duelTerminalGuard=null;duelForceTerminalSummary()},6500)
 }
 function duelStartDirectRematch(payload){
   if(!payload?.state)return;
+  if(duelTerminalGuard){clearTimeout(duelTerminalGuard);duelTerminalGuard=null}
   directResetRematchVotes();
   duelSession.active=false;duelSession.pendingLocal=null;duelSession.deferredPayloads=[];
   end.classList.remove('show','duel-result-win','duel-result-loss','duel-result-draw','duel-result-enter');
@@ -81,27 +102,28 @@ function duelRequestDirectRematch(){
   msg('Rematch requested — waiting for your opponent.');if(directDuel.role==='host')directTryStartRematch()
 }
 
-// The shared network adapter already records the final two viewer-projected interactions.
-// Preserve them at terminal instead of the older Alpha behavior that intentionally nulled replay.
+// The shared network adapter records the final two viewer-projected interactions.
+// A bounded terminal guard prevents a presentation callback from stranding mobile
+// in the gameplay shell after the winner has already been received.
 duelFinishNetworkPresentation=function(events,column){
+  let settled=false,guard=null;
   const done=()=>{
+    if(settled)return;settled=true;if(guard)clearTimeout(guard);
     busy=false;
     const deferred=nextDeferredDuelPayload();
     if(deferred){duelAcceptActivePayload(deferred);return}
     if(s.winner||s.draw){
-      duelStopPolling();postMatchView='summary';directResetRematchVotes();
-      finishReplay={steps:recentInteractions.slice(-2).map(cloneInteractionForReplay)};
-      render();return
+      duelStopPolling();postMatchView='summary';directResetRematchVotes();duelBuildFinishReplay();render();return
     }
     continueTurnController()
   };
-  if(events.length)playEvents(events,done,column);else done()
+  if(events.length){playEvents(events,done,column);if(s.winner||s.draw)guard=setTimeout(done,6500)}else done()
 };
 
 const renderPostMatchBeforeDuelResult=renderPostMatch;
 renderPostMatch=function(reviewMode){
   const result=renderPostMatchBeforeDuelResult(reviewMode);
-  duelPostMatchReplayControls();duelPostMatchActionControls();duelPostMatchAnimate();return result
+  duelPostMatchReplayControls();duelPostMatchActionControls();duelPostMatchAnimate();duelArmTerminalGuard();return result
 };
 
 const directHandleMessageBeforePostMatch=directHandleMessage;
@@ -111,11 +133,26 @@ directHandleMessage=function(data){
   }
   if(data?.kind==='rematch-start'&&directDuel?.active&&data.payload){duelStartDirectRematch(data.payload);return}
   if(data?.kind==='leave'&&matchMode==='duel'&&(s.winner||s.draw)){
-    directDuel.active=false;globalThis.duelReturnToModeHub?.({notify:false});return
+    directDuel.active=false;directConnectionBadge('offline','Duel complete');duelPostMatchActionControls();return
   }
   return directHandleMessageBeforePostMatch(data)
 };
 globalThis.directHandleMessage=directHandleMessage;
+
+// A peer closing after the terminal packet is a completed match, not a network error.
+// Preserve the result/replay screen instead of replacing it with "Opponent disconnected".
+const directBindChannelBeforePostMatch=directBindChannel;
+directBindChannel=function(channel){
+  const result=directBindChannelBeforePostMatch(channel),normalClose=channel.onclose;
+  channel.onclose=()=>{
+    if(matchMode==='duel'&&duelSession.active&&(s.winner||s.draw)){
+      directDuel.active=false;directConnectionBadge('offline','Duel complete');duelPostMatchActionControls();duelForceTerminalSummary();return
+    }
+    normalClose?.()
+  };
+  return result
+};
+globalThis.directBindChannel=directBindChannel;
 
 // In Direct Duel the left action is a true rematch/try-again; the right action is New Duel.
 // Other Duel transports keep the simpler New Duel behavior.
@@ -124,7 +161,7 @@ document.addEventListener('click',event=>{
   const rematch=event.target?.closest?.('#restartBottom,#reviewRestart,#sidebarRematch');
   if(rematch){event.preventDefault();event.stopImmediatePropagation();if(directDuel?.active)duelRequestDirectRematch();else globalThis.duelRouteNewDuel?.();return}
   const newDuel=event.target?.closest?.('#homeBottom,#reviewHome,#sidebarHome');
-  if(newDuel){event.preventDefault();event.stopImmediatePropagation();globalThis.duelRouteNewDuel?.()}
+  if(newDuel){event.preventDefault();event.stopImmediatePropagation();if(duelTerminalGuard){clearTimeout(duelTerminalGuard);duelTerminalGuard=null}globalThis.duelRouteNewDuel?.()}
 },true);
 
 duelPostMatchEnsureVisual();
