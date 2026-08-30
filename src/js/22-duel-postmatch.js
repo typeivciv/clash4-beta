@@ -1,4 +1,4 @@
-// Duel 0.15.6: robust post-match routing + replay + animated win/loss/draw presentation.
+// Duel 0.15.7: robust post-match routing + replay + animated win/loss/draw presentation.
 'use strict';
 let duelResultAnimationKey='';
 
@@ -12,12 +12,24 @@ function duelPostMatchEnsureVisual(){
   card.prepend(stage);return stage
 }
 function duelPostMatchOutcome(){return s.draw?'draw':s.winner===H?'win':'loss'}
+function duelPostMatchCopy(outcome){
+  if(outcome==='win'){
+    endText.textContent='YOU WIN';
+    endReason.textContent=s.winReason==='clashmate'?'CLASHMATE · You forced the winning position.':'Victory secured · Your Connect Four is locked in.'
+  }else if(outcome==='loss'){
+    endText.textContent='YOU LOSE';
+    endReason.textContent='TRY AGAIN · Review the finish or start a New Duel.'
+  }else{
+    endText.textContent='DRAW';
+    endReason.textContent='No winner this time · Review the board or try again.'
+  }
+}
 function duelPostMatchAnimate(){
   const stage=duelPostMatchEnsureVisual();if(!stage)return;
   const visible=matchMode==='duel'&&(s.winner||s.draw)&&postMatchView==='summary'&&!busy;
   if(!visible){stage.hidden=true;end.classList.remove('duel-result-win','duel-result-loss','duel-result-draw','duel-result-enter');duelResultAnimationKey='';return}
   const outcome=duelPostMatchOutcome(),key=`${s.moveNumber}:${outcome}:${s.winReason||''}`;
-  stage.hidden=false;
+  duelPostMatchCopy(outcome);stage.hidden=false;
   end.classList.remove('duel-result-win','duel-result-loss','duel-result-draw');end.classList.add(`duel-result-${outcome}`);
   const core=stage.querySelector('.duelResultCore span');if(core)core.textContent=outcome==='win'?'✦':outcome==='loss'?'◆':'＝';
   const kicker=end.querySelector('.postMatchDeckKicker');if(kicker)kicker.textContent=outcome==='win'?'DUEL VICTORY':outcome==='loss'?'DUEL DEFEAT':'DUEL DRAW';
@@ -56,16 +68,12 @@ renderPostMatch=function(reviewMode){
   duelPostMatchReplayControls();duelPostMatchAnimate();return result
 };
 
-// Capture the three post-match New Duel buttons before the legacy Rematch listeners.
-// This keeps Direct connection teardown and Duel hub routing deterministic.
+// Capture post-match New Duel before the legacy Arcade Rematch listeners.
+// The router now performs an atomic terminal-state reset and re-opens the Duel overlay.
 document.addEventListener('click',event=>{
   if(matchMode!=='duel')return;
   const button=event.target?.closest?.('#restartBottom,#reviewRestart,#sidebarRematch');if(!button)return;
-  event.preventDefault();event.stopImmediatePropagation();
-  clearPresentationTimers();clearTimer('replay');
-  postMatchView='none';replayPhase='idle';replayVisualState=null;replayStepIndex=-1;dropPresentation=null;busy=false;ready=false;
-  end.classList.remove('show','duel-result-win','duel-result-loss','duel-result-draw','duel-result-enter');
-  globalThis.duelRouteNewDuel?.()
+  event.preventDefault();event.stopImmediatePropagation();globalThis.duelRouteNewDuel?.()
 },true);
 
 duelPostMatchEnsureVisual();
