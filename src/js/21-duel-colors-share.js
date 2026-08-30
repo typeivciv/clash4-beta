@@ -1,4 +1,4 @@
-// Duel 0.15.5: independent Direct Duel colors + one-scan link sharing.
+// Multiplayer Alpha 0.16.2: independent Direct Duel colors + resilient one-link sharing.
 // Each seat owns its own color choice. The exact same preset cannot be locked by both
 // players because board ownership must remain visually distinguishable.
 'use strict';
@@ -81,17 +81,22 @@ duelBeginActive=function(payload){
   return result
 };
 
-// Nearby QR and text sharing are the same invite. Keep the raw peer id hidden, but expose
-// Copy Link / Text or Share Link beneath the QR so Player 1 can invite someone remotely.
+// Nearby QR and remote sharing are the exact same HTTPS invite. Do not key visibility to
+// presentation copy: Alpha headings can change without changing the pairing state. If the
+// one-scan stage contains a real c4peer invite, Player 1 always gets Copy Link + Share Link.
+function duelHasLiveNearbyInvite(){
+  const value=String(directEl('duelDirectSignal')?.value||'');
+  return directDuel?.pairing==='nearby'&&directPeerSession?.role==='host'&&value.startsWith('http')&&value.includes(`#${DIRECT_PEER_JOIN_PARAM}=`)
+}
 const directNearbyStageBeforeShareLinks=directNearbyStage;
 directNearbyStage=function(options={}){
-  const result=directNearbyStageBeforeShareLinks(options);const title=String(options.title||'');
+  const result=directNearbyStageBeforeShareLinks(options);
   const label=directEl('duelDirectSignal')?.closest('.duelSignalLabel'),actions=directEl('duelDirectShare')?.parentElement;
-  if(title.includes('Scan once to join')){
+  if(duelHasLiveNearbyInvite()){
     if(label)label.hidden=true;if(actions)actions.hidden=false;
     const copyBtn=directEl('duelDirectCopy'),shareBtn=directEl('duelDirectShare'),copy=directEl('duelDirectStageCopy');
-    if(copyBtn)copyBtn.textContent='Copy Link';if(shareBtn)shareBtn.textContent='Text / Share Link';
-    if(copy)copy.textContent='Player 2 can scan this QR with the normal Camera app or open the same Clash 4 invite link you send by text, Messages, Discord, or another app.'
+    if(copyBtn)copyBtn.textContent='Copy Link';if(shareBtn)shareBtn.textContent='Share Link';
+    if(copy)copy.textContent='Player 2 can scan this QR with the normal Camera app or open the same Clash 4 invite link you send by text, Messages, Discord, email, or another app.'
   }else if(directDuel?.pairing==='nearby'){
     if(actions)actions.hidden=true
   }
