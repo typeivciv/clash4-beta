@@ -8,7 +8,7 @@ assert.ok(publicIndex.includes('<title>Clash 4 — Mobile Beta 0.13.3</title>'),
 assert.ok(!publicIndex.includes('id="homeDuelButton"'),'public beta must not expose unfinished Duel UI');
 
 for(const required of [
-  'Duel Modes Alpha 0.15.2',
+  'Duel Modes Alpha 0.15.3',
   'id="homeDuelButton"',
   'id="duelLobbyPanel"',
   'id="duelDirectMode"',
@@ -28,6 +28,10 @@ for(const required of [
   'No return QR or service URL is required.',
   'normal Camera app',
   'directBootNearbyPeerUx();',
+  'stun:stun.cloudflare.com:3478',
+  'function directObservePeerConnection(conn)',
+  'Direct route blocked',
+  'TURN relay or Online Room fallback',
   'function startPassPlay()',
   'function duelRouteMove(owner,type,column)',
   'qrcodejs@1.0.0/qrcode.min.js',
@@ -53,4 +57,4 @@ for(let i=0;i<scripts.length;i++){
   catch(error){throw new Error(`generated script ${i+1} failed syntax: ${error.message}`)}
 }
 
-console.log(`PASS generated Duel Modes Alpha 0.15.2 build (${ids.length} unique DOM ids, ${scripts.length} script blocks)`);
+console.log(`PASS generated Duel Modes Alpha 0.15.3 build (${ids.length} unique DOM ids, ${scripts.length} script blocks)`);
