@@ -22,8 +22,8 @@ for(const token of [
 assert.ok(!direct.includes('fetch('),'core WebRTC transport must not call the Clash 4 HTTP game server');
 
 for(const token of [
-  "DIRECT_PEER_JOIN_PARAM='c4peer'",'DIRECT_PEER_TIMEOUT_MS=90_000','let directNearbyRetryPeerId=',
-  'function directNearbyJoinLink(peerId)','new Peer(undefined,{debug:0,config:DIRECT_RTC_CONFIG})',
+  "DIRECT_PEER_JOIN_PARAM='c4peer'",'DIRECT_PEER_ATTEMPT_TIMEOUT_MS=90_000','DIRECT_HOST_INVITE_TTL_MS=5*60_000','let directNearbyRetryPeerId=',
+  'function directPeerTimeoutForRole(role)','function directNearbyJoinLink(peerId)','new Peer(undefined,{debug:0,config:DIRECT_RTC_CONFIG})',
   "peer.on('connection',conn=>directBindPeerJsConnection(conn))","peer.connect(hostPeerId,{reliable:true,serialization:'json'})",
   'directPeerSession.peer?.disconnect()','No return QR or service URL is required.','directBootNearbyPeerUx();',
   "stun:stun.cloudflare.com:3478",'function directObservePeerConnection(conn)','function directPeerRouteFailureMessage()',
@@ -36,9 +36,10 @@ for(const token of [
   "directEl('duelDirectRefreshInvite')?.addEventListener('click',directRefreshNearbyInvite)",
   "directEl('duelDirectRetryConnection')?.addEventListener('click',directRetryNearbyConnection)",
   "if(qr){qr.innerHTML='';qr.hidden=true}if(field)field.value=''",
-  'Player 2 can retry the same live invite','Failed attempts do not consume the invite',
-  'directOpenPanel();directNearbyRetryPeerId=hostPeerId;directRecoveryActions();directPeerReset();'
+  'Player 2 can retry the same live invite','This invite stays active for 5 minutes','invite active for 5 minutes',
+  'This connection attempt timed out after 90 seconds','directOpenPanel();directNearbyRetryPeerId=hostPeerId;directRecoveryActions();directPeerReset();'
 ])assert.ok(nearby.includes(token),`Nearby PeerJS recovery contract missing ${token}`);
+assert.ok(!nearby.includes('DIRECT_PEER_TIMEOUT_MS=90_000'),'host invite and guest attempt must not share the old 90-second timeout');
 assert.ok(!nearby.includes('directNearbyRetryPeerId=hostPeerId;directOpenPanel()'),'guest retry target must be stored after directOpenPanel cleanup, never before it');
 assert.ok(!nearby.includes("if(directPeerSession.conn&&directPeerSession.conn!==conn){try{conn.close()}catch{};return}"),'host must not reject a new retry merely because a failed pre-open DataConnection is still referenced');
 assert.ok(!nearby.includes('fetch('),'Nearby PeerJS pairing must not depend on the Clash 4 HTTP backend');
@@ -69,4 +70,4 @@ assert.ok(lobby.includes('Alpha relay fallback'),'Direct UI must disclose the st
 assert.ok(lobby.includes('Direct Duel is intended for trusted opponents'),'Direct Duel trust model must be visible in Alpha UI');
 
 for(const [name,source] of [['direct',direct],['nearby',nearby],['turn',turn],['colors',colors],['postmatch',postmatch],['pass',pass],['router',router]]){try{new Function(source)}catch(error){throw new Error(`${name} module syntax failed: ${error.message}`)}}
-console.log('PASS Direct Duel + same-invite host retry lifecycle + Player 2 recovery + TURN + colors/share + unified results + rematch/New Duel + Pass & Play contracts');
+console.log('PASS Direct Duel + 5-minute host invite + 90-second guest retry timeout + same-invite recovery + TURN + colors/share + unified results + rematch/New Duel + Pass & Play contracts');
