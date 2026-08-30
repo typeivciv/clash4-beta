@@ -8,7 +8,7 @@ assert.ok(publicIndex.includes('<title>Clash 4 — Mobile Beta 0.13.3</title>'),
 assert.ok(!publicIndex.includes('id="homeDuelButton"'),'public beta must not expose unfinished Duel UI');
 
 for(const required of [
-  'Duel Modes Alpha 0.15.8',
+  'Duel Modes Alpha 0.15.9',
   'id="homeDuelButton"',
   'id="duelLobbyPanel"',
   'id="duelDirectMode"',
@@ -48,18 +48,19 @@ for(const required of [
   'function duelBuildFinishReplay()',
   'function duelPostMatchReplayControls()',
   'function duelPostMatchActionControls()',
+  "if(matchMode==='arcade')",
+  "b.textContent='Rematch'",
   'function duelPostMatchAnimate()',
+  "const visible=(s.winner||s.draw)&&postMatchView==='summary'&&!busy",
+  "endText.textContent='YOU WIN'",
+  "endText.textContent='TRY AGAIN'",
+  "mobileContextTitle.textContent='TRY AGAIN'",
+  "return duel?'DUEL VICTORY':'VICTORY'",
+  "return duel?'DUEL DEFEAT':'DEFEAT'",
   'function duelForceTerminalSummary()',
   'function duelArmTerminalGuard()',
   'const directBindChannelBeforePostMatch=directBindChannel',
   "directConnectionBadge('offline','Duel complete')",
-  "endText.textContent='YOU WIN'",
-  "endText.textContent='YOU LOSE'",
-  "mobileContextTitle.textContent='YOU LOSE · TRY AGAIN'",
-  "endReason.textContent='TRY AGAIN · Review the finish or challenge them again.'",
-  'DUEL VICTORY',
-  'DUEL DEFEAT',
-  'DUEL DRAW',
   "kind:'rematch-request'",
   "kind:'rematch-start'",
   'function duelRequestDirectRematch()',
@@ -86,8 +87,8 @@ for(const required of [
   'bindPrivateDuelUi();'
 ])assert.ok(alpha.includes(required),`generated Alpha missing: ${required}`);
 
-for(const obsolete of ['DIRECT_RETURN_KEY','directShowReturnLinkLanding','2 · Scan Player 2 Return QR','/api/direct/signals','id="duelDirectServerInput"']){
-  assert.ok(!alpha.includes(obsolete),`generated Alpha still contains obsolete/broken Nearby path: ${obsolete}`)
+for(const obsolete of ['DIRECT_RETURN_KEY','directShowReturnLinkLanding','2 · Scan Player 2 Return QR','/api/direct/signals','id="duelDirectServerInput"',"endText.textContent='YOU LOSE'"]){
+  assert.ok(!alpha.includes(obsolete),`generated Alpha still contains obsolete/broken path: ${obsolete}`)
 }
 
 const ids=[...alpha.matchAll(/\sid="([^"]+)"/g)].map(m=>m[1]);
@@ -102,4 +103,4 @@ for(let i=0;i<scripts.length;i++){
   catch(error){throw new Error(`generated script ${i+1} failed syntax: ${error.message}`)}
 }
 
-console.log(`PASS generated Duel Modes Alpha 0.15.8 build (${ids.length} unique DOM ids, ${scripts.length} script blocks)`);
+console.log(`PASS generated Duel Modes Alpha 0.15.9 build (${ids.length} unique DOM ids, ${scripts.length} script blocks)`);
