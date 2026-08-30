@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="description" content="Clash 4 mobile beta test build">
-<title>Clash 4 — Fog of War · Duel Modes Alpha 0.15.3</title>
+<title>Clash 4 — Fog of War · Duel Modes Alpha 0.15.4</title>
 
 
 
@@ -595,12 +595,21 @@ html.pass-privacy-active{overflow:hidden}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<style>
+/* 0.15.4 Alpha relay + one-scan cleanup. */
+.duelDirectQr[hidden],
+.duelSignalLabel[hidden],
+.duelSignalActions[hidden],
+.duelAcceptRow[hidden]{display:none!important}
+.duelRelayNote{margin:10px 2px 0;padding:9px 10px;border:1px solid rgba(45,212,191,.22);border-radius:10px;background:rgba(8,34,38,.34);color:#8fb6b2;font-size:9px;line-height:1.45}
+.duelRelayNote strong{color:#bdf8ef}
+</style>
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
 </head>
 <body>
 <div id="appRoot" class="app">
 <header>
-  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Arcade RC1 · Duel Modes Alpha 0.15.3</div></div>
+  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Arcade RC1 · Duel Modes Alpha 0.15.4</div></div>
   <div id="fogTurnPill" class="fogTurnPill neutral"><span class="fogTurnDot"></span><span id="fogTurnText">Setup</span></div>
   <div class="topActions">
     <div id="matchDifficultyBadge" class="matchDifficultyBadge" title="Difficulty is chosen before the match"><span>AI</span><strong id="matchDifficultyLabel">Normal</strong></div>
@@ -734,7 +743,7 @@ html.pass-privacy-active{overflow:hidden}
       <div class="homeTagline">Connect Four. Win the Clash.</div>
       <p class="homeLede">Build four in a row while Rock–Paper–Scissors combat, Decoys, and hidden enemy identities turn every column into a tactical gamble.</p>
       <div class="homeActions"><button id="homePlayButton" class="homePlay" type="button"><span>Play</span><small>Normal · Default colors · Random start</small></button><button id="homeDuelButton" class="homeDuel" type="button"><span>Duel</span><small>Direct P2P · Pass &amp; Play · Online Room · Alpha</small></button><button id="homeCustomizeButton" class="homeCustomize" type="button"><span>Customize Match</span><small>Difficulty · first move · colors · tips</small></button><button id="homeRulesButton" class="homeSecondary" type="button">How to Play</button></div>
-      <div class="homeMeta"><span>Duel Modes Alpha · 0.15.3</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
+      <div class="homeMeta"><span>Duel Modes Alpha · 0.15.4</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
     </div>
     <div class="homeHero" aria-hidden="true"><div class="homeHeroGlow"></div><div class="heroBoard"><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">🪨</span></div><div class="heroHole"><span class="heroPiece ai ">📄</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">✂️</span></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"><span class="heroPiece player ">📄</span></div><div class="heroHole"><span class="heroPiece ai ">🪨</span></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"><span class="heroPiece ai ">✂️</span></div></div><div class="heroFog"></div></div>
   </section>
@@ -749,23 +758,24 @@ html.pass-privacy-active{overflow:hidden}
   <div id="duelEntryPanel" class="duelEntryPanel">
     <div id="duelModeHub" class="duelModeHub">
       <div class="duelModeGrid">
-        <button id="duelDirectMode" class="duelModeCard direct" type="button"><span class="duelModeIcon">⇄</span><strong>Direct Duel</strong><small>Two devices · WebRTC peer-to-peer gameplay</small><em>Nearby one-scan QR or long-distance invite</em></button>
+        <button id="duelDirectMode" class="duelModeCard direct" type="button"><span class="duelModeIcon">⇄</span><strong>Direct Duel</strong><small>Two devices · WebRTC gameplay</small><em>Nearby one-scan QR or long-distance invite</em></button>
         <button id="duelPassMode" class="duelModeCard pass" type="button"><span class="duelModeIcon">▣</span><strong>Pass &amp; Play</strong><small>Two players · one device · completely offline</small><em>Private handoff between every turn</em></button>
         <button id="duelOnlineMode" class="duelModeCard online" type="button"><span class="duelModeIcon">◎</span><strong>Online Room</strong><small>Private room code · authoritative server</small><em>Most reliable across restrictive networks</em></button>
       </div>
-      <p class="duelModeNote">Nearby Direct uses a public pairing broker only to introduce the two browsers. Once the WebRTC connection opens, match traffic is device-to-device.</p>
+      <p class="duelModeNote">Nearby Direct uses a public pairing broker only to introduce the two browsers. Match traffic is WebRTC; Alpha can use an encrypted TURN relay when the phones cannot form a direct route.</p>
     </div>
 
     <div id="duelDirectPanel" class="duelDirectPanel" hidden>
       <button id="duelDirectBack" class="duelSectionBack" type="button">← Duel modes</button>
       <div id="duelDirectActions">
-        <div class="duelSectionHead"><div><div class="eyebrow">DIRECT DUEL</div><h3>Connect device-to-device</h3></div><span class="duelP2PBadge">P2P</span></div>
+        <div class="duelSectionHead"><div><div class="eyebrow">DIRECT DUEL</div><h3>Connect device-to-device</h3></div><span class="duelP2PBadge">WebRTC</span></div>
         <div class="duelDirectGrid">
           <button id="duelDirectNearby" class="duelChoiceCard" type="button"><strong>Nearby · One Scan</strong><small>Player 1 shows one QR. Player 2 scans it with the normal Camera app and both phones connect automatically.</small></button>
           <button id="duelDirectRemote" class="duelChoiceCard" type="button"><strong>Long Distance · Create</strong><small>Share an invite through text, Discord, email, or another app.</small></button>
           <button id="duelDirectJoin" class="duelChoiceCard" type="button"><strong>Long Distance · Join</strong><small>Paste an invite sent by Player 1.</small></button>
         </div>
-        <p class="duelModeNote"><strong>Nearby pairing:</strong> no server URL or return QR is required. The broker handles connection discovery only; Clash 4 moves stay peer-to-peer.</p>
+        <p class="duelModeNote"><strong>Nearby pairing:</strong> no server URL or return QR is required. The broker handles connection discovery only; Clash 4 moves stay on the WebRTC connection.</p>
+        <p class="duelRelayNote"><strong>Alpha relay fallback:</strong> if the phones cannot make a direct ICE route, this test build may relay the encrypted WebRTC DataChannel through Open Relay automatically.</p>
         <p class="duelTrustNote"><strong>Alpha trust model:</strong> Direct Duel is intended for trusted opponents because Player 1's browser acts as the match authority. Online Room provides stronger hidden-state enforcement.</p>
       </div>
 
@@ -791,7 +801,7 @@ html.pass-privacy-active{overflow:hidden}
         <div><button id="duelJoinButton" class="duelPrimary" type="button">Join Room</button><button id="duelJoinCancel" class="duelSecondary" type="button">Cancel</button></div>
       </div>
       <div class="duelServerBox">
-        <div><strong>Online Room server</strong><small id="duelServerNotice">Only Online Room requires your Clash 4 authoritative backend. Nearby Direct no longer uses this field.</small></div>
+        <div><strong>Online Room server</strong><small id="duelServerNotice">Only Online Room requires your Clash 4 authoritative backend. Nearby Direct does not use this field.</small></div>
         <div class="duelServerRow"><input id="duelServerInput" type="url" placeholder="https://your-duel-server.example" aria-label="Duel server URL"><button id="duelSaveServerButton" type="button">Save</button></div>
       </div>
       <div id="duelEntryStatus" class="duelEntryStatus" role="status" aria-live="polite"></div>
@@ -2567,6 +2577,58 @@ globalThis.directHandleNearbyLaunch=directHandleNearbyLaunch;
 globalThis.directBootNearbyPeerUx=directBootNearbyPeerUx;
 directBootNearbyPeerUx();
 
+// Alpha TURN fallback for Nearby Direct Duel.
+// ICE still prefers a direct host/STUN path. These public Open Relay entries are staging-only
+// so restrictive NAT/firewall pairs can fall back to an encrypted TURN relay during testing.
+'use strict';
+const DIRECT_ALPHA_TURN_SERVERS=[
+  {urls:'stun:openrelay.metered.ca:80'},
+  {urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
+  {urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
+  {urls:'turn:openrelay.metered.ca:443?transport=tcp',username:'openrelayproject',credential:'openrelayproject'}
+];
+for(const entry of DIRECT_ALPHA_TURN_SERVERS){
+  const urls=Array.isArray(entry.urls)?entry.urls:[entry.urls];
+  const exists=(DIRECT_RTC_CONFIG.iceServers||[]).some(server=>{
+    const current=Array.isArray(server.urls)?server.urls:[server.urls];return urls.some(url=>current.includes(url))
+  });
+  if(!exists)DIRECT_RTC_CONFIG.iceServers.push(entry)
+}
+DIRECT_RTC_CONFIG.iceCandidatePoolSize=Math.max(4,Number(DIRECT_RTC_CONFIG.iceCandidatePoolSize)||0);
+
+async function directAlphaRouteKind(conn){
+  const pc=conn?.peerConnection;if(!pc?.getStats)return null;
+  try{
+    const stats=await pc.getStats();let pair=null;
+    for(const report of stats.values()){
+      if(report.type==='transport'&&report.selectedCandidatePairId){pair=stats.get(report.selectedCandidatePairId);break}
+    }
+    if(!pair){
+      for(const report of stats.values())if(report.type==='candidate-pair'&&report.state==='succeeded'&&(report.nominated||report.selected)){pair=report;break}
+    }
+    if(!pair)return null;
+    const local=stats.get(pair.localCandidateId),remote=stats.get(pair.remoteCandidateId);
+    return local?.candidateType==='relay'||remote?.candidateType==='relay'?'relay':'direct'
+  }catch{return null}
+}
+async function directAlphaReportRoute(conn){
+  await new Promise(resolve=>setTimeout(resolve,250));
+  const kind=await directAlphaRouteKind(conn);
+  if(kind==='relay'){
+    directConnectionBadge('online','Connected · relay fallback');
+    directSetStatus('Connected through encrypted TURN relay because a direct phone-to-phone route was unavailable.')
+  }else if(kind==='direct'){
+    directConnectionBadge('online','Direct connected');
+    directSetStatus('Connected directly between devices.')
+  }
+}
+const directBindPeerJsConnectionBeforeTurn=directBindPeerJsConnection;
+directBindPeerJsConnection=function(conn){
+  conn.on('open',()=>directAlphaReportRoute(conn));
+  return directBindPeerJsConnectionBeforeTurn(conn)
+};
+globalThis.directAlphaRouteKind=directAlphaRouteKind;
+
 // AI evaluation and decision policy. Hidden-information rules remain bounded here.
 function projectedScore(board,owner,c){
   if(board[c].length>=ROWS)return-Infinity;
@@ -3521,7 +3583,7 @@ init();
 
 <script>
 (function(){
-  const BUILD='Duel Modes Alpha 0.15.3';
+  const BUILD='Duel Modes Alpha 0.15.4';
   const REPO_ISSUES='https://github.com/typeivciv/clash4-beta/issues/new';
   const $=id=>document.getElementById(id);
   const openBtn=$('betaFeedbackButton'), overlay=$('betaFeedbackOverlay'), closeBtn=$('betaFeedbackClose');
@@ -3557,7 +3619,7 @@ init();
   function issueTitle(){
     const type=$('betaIssueType').value;
     const detail=$('betaWhatHappened').value.trim().replace(/\s+/g,' ').slice(0,72);
-    return `[Duel Modes 0.15.3][${type}] ${detail||'Tester report'}`;
+    return `[Duel Modes 0.15.4][${type}] ${detail||'Tester report'}`;
   }
   function githubUrl(){
     const body=[
