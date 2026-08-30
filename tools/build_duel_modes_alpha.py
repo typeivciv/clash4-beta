@@ -15,7 +15,7 @@ TURN_CSS=ROOT/'src/styles/51-duel-turn-alpha.css'
 DUEL_COLORS_CSS=ROOT/'src/styles/52-duel-colors-share.css'
 DUEL_POSTMATCH_CSS=ROOT/'src/styles/53-duel-postmatch.css'
 ALPHA_TESTER_CSS=ROOT/'src/styles/54-duel-alpha-tester.css'
-VERSION='0.16.0'
+VERSION='0.16.1'
 
 runpy.run_path(str(BASE_BUILDER),run_name='__main__')
 html=OUT.read_text(encoding='utf-8')
@@ -40,8 +40,8 @@ if html.count(unsafe_icon)!=1:
 html=html.replace(unsafe_icon,safe_icon,1)
 
 # PeerJS Cloud brokers only the initial Direct WebRTC connection. The established
-# DataConnection carries gameplay. The 0.16 package keeps the validated 5-minute host
-# invite / 90-second guest attempt split and adds tester-facing utilities only.
+# DataConnection carries gameplay. 0.16.1 preserves validated Direct recovery while
+# strengthening the shared Arcade/Duel result treatment and clarifying new-opponent UX.
 peerjs='<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>\n'
 extra_style='<style>\n'+TURN_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DUEL_COLORS_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DUEL_POSTMATCH_CSS.read_text(encoding='utf-8').rstrip()+'\n'+ALPHA_TESTER_CSS.read_text(encoding='utf-8').rstrip()+'\n</style>\n'
 if peerjs not in html:
