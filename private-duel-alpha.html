@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="description" content="Clash 4 mobile beta test build">
-<title>Clash 4 — Fog of War · Multiplayer Alpha 0.16.1</title>
+<title>Clash 4 — Fog of War · Multiplayer Alpha 0.16.2</title>
 
 
 
@@ -728,7 +728,7 @@ body.alpha-tester-modal-open{overflow:hidden}
 <body>
 <div id="appRoot" class="app">
 <header>
-  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Arcade RC1 · Multiplayer Alpha 0.16.1</div></div>
+  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Arcade RC1 · Multiplayer Alpha 0.16.2</div></div>
   <div id="fogTurnPill" class="fogTurnPill neutral"><span class="fogTurnDot"></span><span id="fogTurnText">Setup</span></div>
   <div class="topActions">
     <div id="matchDifficultyBadge" class="matchDifficultyBadge" title="Difficulty is chosen before the match"><span>AI</span><strong id="matchDifficultyLabel">Normal</strong></div>
@@ -862,7 +862,7 @@ body.alpha-tester-modal-open{overflow:hidden}
       <div class="homeTagline">Connect Four. Win the Clash.</div>
       <p class="homeLede">Build four in a row while Rock–Paper–Scissors combat, Decoys, and hidden enemy identities turn every column into a tactical gamble.</p>
       <div class="homeActions"><button id="homePlayButton" class="homePlay" type="button"><span>Play</span><small>Normal · Default colors · Random start</small></button><button id="homeDuelButton" class="homeDuel" type="button"><span>Multiplayer</span><small>Invite a player · Pass &amp; Play · Alpha test</small></button><button id="homeCustomizeButton" class="homeCustomize" type="button"><span>Customize Match</span><small>Difficulty · first move · colors · tips</small></button><button id="homeRulesButton" class="homeSecondary" type="button">How to Play</button></div>
-      <div class="homeMeta"><span>Duel Modes Alpha · 0.16.1</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
+      <div class="homeMeta"><span>Duel Modes Alpha · 0.16.2</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
     </div>
     <div class="homeHero" aria-hidden="true"><div class="homeHeroGlow"></div><div class="heroBoard"><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">🪨</span></div><div class="heroHole"><span class="heroPiece ai ">📄</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">✂️</span></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"><span class="heroPiece player ">📄</span></div><div class="heroHole"><span class="heroPiece ai ">🪨</span></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"><span class="heroPiece ai ">✂️</span></div></div><div class="heroFog"></div></div>
   </section>
@@ -2874,7 +2874,7 @@ directBindPeerJsConnection=function(conn){
 };
 globalThis.directAlphaRouteKind=directAlphaRouteKind;
 
-// Duel 0.15.5: independent Direct Duel colors + one-scan link sharing.
+// Multiplayer Alpha 0.16.2: independent Direct Duel colors + resilient one-link sharing.
 // Each seat owns its own color choice. The exact same preset cannot be locked by both
 // players because board ownership must remain visually distinguishable.
 'use strict';
@@ -2957,17 +2957,22 @@ duelBeginActive=function(payload){
   return result
 };
 
-// Nearby QR and text sharing are the same invite. Keep the raw peer id hidden, but expose
-// Copy Link / Text or Share Link beneath the QR so Player 1 can invite someone remotely.
+// Nearby QR and remote sharing are the exact same HTTPS invite. Do not key visibility to
+// presentation copy: Alpha headings can change without changing the pairing state. If the
+// one-scan stage contains a real c4peer invite, Player 1 always gets Copy Link + Share Link.
+function duelHasLiveNearbyInvite(){
+  const value=String(directEl('duelDirectSignal')?.value||'');
+  return directDuel?.pairing==='nearby'&&directPeerSession?.role==='host'&&value.startsWith('http')&&value.includes(`#${DIRECT_PEER_JOIN_PARAM}=`)
+}
 const directNearbyStageBeforeShareLinks=directNearbyStage;
 directNearbyStage=function(options={}){
-  const result=directNearbyStageBeforeShareLinks(options);const title=String(options.title||'');
+  const result=directNearbyStageBeforeShareLinks(options);
   const label=directEl('duelDirectSignal')?.closest('.duelSignalLabel'),actions=directEl('duelDirectShare')?.parentElement;
-  if(title.includes('Scan once to join')){
+  if(duelHasLiveNearbyInvite()){
     if(label)label.hidden=true;if(actions)actions.hidden=false;
     const copyBtn=directEl('duelDirectCopy'),shareBtn=directEl('duelDirectShare'),copy=directEl('duelDirectStageCopy');
-    if(copyBtn)copyBtn.textContent='Copy Link';if(shareBtn)shareBtn.textContent='Text / Share Link';
-    if(copy)copy.textContent='Player 2 can scan this QR with the normal Camera app or open the same Clash 4 invite link you send by text, Messages, Discord, or another app.'
+    if(copyBtn)copyBtn.textContent='Copy Link';if(shareBtn)shareBtn.textContent='Share Link';
+    if(copy)copy.textContent='Player 2 can scan this QR with the normal Camera app or open the same Clash 4 invite link you send by text, Messages, Discord, email, or another app.'
   }else if(directDuel?.pairing==='nearby'){
     if(actions)actions.hidden=true
   }
@@ -3156,7 +3161,7 @@ document.addEventListener('click',event=>{
 duelPostMatchEnsureVisual();
 
 'use strict';
-const ALPHA_TESTER_VERSION='0.16.1';
+const ALPHA_TESTER_VERSION='0.16.2';
 function alphaTesterEl(id){return document.getElementById(id)}
 function alphaTesterMode(){
   if(typeof matchMode!=='undefined'&&matchMode==='arcade')return'Arcade / Solo';
@@ -4192,7 +4197,7 @@ init();
 
 <script>
 (function(){
-  const BUILD='Multiplayer Alpha 0.16.1';
+  const BUILD='Multiplayer Alpha 0.16.2';
   const REPO_ISSUES='https://github.com/typeivciv/clash4-beta/issues/new';
   const $=id=>document.getElementById(id);
   const openBtn=$('betaFeedbackButton'), overlay=$('betaFeedbackOverlay'), closeBtn=$('betaFeedbackClose');
@@ -4228,7 +4233,7 @@ init();
   function issueTitle(){
     const type=$('betaIssueType').value;
     const detail=$('betaWhatHappened').value.trim().replace(/\s+/g,' ').slice(0,72);
-    return `[Multiplayer Alpha 0.16.1][${type}] ${detail||'Tester report'}`;
+    return `[Multiplayer Alpha 0.16.2][${type}] ${detail||'Tester report'}`;
   }
   function githubUrl(){
     const body=[
