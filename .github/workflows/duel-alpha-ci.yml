@@ -1,4 +1,4 @@
-name: Private Duel Alpha CI
+name: Duel Modes Alpha CI
 
 on:
   push:
@@ -9,6 +9,10 @@ on:
       - 'src/js/12-duel-projection.js'
       - 'src/js/13-duel-client.js'
       - 'src/js/14-duel-bindings.js'
+      - 'src/js/15-duel-local-core.js'
+      - 'src/js/16-duel-direct-webrtc.js'
+      - 'src/js/17-duel-pass-play.js'
+      - 'src/js/18-duel-router.js'
       - 'src/styles/50-private-duel.css'
       - 'src/ui/private-duel-lobby.html'
       - 'tools/build_private_duel_alpha.py'
@@ -22,6 +26,10 @@ on:
       - 'src/js/12-duel-projection.js'
       - 'src/js/13-duel-client.js'
       - 'src/js/14-duel-bindings.js'
+      - 'src/js/15-duel-local-core.js'
+      - 'src/js/16-duel-direct-webrtc.js'
+      - 'src/js/17-duel-pass-play.js'
+      - 'src/js/18-duel-router.js'
       - 'src/styles/50-private-duel.css'
       - 'src/ui/private-duel-lobby.html'
       - 'tools/build_private_duel_alpha.py'
@@ -47,11 +55,19 @@ jobs:
           node --check src/js/12-duel-projection.js
           node --check src/js/13-duel-client.js
           node --check src/js/14-duel-bindings.js
+          node --check src/js/15-duel-local-core.js
+          node --check src/js/16-duel-direct-webrtc.js
+          node --check src/js/17-duel-pass-play.js
+          node --check src/js/18-duel-router.js
           python3 -m py_compile tools/build_private_duel_alpha.py
       - name: Client ordering contract
         run: node tests/test-duel-client-contract.mjs
       - name: Server update-history integration
         run: node tests/test-duel-server-history.mjs
+      - name: Local authority and Fog parity
+        run: node tests/test-duel-local-core.mjs
+      - name: Direct and Pass transport contracts
+        run: node tests/test-duel-mode-contract.mjs
       - name: Build isolated Alpha client
         run: python3 tools/build_private_duel_alpha.py
       - name: Generated client contract
@@ -63,7 +79,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add private-duel-alpha.html
-            git commit -m "Build Private Duel Alpha 0.14.1 staging client"
+            git commit -m "Build Duel Modes Alpha 0.15.0 staging client"
             git push
           else
             echo "Staging client already matches canonical sources."
