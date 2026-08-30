@@ -66,13 +66,14 @@ function duelPostMatchActionControls(){
     return
   }
   if(matchMode!=='duel')return;
+  const labelInviteNewPlayer=b=>{b.textContent='Invite New Player';b.setAttribute('aria-label','Invite a new player; matchmaking is not available yet');b.title='Create a new invite for another player — matchmaking is not available yet.';b.disabled=false};
   if(directDuel?.active){
     const local=directDuel.seat,remote=other(local),localVoted=!!directRematchVotes[local],remoteVoted=!!directRematchVotes[remote];
     for(const b of rematchButtons){b.textContent=localVoted?'Waiting…':remoteVoted?'Accept Rematch':'Rematch';b.disabled=localVoted||directRematchStarting}
-    for(const b of newMatchButtons){b.textContent='Play Someone Else';b.setAttribute('aria-label','Play against someone else');b.disabled=false}
+    for(const b of newMatchButtons)labelInviteNewPlayer(b)
   }else{
-    for(const b of rematchButtons){b.textContent='Play Someone Else';b.setAttribute('aria-label','Play against someone else');b.disabled=false}
-    for(const b of newMatchButtons){b.textContent='Play Someone Else';b.setAttribute('aria-label','Play against someone else');b.disabled=false}
+    for(const b of rematchButtons)labelInviteNewPlayer(b)
+    for(const b of newMatchButtons)labelInviteNewPlayer(b)
   }
 }
 function duelBuildFinishReplay(){
