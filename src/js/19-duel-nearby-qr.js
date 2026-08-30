@@ -21,7 +21,7 @@ function directNearbyStage({title,copy,status,showQr=true}){
   const titleEl=directEl('duelDirectStageTitle'),copyEl=directEl('duelDirectStageCopy'),qr=directEl('duelDirectQr');
   if(titleEl)titleEl.textContent=title;if(copyEl)copyEl.textContent=copy;if(qr)qr.hidden=!showQr;directSetStatus(status||'');queueFit()
 }
-function directNearbyJoinLink(peerId){return `${location.origin}${location.pathname}#${DIRECT_PEER_JOIN_PARAM}=${encodeURIComponent(peerId)}`}
+function directNearbyJoinLink(peerId){return `${location.origin}${location.pathname}${location.search}#${DIRECT_PEER_JOIN_PARAM}=${encodeURIComponent(peerId)}`}
 function directReadNearbyPeerId(){
   const raw=String(location.hash||'').replace(/^#/,'');if(!raw)return'';
   const value=new URLSearchParams(raw).get(DIRECT_PEER_JOIN_PARAM)||'';
