@@ -8,7 +8,7 @@ assert.ok(publicIndex.includes('<title>Clash 4 — Mobile Beta 0.13.3</title>'),
 assert.ok(!publicIndex.includes('id="homeDuelButton"'),'public beta must not expose unfinished Duel UI');
 
 for(const required of [
-  'Duel Modes Alpha 0.15.6',
+  'Duel Modes Alpha 0.15.7',
   'id="homeDuelButton"',
   'id="duelLobbyPanel"',
   'id="duelDirectMode"',
@@ -48,9 +48,15 @@ for(const required of [
   'finishReplay={steps:recentInteractions.slice(-2).map(cloneInteractionForReplay)}',
   'function duelPostMatchReplayControls()',
   'function duelPostMatchAnimate()',
+  "endText.textContent='YOU WIN'",
+  "endText.textContent='YOU LOSE'",
+  "endReason.textContent='TRY AGAIN · Review the finish or start a New Duel.'",
   'DUEL VICTORY',
   'DUEL DEFEAT',
   'DUEL DRAW',
+  'function duelResetCompletedMatchUi()',
+  'resetMatchRuntime(H,{isReady:false})',
+  "coinOverlay.classList.add('show')",
   '#restartBottom,#reviewRestart,#sidebarRematch',
   'globalThis.duelRouteNewDuel?.()',
   '.duelResultAnimation',
@@ -84,4 +90,4 @@ for(let i=0;i<scripts.length;i++){
   catch(error){throw new Error(`generated script ${i+1} failed syntax: ${error.message}`)}
 }
 
-console.log(`PASS generated Duel Modes Alpha 0.15.6 build (${ids.length} unique DOM ids, ${scripts.length} script blocks)`);
+console.log(`PASS generated Duel Modes Alpha 0.15.7 build (${ids.length} unique DOM ids, ${scripts.length} script blocks)`);
