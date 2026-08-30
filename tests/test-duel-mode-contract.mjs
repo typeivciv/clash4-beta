@@ -30,7 +30,7 @@ for(const token of [
   "pc.iceConnectionState==='failed'","directConnectionBadge('error','Direct route blocked')",
   'function directRecoveryActions(','function directShowRecoveryForRole(','function directRetireHostInvite(',
   'function directRefreshNearbyInvite()','function directRetryNearbyConnection()',
-  "button.textContent='Refresh Invite'","button.textContent='Retrying…'",
+  "refreshButton.textContent='Refresh Invite'","button.textContent='Retrying…'",
   "directEl('duelDirectRefreshInvite')?.addEventListener('click',directRefreshNearbyInvite)",
   "directEl('duelDirectRetryConnection')?.addEventListener('click',directRetryNearbyConnection)",
   "if(qr){qr.innerHTML='';qr.hidden=true}if(field)field.value=''",
