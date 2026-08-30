@@ -38,7 +38,7 @@ for(const required of [
   'Connected · relay fallback',
   'encrypted TURN relay',
   "let duelSeatColors={human:'blue',ai:'orange'}",
-  'id="duelColorSetup"',
+  "panel.id='duelColorSetup'",
   'Choose independently',
   'Text / Share Link',
   'Copy Link',
