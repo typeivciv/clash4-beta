@@ -33,7 +33,14 @@ for(const token of [
   'directPeerSession.peer?.disconnect()',
   'No return QR or service URL is required.',
   'normal Camera app',
-  'directBootNearbyPeerUx();'
+  'directBootNearbyPeerUx();',
+  "stun:stun.cloudflare.com:3478",
+  'function directObservePeerConnection(conn)',
+  'function directPeerRouteFailureMessage()',
+  "pc.iceConnectionState==='failed'",
+  "directConnectionBadge('error','Direct route blocked')",
+  'same non-guest Wi-Fi',
+  'TURN relay or Online Room fallback'
 ])assert.ok(nearby.includes(token),`Nearby PeerJS contract missing ${token}`);
 assert.ok(!nearby.includes('fetch('),'Nearby PeerJS pairing must not depend on the Clash 4 HTTP backend');
 for(const forbidden of ['/api/direct/signals','/api/lobbies','/move','projectDuelState','applyLocalDuelMove','resolveRaw','BroadcastChannel','DIRECT_RETURN_KEY','duelDirectServerInput','Scan Player 2 Return QR']){
@@ -51,4 +58,4 @@ assert.ok(lobby.includes('Direct Duel is intended for trusted opponents'),'Direc
 for(const [name,source] of [['direct',direct],['nearby',nearby],['pass',pass],['router',router]]){
   try{new Function(source)}catch(error){throw new Error(`${name} module syntax failed: ${error.message}`)}
 }
-console.log('PASS Direct Duel + one-scan Nearby PeerJS + Pass & Play transport contracts');
+console.log('PASS Direct Duel + one-scan Nearby diagnostics + Pass & Play transport contracts');
