@@ -15,3 +15,9 @@ services:
         value: 500
       - key: RATE_LIMIT
         value: 240
+      - key: UPDATE_HISTORY_LIMIT
+        value: 8
+      - key: DIRECT_SIGNAL_TTL_MS
+        value: 180000
+      - key: MAX_SIGNAL_SESSIONS
+        value: 1000
