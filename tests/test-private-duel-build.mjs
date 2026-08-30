@@ -3,9 +3,11 @@ import fs from 'node:fs';
 
 const publicIndex=fs.readFileSync('index.html','utf8');
 const alpha=fs.readFileSync('private-duel-alpha.html','utf8');
+const testerAlpha=fs.readFileSync('multiplayer-alpha.html','utf8');
 
 assert.ok(publicIndex.includes('<title>Clash 4 — Mobile Beta 0.13.3</title>'),'public index must remain frozen on 0.13.3');
 assert.ok(!publicIndex.includes('id="homeDuelButton"'),'public beta must not expose unfinished Multiplayer Alpha UI');
+assert.equal(testerAlpha,alpha,'clean multiplayer-alpha.html tester entry must exactly match the canonical generated Alpha build');
 
 for(const required of [
   'Multiplayer Alpha 0.16.0','id="homeDuelButton"','<span>Multiplayer</span><small>Invite a player · Pass &amp; Play · Alpha test</small>','id="duelLobbyPanel"','id="duelDirectMode"','id="duelPassMode"','id="duelOnlineMode"','Play With Someone','Create Duel','More Options','Hosted Room','Advanced · Manual Connection','Alpha tester checklist','id="alphaTesterBar"','id="alphaConnectionHelp"','id="alphaCopyTestInfo"','id="alphaReportProblem"','id="alphaTesterModal"',
@@ -22,4 +24,4 @@ assert.deepEqual(duplicates,[],`duplicate DOM ids: ${duplicates.join(', ')}`);
 const scripts=[...alpha.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]);
 assert.ok(scripts.length>=4,'expected QR + PeerJS dependencies plus generated application script');
 for(let i=0;i<scripts.length;i++){if(!scripts[i].trim())continue;try{new Function(scripts[i])}catch(error){throw new Error(`generated script ${i+1} failed syntax: ${error.message}`)}}
-console.log(`PASS generated Multiplayer Alpha 0.16.0 tester package (${ids.length} unique DOM ids, ${scripts.length} script blocks)`);
+console.log(`PASS generated Multiplayer Alpha 0.16.0 tester package + clean alias (${ids.length} unique DOM ids, ${scripts.length} script blocks)`);
