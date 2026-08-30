@@ -24,6 +24,10 @@
           <button id="duelDirectRemote" class="duelChoiceCard" type="button"><strong>Long Distance · Create</strong><small>Share an invite through text, Discord, email, or another app.</small></button>
           <button id="duelDirectJoin" class="duelChoiceCard" type="button"><strong>Long Distance · Join</strong><small>Paste an invite sent by Player 1.</small></button>
         </div>
+        <div class="duelServerBox">
+          <div><strong>Pairing service · Player 1 only</strong><small>Save once. Nearby QR sends this service location to Player 2 automatically; it never carries match moves.</small></div>
+          <div class="duelServerRow"><input id="duelDirectServerInput" type="url" placeholder="https://your-duel-server.example" aria-label="Direct Duel pairing service URL"><button id="duelDirectSaveServer" type="button">Save</button></div>
+        </div>
         <p class="duelModeNote"><strong>Nearby pairing:</strong> a short-lived signaling slot carries only the WebRTC offer and answer. It does not receive moves or game state.</p>
         <p class="duelTrustNote"><strong>Alpha trust model:</strong> Direct Duel is intended for trusted opponents because Player 1's browser acts as the match authority. Online Room provides stronger hidden-state enforcement.</p>
       </div>
