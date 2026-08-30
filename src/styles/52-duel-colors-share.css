@@ -1,0 +1,18 @@
+/* 0.15.5 Direct Duel independent player colors. */
+.duelColorSetup{display:grid;gap:9px;padding:12px;border:1px solid #34445b;border-radius:14px;background:linear-gradient(155deg,rgba(18,29,47,.92),rgba(10,18,31,.92))}
+.duelColorSetup[hidden]{display:none!important}
+.duelColorHead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.duelColorHead>div:first-child{display:grid;gap:2px}
+.duelColorHead span{font-size:8px;letter-spacing:.12em;color:#7f91aa;font-weight:900}
+.duelColorHead strong{font-size:12px;color:#e8f0fb}
+.duelOpponentColor{display:flex;align-items:center;gap:6px;padding:6px 8px;border:1px solid #38475d;border-radius:999px;background:#0b1422;color:#9eb0c7;font-size:9px;font-weight:800}
+.duelOpponentColor i{display:block;width:12px;height:12px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
+.duelColorSwatches{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
+.duelColorChoice{min-width:0;display:grid;justify-items:center;gap:4px;padding:7px 3px;border:1px solid #35445a;border-radius:10px;background:#101a29;color:#93a5bb;font-size:8px;font-weight:800;cursor:pointer}
+.duelColorChoice i{display:block;width:23px;height:23px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(255,255,255,.13),0 2px 7px rgba(0,0,0,.28)}
+.duelColorChoice:hover{border-color:#7086a4;filter:brightness(1.06)}
+.duelColorChoice.selected{border-color:#9db9dc;background:#17263a;color:#eef5ff;box-shadow:inset 0 0 0 1px rgba(157,185,220,.2)}
+.duelColorChoice:disabled{cursor:default;opacity:.72}
+.duelColorStatus{margin:0;color:#7f91aa;font-size:9px;line-height:1.4;text-align:center}
+.duelColorStatus.error{color:#ffb67c}
+@media(max-width:560px){.duelColorSwatches{grid-template-columns:repeat(4,minmax(0,1fr))}.duelColorHead{align-items:flex-start}.duelOpponentColor{flex:0 0 auto}}
