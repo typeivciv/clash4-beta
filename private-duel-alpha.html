@@ -2494,6 +2494,7 @@ globalThis.bindPrivateDuelUi=bindPrivateDuelUi;
 const DIRECT_PEER_JOIN_PARAM='c4peer';
 const DIRECT_PEER_TIMEOUT_MS=90_000;
 let directPeerSession={peer:null,conn:null,role:null,opened:false,deadline:0,timer:null,lastIce:'new',lastConnection:'new'};
+let directNearbyRetryPeerId='';
 
 // Keep host/LAN candidates and broaden STUN discovery. This still prefers a true direct
 // connection; it does not add a relay/TURN server or put game traffic on a backend.
@@ -2512,10 +2513,14 @@ function directNearbyManualUi(show){
   const label=directEl('duelDirectSignal')?.closest('.duelSignalLabel'),actions=directEl('duelDirectCopy')?.parentElement,accept=directEl('duelDirectAcceptRow');
   if(label)label.hidden=!show;if(actions)actions.hidden=!show;if(accept)accept.hidden=!show
 }
-function directRefreshInviteUi(show){
-  const row=directEl('duelDirectRefreshRow'),button=directEl('duelDirectRefreshInvite');
-  if(row)row.hidden=!show;if(button){button.disabled=false;button.textContent='Refresh Invite'}
+function directRecoveryActions({refresh=false,retry=false}={}){
+  const row=directEl('duelDirectRefreshRow'),refreshButton=directEl('duelDirectRefreshInvite'),retryButton=directEl('duelDirectRetryConnection');
+  if(row)row.hidden=!(refresh||retry);
+  if(refreshButton){refreshButton.hidden=!refresh;refreshButton.disabled=false;refreshButton.textContent='Refresh Invite'}
+  if(retryButton){retryButton.hidden=!retry;retryButton.disabled=false;retryButton.textContent='Retry Connection'}
 }
+function directRefreshInviteUi(show){directRecoveryActions({refresh:show})}
+function directRetryConnectionUi(show){directRecoveryActions({retry:show})}
 function directNearbyStage({title,copy,status,showQr=true}){
   directEl('duelDirectActions').hidden=true;directEl('duelDirectStage').hidden=false;directNearbyManualUi(false);
   const titleEl=directEl('duelDirectStageTitle'),copyEl=directEl('duelDirectStageCopy'),qr=directEl('duelDirectQr');
@@ -2534,27 +2539,34 @@ function directClearNearbyHash(){
 function directPeerErrorMessage(error){
   const type=String(error?.type||'');
   if(type==='peer-unavailable')return 'Player 1’s invite is no longer available. Player 1 should refresh the Direct invite and send the new QR or link.';
-  if(type==='network'||type==='server-error'||type==='socket-error'||type==='socket-closed')return 'Could not reach the temporary Direct pairing broker. Check internet access, then refresh the invite and try again.';
+  if(type==='network'||type==='server-error'||type==='socket-error'||type==='socket-closed')return 'Could not reach the temporary Direct pairing broker. Check internet access, then retry or refresh the invite.';
   if(type==='browser-incompatible')return 'This browser does not support the WebRTC features needed for Direct Duel.';
   if(type==='webrtc')return directPeerRouteFailureMessage();
   return error?.message||'Direct pairing failed before a connection could open.'
 }
 function directPeerRouteFailureMessage(){
   const ice=directPeerSession.lastIce||'unknown',connection=directPeerSession.lastConnection||'unknown';
-  return `Player 1 was found, but the phones could not establish the direct WebRTC route (ICE: ${ice}, connection: ${connection}). Try both phones on the same non-guest Wi-Fi and disable VPN/Private Relay. If it still fails, this network needs a TURN relay or Online Room fallback.`
+  return `Player 1 was found, but the phones could not establish the direct WebRTC route (ICE: ${ice}, connection: ${connection}). Change networks if needed, then use Refresh Invite on Player 1 or Retry Connection on Player 2. A restrictive network may still need TURN or Hosted Room.`
 }
 function directSetPeerRole(role){
   directDuel.role=role;directDuel.pairing='nearby';directDuel.seat=role==='host'?H:A;duelSession.seat=directDuel.seat;directPeerSession.role=role
 }
+function directShowRecoveryForRole(role=directPeerSession.role){
+  if(role==='host')directRefreshInviteUi(true);
+  else if(role==='guest'&&directNearbyRetryPeerId)directRetryConnectionUi(true)
+}
 function directPeerChannelAdapter(conn){
   const channel={readyState:'connecting',onopen:null,onmessage:null,onclose:null,onerror:null,
     send(value){conn.send(value)},close(){try{conn.close()}catch{}}};
-  conn.on('open',()=>{channel.readyState='open';directPeerSession.opened=true;if(directPeerSession.timer)clearTimeout(directPeerSession.timer);directRefreshInviteUi(false);channel.onopen?.();
+  conn.on('open',()=>{channel.readyState='open';directPeerSession.opened=true;if(directPeerSession.timer)clearTimeout(directPeerSession.timer);directRecoveryActions();directNearbyRetryPeerId='';channel.onopen?.();
     // Existing P2P connections stay alive after PeerJS signaling disconnects.
     try{directPeerSession.peer?.disconnect()}catch{}
   });
   conn.on('data',data=>channel.onmessage?.({data:typeof data==='string'?data:JSON.stringify(data)}));
-  conn.on('close',()=>{channel.readyState='closed';channel.onclose?.()});
+  conn.on('close',()=>{
+    const wasOpened=directPeerSession.opened,role=directPeerSession.role;channel.readyState='closed';
+    if(!wasOpened)directShowRecoveryForRole(role);channel.onclose?.()
+  });
   conn.on('error',error=>channel.onerror?.(error));
   return channel
 }
@@ -2568,7 +2580,7 @@ function directObservePeerConnection(conn){
     if(pc.iceConnectionState==='connected'||pc.iceConnectionState==='completed')directSetStatus('Direct network path found. Opening the game connection…');
     if(pc.iceConnectionState==='failed'||pc.connectionState==='failed'){
       directConnectionBadge('error','Direct route blocked');
-      directSetStatus(directPeerRouteFailureMessage(),{error:true})
+      directSetStatus(directPeerRouteFailureMessage(),{error:true});directShowRecoveryForRole()
     }
   };
   pc.addEventListener?.('iceconnectionstatechange',update);pc.addEventListener?.('connectionstatechange',update);update()
@@ -2577,53 +2589,61 @@ function directBindPeerJsConnection(conn){
   if(directPeerSession.conn&&directPeerSession.conn!==conn){try{conn.close()}catch{};return}
   directPeerSession.conn=conn;directDuel.pc={close(){directPeerReset()}};
   const channel=directPeerChannelAdapter(conn);directBindChannel(channel);
-  // Replace the core's deliberately generic channel error with actionable Nearby diagnostics.
+  // Replace the core's deliberately generic channel error with actionable Direct diagnostics.
   channel.onerror=error=>{
     directConnectionBadge('error','Direct route failed');
-    directSetStatus(directPeerErrorMessage(error),{error:true})
+    directSetStatus(directPeerErrorMessage(error),{error:true});directShowRecoveryForRole()
   };
   directObservePeerConnection(conn);directSetStatus('Peer found. Establishing the direct connection…')
 }
-function directExpireHostInvite(){
+function directRetireHostInvite({title='Invite expired',copy='This invite is no longer usable. Refresh it to generate a new QR code and share link.',status='Refresh the invite before Player 2 joins.'}={}){
   const qr=directEl('duelDirectQr'),field=directEl('duelDirectSignal');
   directPeerReset();
   if(qr){qr.innerHTML='';qr.hidden=true}if(field)field.value='';
-  directNearbyStage({title:'Invite expired',copy:'No player joined within 90 seconds. Refresh the invite to generate a new QR code and share link.',status:'This QR and link have expired. Refresh before Player 2 joins.',showQr:false});
-  directRefreshInviteUi(true)
+  directNearbyStage({title,copy,status,showQr:false});directRefreshInviteUi(true)
 }
 function directCreatePeer(role){
   if(!globalThis.Peer)throw new Error('Nearby pairing library did not load. Refresh and try again.');
   directSetPeerRole(role);
   const peer=new Peer(undefined,{debug:0,config:DIRECT_RTC_CONFIG});directPeerSession.peer=peer;directPeerSession.deadline=Date.now()+DIRECT_PEER_TIMEOUT_MS;
-  peer.on('error',error=>{if(directPeerSession.opened)return;directConnectionBadge('error','Pairing failed');directSetStatus(directPeerErrorMessage(error),{error:true})});
-  peer.on('disconnected',()=>{if(!directPeerSession.opened)directConnectionBadge('offline','Pairing interrupted')});
+  peer.on('error',error=>{
+    if(directPeerSession.opened)return;
+    const failedRole=directPeerSession.role;directConnectionBadge('error','Pairing failed');directSetStatus(directPeerErrorMessage(error),{error:true});directShowRecoveryForRole(failedRole)
+  });
+  peer.on('disconnected',()=>{
+    if(directPeerSession.opened)return;
+    const interruptedRole=directPeerSession.role;directConnectionBadge('offline','Pairing interrupted');
+    directSetStatus(interruptedRole==='guest'?'Pairing was interrupted. Change networks if needed, then tap Retry Connection.':'Pairing was interrupted. Change networks if needed, then refresh the invite.',{error:true});directShowRecoveryForRole(interruptedRole)
+  });
   directPeerSession.timer=setTimeout(()=>{if(!directPeerSession.opened){
     const role=directPeerSession.role,sawIce=directPeerSession.lastIce&&directPeerSession.lastIce!=='new';
     directConnectionBadge('error','Pairing timed out');
-    if(role==='host'&&!sawIce){directExpireHostInvite();return}
-    directSetStatus(sawIce?directPeerRouteFailureMessage():'Direct pairing timed out before the phones found each other. Ask Player 1 to refresh the invite and try again.',{error:true});directPeerReset();directRefreshInviteUi(false)
+    if(role==='host'){
+      directRetireHostInvite({title:'Pairing timed out',copy:'Player 2 did not connect within 90 seconds. Refresh Invite creates a completely new QR code and share link.',status:sawIce?'The previous network attempt failed. Change networks if needed, then refresh the invite.':'The old QR and link are retired. Refresh to create a new invite.'});return
+    }
+    directSetStatus(sawIce?directPeerRouteFailureMessage():'Direct pairing timed out before the phones found each other. Change networks if needed, then tap Retry Connection.',{error:true});directPeerReset();directRetryConnectionUi(!!directNearbyRetryPeerId)
   }},DIRECT_PEER_TIMEOUT_MS);
   return peer
 }
 
 const directClosePeerBeforePeerJs=directClosePeer;
-directClosePeer=function(options={}){directRefreshInviteUi(false);directPeerReset();return directClosePeerBeforePeerJs(options)};
+directClosePeer=function(options={}){directRecoveryActions();directNearbyRetryPeerId='';directPeerReset();return directClosePeerBeforePeerJs(options)};
 globalThis.directClosePeer=directClosePeer;
 
 async function directCreateNearby(){
-  directOpenPanel();directRefreshInviteUi(false);directPeerReset();directDuel.pairing='nearby';
-  directNearbyStage({title:'Preparing one-scan invite…',copy:'Player 2 will scan one QR with the normal Camera app. No return QR or service URL is required.',status:'Connecting to the temporary pairing broker…',showQr:false});
+  directOpenPanel();directRecoveryActions();directNearbyRetryPeerId='';directPeerReset();directDuel.pairing='nearby';
+  directNearbyStage({title:'Preparing one-scan invite…',copy:'Player 2 can scan one QR or open the same invite link. No return QR or service URL is required.',status:'Connecting to the temporary pairing broker…',showQr:false});
   try{
     const peer=directCreatePeer('host');
     peer.on('connection',conn=>directBindPeerJsConnection(conn));
     peer.on('open',id=>{
       const link=directNearbyJoinLink(id),qr=directEl('duelDirectQr'),field=directEl('duelDirectSignal');
       if(field)field.value=link;if(qr){qr.hidden=false;directRenderQr(link)}
-      directRefreshInviteUi(false);
-      directNearbyStage({title:'Player 2 · Scan once to join',copy:'Player 2: use the normal Camera app, scan this QR, and tap the Clash 4 link. Both phones will connect automatically.',status:'Waiting for Player 2 to scan…',showQr:true});
+      directNearbyStage({title:'Player 2 · Scan or open link',copy:'Player 2 can scan this QR with the Camera app or open the Clash 4 link you send. If your network changes or pairing gets stuck, Player 1 can refresh this invite at any time.',status:'Waiting for Player 2…',showQr:true});
+      directRefreshInviteUi(true);
       if(!globalThis.QRCode)directNearbyManualUi(true)
     })
-  }catch(e){directConnectionBadge('error','Pairing failed');directSetStatus(directPeerErrorMessage(e),{error:true});directPeerReset()}
+  }catch(e){directConnectionBadge('error','Pairing failed');directSetStatus(directPeerErrorMessage(e),{error:true});directPeerReset();directRefreshInviteUi(true)}
 }
 globalThis.directCreateNearby=directCreateNearby;
 function directRefreshNearbyInvite(){
@@ -2634,16 +2654,23 @@ function directRefreshNearbyInvite(){
 globalThis.directRefreshNearbyInvite=directRefreshNearbyInvite;
 
 async function directJoinNearbyFromPeerId(hostPeerId){
-  directOpenPanel();directRefreshInviteUi(false);directPeerReset();
-  directNearbyStage({title:'Joining Player 1…',copy:'Clash 4 is connecting directly to Player 1. Keep this screen open.',status:'Opening the peer-to-peer connection…',showQr:false});
+  if(!/^[A-Za-z0-9_-]{1,128}$/.test(String(hostPeerId||'')))return;
+  directNearbyRetryPeerId=hostPeerId;directOpenPanel();directRecoveryActions();directPeerReset();
+  directNearbyStage({title:'Joining Player 1…',copy:'Clash 4 is connecting directly to Player 1. If you change networks, you can retry this same invite without rescanning while it remains active.',status:'Opening the peer-to-peer connection…',showQr:false});
   try{
     const peer=directCreatePeer('guest');
     peer.on('open',()=>{
       directSetStatus('Pairing broker connected. Finding Player 1…');
       const conn=peer.connect(hostPeerId,{reliable:true,serialization:'json'});directBindPeerJsConnection(conn)
     })
-  }catch(e){directConnectionBadge('error','Pairing failed');directSetStatus(directPeerErrorMessage(e),{error:true});directPeerReset()}
+  }catch(e){directConnectionBadge('error','Pairing failed');directSetStatus(directPeerErrorMessage(e),{error:true});directPeerReset();directRetryConnectionUi(true)}
 }
+function directRetryNearbyConnection(){
+  if(directDuel?.active||!directNearbyRetryPeerId)return;
+  const peerId=directNearbyRetryPeerId,button=directEl('duelDirectRetryConnection');if(button){button.disabled=true;button.textContent='Retrying…'}
+  directJoinNearbyFromPeerId(peerId)
+}
+globalThis.directRetryNearbyConnection=directRetryNearbyConnection;
 async function directHandleNearbyLaunch(){
   const peerId=directReadNearbyPeerId();if(!peerId)return false;directClearNearbyHash();await directJoinNearbyFromPeerId(peerId);return true
 }
@@ -2657,6 +2684,7 @@ globalThis.directNearbyJoinLink=directNearbyJoinLink;
 globalThis.directHandleNearbyLaunch=directHandleNearbyLaunch;
 globalThis.directBootNearbyPeerUx=directBootNearbyPeerUx;
 directEl('duelDirectRefreshInvite')?.addEventListener('click',directRefreshNearbyInvite);
+directEl('duelDirectRetryConnection')?.addEventListener('click',directRetryNearbyConnection);
 directBootNearbyPeerUx();
 
 // Alpha TURN fallback for Nearby Direct Duel.
