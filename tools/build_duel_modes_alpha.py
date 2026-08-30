@@ -7,6 +7,7 @@ BASE_BUILDER=ROOT/'tools/build_private_duel_alpha.py'
 OUT=ROOT/'private-duel-alpha.html'
 NEARBY_QR=ROOT/'src/js/19-duel-nearby-qr.js'
 TURN_ALPHA=ROOT/'src/js/20-duel-turn-alpha.js'
+TURN_CSS=ROOT/'src/styles/51-duel-turn-alpha.css'
 VERSION='0.15.4'
 
 runpy.run_path(str(BASE_BUILDER),run_name='__main__')
@@ -19,9 +20,10 @@ html=html.replace('0.15.0',VERSION)
 # DataConnection carries gameplay. Alpha 0.15.4 also supplies staging TURN fallback
 # candidates for networks that cannot form a direct ICE path.
 peerjs='<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>\n'
+turn_style='<style>\n'+TURN_CSS.read_text(encoding='utf-8').rstrip()+'\n</style>\n'
 if peerjs not in html:
     if html.count('</head>')!=1:raise SystemExit('PeerJS injection: expected one </head>')
-    html=html.replace('</head>',peerjs+'</head>',1)
+    html=html.replace('</head>',turn_style+peerjs+'</head>',1)
 
 anchor='// AI evaluation and decision policy. Hidden-information rules remain bounded here.'
 if html.count(anchor)!=1:
