@@ -8,23 +8,24 @@
   <div id="duelEntryPanel" class="duelEntryPanel">
     <div id="duelModeHub" class="duelModeHub">
       <div class="duelModeGrid">
-        <button id="duelDirectMode" class="duelModeCard direct" type="button"><span class="duelModeIcon">⇄</span><strong>Direct Duel</strong><small>Two devices · WebRTC peer-to-peer gameplay</small><em>Nearby one-scan QR or long-distance invite</em></button>
+        <button id="duelDirectMode" class="duelModeCard direct" type="button"><span class="duelModeIcon">⇄</span><strong>Direct Duel</strong><small>Two devices · WebRTC gameplay</small><em>Nearby one-scan QR or long-distance invite</em></button>
         <button id="duelPassMode" class="duelModeCard pass" type="button"><span class="duelModeIcon">▣</span><strong>Pass &amp; Play</strong><small>Two players · one device · completely offline</small><em>Private handoff between every turn</em></button>
         <button id="duelOnlineMode" class="duelModeCard online" type="button"><span class="duelModeIcon">◎</span><strong>Online Room</strong><small>Private room code · authoritative server</small><em>Most reliable across restrictive networks</em></button>
       </div>
-      <p class="duelModeNote">Nearby Direct uses a public pairing broker only to introduce the two browsers. Once the WebRTC connection opens, match traffic is device-to-device.</p>
+      <p class="duelModeNote">Nearby Direct uses a public pairing broker only to introduce the two browsers. Match traffic is WebRTC; Alpha can use an encrypted TURN relay when the phones cannot form a direct route.</p>
     </div>
 
     <div id="duelDirectPanel" class="duelDirectPanel" hidden>
       <button id="duelDirectBack" class="duelSectionBack" type="button">← Duel modes</button>
       <div id="duelDirectActions">
-        <div class="duelSectionHead"><div><div class="eyebrow">DIRECT DUEL</div><h3>Connect device-to-device</h3></div><span class="duelP2PBadge">P2P</span></div>
+        <div class="duelSectionHead"><div><div class="eyebrow">DIRECT DUEL</div><h3>Connect device-to-device</h3></div><span class="duelP2PBadge">WebRTC</span></div>
         <div class="duelDirectGrid">
           <button id="duelDirectNearby" class="duelChoiceCard" type="button"><strong>Nearby · One Scan</strong><small>Player 1 shows one QR. Player 2 scans it with the normal Camera app and both phones connect automatically.</small></button>
           <button id="duelDirectRemote" class="duelChoiceCard" type="button"><strong>Long Distance · Create</strong><small>Share an invite through text, Discord, email, or another app.</small></button>
           <button id="duelDirectJoin" class="duelChoiceCard" type="button"><strong>Long Distance · Join</strong><small>Paste an invite sent by Player 1.</small></button>
         </div>
-        <p class="duelModeNote"><strong>Nearby pairing:</strong> no server URL or return QR is required. The broker handles connection discovery only; Clash 4 moves stay peer-to-peer.</p>
+        <p class="duelModeNote"><strong>Nearby pairing:</strong> no server URL or return QR is required. The broker handles connection discovery only; Clash 4 moves stay on the WebRTC connection.</p>
+        <p class="duelRelayNote"><strong>Alpha relay fallback:</strong> if the phones cannot make a direct ICE route, this test build may relay the encrypted WebRTC DataChannel through Open Relay automatically.</p>
         <p class="duelTrustNote"><strong>Alpha trust model:</strong> Direct Duel is intended for trusted opponents because Player 1's browser acts as the match authority. Online Room provides stronger hidden-state enforcement.</p>
       </div>
 
@@ -50,7 +51,7 @@
         <div><button id="duelJoinButton" class="duelPrimary" type="button">Join Room</button><button id="duelJoinCancel" class="duelSecondary" type="button">Cancel</button></div>
       </div>
       <div class="duelServerBox">
-        <div><strong>Online Room server</strong><small id="duelServerNotice">Only Online Room requires your Clash 4 authoritative backend. Nearby Direct no longer uses this field.</small></div>
+        <div><strong>Online Room server</strong><small id="duelServerNotice">Only Online Room requires your Clash 4 authoritative backend. Nearby Direct does not use this field.</small></div>
         <div class="duelServerRow"><input id="duelServerInput" type="url" placeholder="https://your-duel-server.example" aria-label="Duel server URL"><button id="duelSaveServerButton" type="button">Save</button></div>
       </div>
       <div id="duelEntryStatus" class="duelEntryStatus" role="status" aria-live="polite"></div>
