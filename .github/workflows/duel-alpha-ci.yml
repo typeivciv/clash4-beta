@@ -112,3 +112,4 @@ jobs:
             git push
           else
             echo "Staging client already matches canonical sources."
+          fi
