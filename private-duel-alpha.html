@@ -2421,13 +2421,20 @@ globalThis.bindPrivateDuelUi=bindPrivateDuelUi;
 'use strict';
 const DIRECT_PEER_JOIN_PARAM='c4peer';
 const DIRECT_PEER_TIMEOUT_MS=90_000;
-let directPeerSession={peer:null,conn:null,role:null,opened:false,deadline:0,timer:null};
+let directPeerSession={peer:null,conn:null,role:null,opened:false,deadline:0,timer:null,lastIce:'new',lastConnection:'new'};
+
+// Keep host/LAN candidates and broaden STUN discovery. This still prefers a true direct
+// connection; it does not add a relay/TURN server or put game traffic on a backend.
+try{
+  const urls=DIRECT_RTC_CONFIG?.iceServers?.[0]?.urls;
+  if(Array.isArray(urls)&&!urls.includes('stun:stun.cloudflare.com:3478'))urls.push('stun:stun.cloudflare.com:3478')
+}catch{}
 
 function directPeerReset(){
   if(directPeerSession.timer)clearTimeout(directPeerSession.timer);
   try{directPeerSession.conn?.close()}catch{}
   try{directPeerSession.peer?.destroy()}catch{}
-  directPeerSession={peer:null,conn:null,role:null,opened:false,deadline:0,timer:null}
+  directPeerSession={peer:null,conn:null,role:null,opened:false,deadline:0,timer:null,lastIce:'new',lastConnection:'new'}
 }
 function directNearbyManualUi(show){
   const label=directEl('duelDirectSignal')?.closest('.duelSignalLabel'),actions=directEl('duelDirectCopy')?.parentElement,accept=directEl('duelDirectAcceptRow');
@@ -2450,10 +2457,15 @@ function directClearNearbyHash(){
 }
 function directPeerErrorMessage(error){
   const type=String(error?.type||'');
-  if(type==='peer-unavailable')return 'That Nearby invite is no longer available. Ask Player 1 to create a new QR.';
-  if(type==='network'||type==='server-error'||type==='socket-error'||type==='socket-closed')return 'Could not reach the Nearby pairing broker. Check internet access and try again.';
-  if(type==='browser-incompatible')return 'This browser cannot create the Direct WebRTC connection.';
-  return error?.message||'Nearby pairing failed.'
+  if(type==='peer-unavailable')return 'Player 1’s invite is no longer available. Player 1 should create a fresh Nearby QR and keep that screen open.';
+  if(type==='network'||type==='server-error'||type==='socket-error'||type==='socket-closed')return 'Could not reach the temporary Nearby pairing broker. Check internet access, then create a new QR and try again.';
+  if(type==='browser-incompatible')return 'This browser does not support the WebRTC features needed for Direct Duel.';
+  if(type==='webrtc')return directPeerRouteFailureMessage();
+  return error?.message||'Nearby pairing failed before a direct connection could open.'
+}
+function directPeerRouteFailureMessage(){
+  const ice=directPeerSession.lastIce||'unknown',connection=directPeerSession.lastConnection||'unknown';
+  return `Player 1 was found, but the phones could not establish the direct WebRTC route (ICE: ${ice}, connection: ${connection}). Try both phones on the same non-guest Wi-Fi and disable VPN/Private Relay. If it still fails, this network needs a TURN relay or Online Room fallback.`
 }
 function directSetPeerRole(role){
   directDuel.role=role;directDuel.pairing='nearby';directDuel.seat=role==='host'?H:A;duelSession.seat=directDuel.seat;directPeerSession.role=role
@@ -2461,9 +2473,8 @@ function directSetPeerRole(role){
 function directPeerChannelAdapter(conn){
   const channel={readyState:'connecting',onopen:null,onmessage:null,onclose:null,onerror:null,
     send(value){conn.send(value)},close(){try{conn.close()}catch{}}};
-  conn.on('open',()=>{channel.readyState='open';directPeerSession.opened=true;channel.onopen?.();
-    // PeerJS documents that existing P2P connections remain alive after disconnecting
-    // from the signaling server, so remove signaling from the match path immediately.
+  conn.on('open',()=>{channel.readyState='open';directPeerSession.opened=true;if(directPeerSession.timer)clearTimeout(directPeerSession.timer);channel.onopen?.();
+    // Existing P2P connections stay alive after PeerJS signaling disconnects.
     try{directPeerSession.peer?.disconnect()}catch{}
   });
   conn.on('data',data=>channel.onmessage?.({data:typeof data==='string'?data:JSON.stringify(data)}));
@@ -2471,18 +2482,43 @@ function directPeerChannelAdapter(conn){
   conn.on('error',error=>channel.onerror?.(error));
   return channel
 }
+function directObservePeerConnection(conn){
+  const pc=conn?.peerConnection;if(!pc)return;
+  const update=()=>{
+    directPeerSession.lastIce=pc.iceConnectionState||directPeerSession.lastIce;
+    directPeerSession.lastConnection=pc.connectionState||directPeerSession.lastConnection;
+    if(directPeerSession.opened)return;
+    if(pc.iceConnectionState==='checking')directSetStatus('Player found. Checking direct network paths…');
+    if(pc.iceConnectionState==='connected'||pc.iceConnectionState==='completed')directSetStatus('Direct network path found. Opening the game connection…');
+    if(pc.iceConnectionState==='failed'||pc.connectionState==='failed'){
+      directConnectionBadge('error','Direct route blocked');
+      directSetStatus(directPeerRouteFailureMessage(),{error:true})
+    }
+  };
+  pc.addEventListener?.('iceconnectionstatechange',update);pc.addEventListener?.('connectionstatechange',update);update()
+}
 function directBindPeerJsConnection(conn){
   if(directPeerSession.conn&&directPeerSession.conn!==conn){try{conn.close()}catch{};return}
-  directPeerSession.conn=conn;directDuel.pc={close(){directPeerReset()}};directBindChannel(directPeerChannelAdapter(conn));
-  directSetStatus('Peer found. Establishing the direct connection…')
+  directPeerSession.conn=conn;directDuel.pc={close(){directPeerReset()}};
+  const channel=directPeerChannelAdapter(conn);directBindChannel(channel);
+  // Replace the core's deliberately generic channel error with actionable Nearby diagnostics.
+  channel.onerror=error=>{
+    directConnectionBadge('error','Direct route failed');
+    directSetStatus(directPeerErrorMessage(error),{error:true})
+  };
+  directObservePeerConnection(conn);directSetStatus('Peer found. Establishing the direct connection…')
 }
 function directCreatePeer(role){
   if(!globalThis.Peer)throw new Error('Nearby pairing library did not load. Refresh and try again.');
   directSetPeerRole(role);
   const peer=new Peer(undefined,{debug:0,config:DIRECT_RTC_CONFIG});directPeerSession.peer=peer;directPeerSession.deadline=Date.now()+DIRECT_PEER_TIMEOUT_MS;
-  peer.on('error',error=>{if(directPeerSession.opened)return;directSetStatus(directPeerErrorMessage(error),{error:true})});
+  peer.on('error',error=>{if(directPeerSession.opened)return;directConnectionBadge('error','Pairing failed');directSetStatus(directPeerErrorMessage(error),{error:true})});
   peer.on('disconnected',()=>{if(!directPeerSession.opened)directConnectionBadge('offline','Pairing interrupted')});
-  directPeerSession.timer=setTimeout(()=>{if(!directPeerSession.opened){directSetStatus('Nearby pairing timed out. Create a new QR and try again.',{error:true});directPeerReset()}},DIRECT_PEER_TIMEOUT_MS);
+  directPeerSession.timer=setTimeout(()=>{if(!directPeerSession.opened){
+    directConnectionBadge('error','Pairing timed out');
+    const sawIce=directPeerSession.lastIce&&directPeerSession.lastIce!=='new';
+    directSetStatus(sawIce?directPeerRouteFailureMessage():'Nearby pairing timed out before the phones found each other. Create a new QR and try again.',{error:true});directPeerReset()
+  }},DIRECT_PEER_TIMEOUT_MS);
   return peer
 }
 
@@ -2502,7 +2538,7 @@ async function directCreateNearby(){
       directNearbyStage({title:'Player 2 · Scan once to join',copy:'Player 2: use the normal Camera app, scan this QR, and tap the Clash 4 link. Both phones will connect automatically.',status:'Waiting for Player 2 to scan…',showQr:true});
       if(!globalThis.QRCode)directNearbyManualUi(true)
     })
-  }catch(e){directSetStatus(directPeerErrorMessage(e),{error:true});directPeerReset()}
+  }catch(e){directConnectionBadge('error','Pairing failed');directSetStatus(directPeerErrorMessage(e),{error:true});directPeerReset()}
 }
 globalThis.directCreateNearby=directCreateNearby;
 
@@ -2512,9 +2548,10 @@ async function directJoinNearbyFromPeerId(hostPeerId){
   try{
     const peer=directCreatePeer('guest');
     peer.on('open',()=>{
+      directSetStatus('Pairing broker connected. Finding Player 1…');
       const conn=peer.connect(hostPeerId,{reliable:true,serialization:'json'});directBindPeerJsConnection(conn)
     })
-  }catch(e){directSetStatus(directPeerErrorMessage(e),{error:true});directPeerReset()}
+  }catch(e){directConnectionBadge('error','Pairing failed');directSetStatus(directPeerErrorMessage(e),{error:true});directPeerReset()}
 }
 async function directHandleNearbyLaunch(){
   const peerId=directReadNearbyPeerId();if(!peerId)return false;directClearNearbyHash();await directJoinNearbyFromPeerId(peerId);return true
