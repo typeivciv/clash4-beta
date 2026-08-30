@@ -30,14 +30,17 @@ for(const token of [
   "pc.iceConnectionState==='failed'","directConnectionBadge('error','Direct route blocked')",
   'function directRecoveryActions(','function directShowRecoveryForRole(','function directRetireHostInvite(',
   'function directRefreshNearbyInvite()','function directRetryNearbyConnection()',
+  'function directReleaseFailedConnection(','function directHostInviteStillLive()',
+  "if(!directPeerSession.opened){directReleaseFailedConnection(directPeerSession.conn,{close:true})}",
   "refreshButton.textContent='Refresh Invite'","button.textContent='Retrying…'",
   "directEl('duelDirectRefreshInvite')?.addEventListener('click',directRefreshNearbyInvite)",
   "directEl('duelDirectRetryConnection')?.addEventListener('click',directRetryNearbyConnection)",
   "if(qr){qr.innerHTML='';qr.hidden=true}if(field)field.value=''",
-  'Player 1 can refresh this invite at any time','you can retry this same invite without rescanning',
+  'Player 2 can retry the same live invite','Failed attempts do not consume the invite',
   'directOpenPanel();directNearbyRetryPeerId=hostPeerId;directRecoveryActions();directPeerReset();'
 ])assert.ok(nearby.includes(token),`Nearby PeerJS recovery contract missing ${token}`);
 assert.ok(!nearby.includes('directNearbyRetryPeerId=hostPeerId;directOpenPanel()'),'guest retry target must be stored after directOpenPanel cleanup, never before it');
+assert.ok(!nearby.includes("if(directPeerSession.conn&&directPeerSession.conn!==conn){try{conn.close()}catch{};return}"),'host must not reject a new retry merely because a failed pre-open DataConnection is still referenced');
 assert.ok(!nearby.includes('fetch('),'Nearby PeerJS pairing must not depend on the Clash 4 HTTP backend');
 for(const forbidden of ['/api/direct/signals','/api/lobbies','/move','projectDuelState','applyLocalDuelMove','resolveRaw','BroadcastChannel','DIRECT_RETURN_KEY','duelDirectServerInput','Scan Player 2 Return QR'])assert.ok(!nearby.includes(forbidden),`Nearby pairing must stay out of backend/gameplay/old return-QR path: ${forbidden}`);
 
@@ -66,4 +69,4 @@ assert.ok(lobby.includes('Alpha relay fallback'),'Direct UI must disclose the st
 assert.ok(lobby.includes('Direct Duel is intended for trusted opponents'),'Direct Duel trust model must be visible in Alpha UI');
 
 for(const [name,source] of [['direct',direct],['nearby',nearby],['turn',turn],['colors',colors],['postmatch',postmatch],['pass',pass],['router',router]]){try{new Function(source)}catch(error){throw new Error(`${name} module syntax failed: ${error.message}`)}}
-console.log('PASS Direct Duel + Player 2 retry lifecycle + always-recoverable invite + TURN + colors/share + unified results + rematch/New Duel + Pass & Play contracts');
+console.log('PASS Direct Duel + same-invite host retry lifecycle + Player 2 recovery + TURN + colors/share + unified results + rematch/New Duel + Pass & Play contracts');
