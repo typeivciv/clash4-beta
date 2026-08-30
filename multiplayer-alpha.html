@@ -2922,7 +2922,7 @@ directNearbyStage=function(options={}){
 
 duelEnsureColorUi();
 
-// Duel 0.15.9: unified Arcade/Direct results, peer-preserving rematch, replay, and terminal guard.
+// Multiplayer Alpha 0.16.1: unified Arcade/Direct results, dramatic outcome presentation, peer-preserving rematch, replay, and terminal guard.
 'use strict';
 let duelResultAnimationKey='';
 let directRematchVotes={human:false,ai:false};
@@ -2993,10 +2993,10 @@ function duelPostMatchActionControls(){
   if(directDuel?.active){
     const local=directDuel.seat,remote=other(local),localVoted=!!directRematchVotes[local],remoteVoted=!!directRematchVotes[remote];
     for(const b of rematchButtons){b.textContent=localVoted?'Waiting…':remoteVoted?'Accept Rematch':'Rematch';b.disabled=localVoted||directRematchStarting}
-    for(const b of newMatchButtons){b.textContent='New Duel';b.disabled=false}
+    for(const b of newMatchButtons){b.textContent='Play Someone Else';b.setAttribute('aria-label','Play against someone else');b.disabled=false}
   }else{
-    for(const b of rematchButtons){b.textContent='New Duel';b.disabled=false}
-    for(const b of newMatchButtons){b.textContent='New Duel';b.disabled=false}
+    for(const b of rematchButtons){b.textContent='Play Someone Else';b.setAttribute('aria-label','Play against someone else');b.disabled=false}
+    for(const b of newMatchButtons){b.textContent='Play Someone Else';b.setAttribute('aria-label','Play against someone else');b.disabled=false}
   }
 }
 function duelBuildFinishReplay(){
