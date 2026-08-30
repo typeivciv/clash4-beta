@@ -37,19 +37,19 @@ function directClosePeer({notify=false}={}){
 globalThis.directClosePeer=directClosePeer;
 function directConnectionBadge(state,text){if(!duelConnectionBadge)return;duelConnectionBadge.className='duelConnectionBadge '+(state==='online'?'online':state==='error'?'error':'offline');duelConnectionBadge.textContent=text}
 function directShowHub(){
-  directClosePeer();duelStopPolling();resetDuelLobbyUi();setVisible(duelEntryPanel,true);setVisible(duelWaitingPanel,false);
+  directClosePeer();duelStopPolling();resetDuelLobbyUi();setVisible(duelEntryPanel,true);setVisible(duelWaitingPanel,false);duelCopyCode.hidden=false;
   const hub=directEl('duelModeHub'),online=directEl('duelOnlinePanel'),direct=directEl('duelDirectPanel');if(hub)hub.hidden=false;if(online)online.hidden=true;if(direct)direct.hidden=true;
   directConnectionBadge('offline','Choose a Duel mode');duelStatus('')
 }
 function openDuelHub(){setMatchControllerMode('duel',{owner:H});setIntroScreen('duel');directShowHub();queueFit()}
 globalThis.openDuelHub=openDuelHub;
 function openDuelOnlineMode(){
-  directClosePeer();const hub=directEl('duelModeHub'),online=directEl('duelOnlinePanel'),direct=directEl('duelDirectPanel');if(hub)hub.hidden=true;if(online)online.hidden=false;if(direct)direct.hidden=true;
+  directClosePeer();duelCopyCode.hidden=false;const hub=directEl('duelModeHub'),online=directEl('duelOnlinePanel'),direct=directEl('duelDirectPanel');if(hub)hub.hidden=true;if(online)online.hidden=false;if(direct)direct.hidden=true;
   openDuelLobby();if(hub)hub.hidden=true;if(online)online.hidden=false
 }
 globalThis.openDuelOnlineMode=openDuelOnlineMode;
 function directOpenPanel(){
-  duelStopPolling();duelClearActiveSession();setMatchControllerMode('duel',{owner:H});setIntroScreen('duel');resetDuelLobbyUi();
+  directClosePeer();duelStopPolling();duelClearActiveSession();setMatchControllerMode('duel',{owner:H});setIntroScreen('duel');resetDuelLobbyUi();duelCopyCode.hidden=false;
   const hub=directEl('duelModeHub'),online=directEl('duelOnlinePanel'),panel=directEl('duelDirectPanel');if(hub)hub.hidden=true;if(online)online.hidden=true;if(panel)panel.hidden=false;
   directEl('duelDirectStage').hidden=true;directEl('duelDirectActions').hidden=false;directEl('duelDirectSignal').value='';directSetStatus('');directConnectionBadge('offline','Direct P2P');queueFit()
 }
@@ -78,12 +78,12 @@ async function directCreate(pairing='nearby'){
   }catch(e){directSetStatus(e.message||'Could not create Direct Duel.',{error:true});directClosePeer()}
 }
 globalThis.directCreate=directCreate;
-async function directJoinSignal(raw){
-  directOpenPanel();directDuel.signalKind='answer';directEl('duelDirectActions').hidden=true;directEl('duelDirectStage').hidden=false;directSetStatus('Opening the Direct Duel invite…');
+async function directJoinSignal(raw,pairing='remote'){
+  directOpenPanel();directDuel.pairing=pairing;directDuel.signalKind='answer';directEl('duelDirectActions').hidden=true;directEl('duelDirectStage').hidden=false;directSetStatus('Opening the Direct Duel invite…');
   try{
     const signal=await unpackDirectSignal(raw);if(signal.kind!=='offer')throw new Error('This is not a host invite.');
     const pc=makeDirectPeer('guest');await pc.setRemoteDescription(signal.description);const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await directWaitForIce(pc);
-    const packed=await packDirectSignal({protocol:DIRECT_PROTOCOL,kind:'answer',description:{type:pc.localDescription.type,sdp:pc.localDescription.sdp}});directShowSignal(packed,'answer',directDuel.pairing||'nearby');directSetStatus('Return this response to Player 1. Connection will open after they accept it.')
+    const packed=await packDirectSignal({protocol:DIRECT_PROTOCOL,kind:'answer',description:{type:pc.localDescription.type,sdp:pc.localDescription.sdp}});directShowSignal(packed,'answer',pairing);directSetStatus('Return this response to Player 1. Connection will open after they accept it.')
   }catch(e){directSetStatus(e.message||'Could not join Direct Duel.',{error:true});directClosePeer()}
 }
 globalThis.directJoinSignal=directJoinSignal;
@@ -107,10 +107,10 @@ async function directCopySignal(){const value=directEl('duelDirectSignal').value
 async function directShareSignal(){const value=directEl('duelDirectSignal').value;if(!value)return;const label=directDuel.signalKind==='answer'?'Direct Duel response':'Direct Duel invite';if(navigator.share){try{await navigator.share({title:`Clash 4 — ${label}`,text:`${label}\n${value}`});return}catch{}}await directCopySignal()}
 async function directPasteAndApply(){
   let value='';try{value=await navigator.clipboard.readText()}catch{}if(!value)value=prompt('Paste the Clash 4 Direct Duel signal:')||'';if(!value)return;
-  if(directDuel.role==='host')await directAcceptAnswer(value);else await directJoinSignal(value)
+  if(directDuel.role==='host')await directAcceptAnswer(value);else await directJoinSignal(value,directDuel.pairing||'remote')
 }
 function directEnterReadyRoom(){
-  setVisible(duelEntryPanel,false);setVisible(duelWaitingPanel,true);duelLobbyCode.textContent='DIRECT';duelSeatLabel.textContent=directDuel.seat===H?'Player 1':'Player 2';
+  setVisible(duelEntryPanel,false);setVisible(duelWaitingPanel,true);duelCopyCode.hidden=true;duelLobbyCode.textContent='DIRECT';duelSeatLabel.textContent=directDuel.seat===H?'Player 1':'Player 2';
   duelLobbyStatus.textContent='Direct connection ready';duelWaitingCopy.textContent='Peer-to-peer connection established. Both players press Ready.';
   duelYouReady.textContent='Not ready';duelYouReady.classList.remove('ready');duelOpponentReady.textContent='Not ready';duelOpponentReady.classList.remove('ready');duelReadyButton.disabled=false;duelReadyButton.textContent="I'm Ready";queueFit()
 }
@@ -161,7 +161,7 @@ async function directScanSignal(){
   const modal=ensureDirectScanner(),video=directEl('directQrVideo'),canvas=directEl('directQrCanvas'),status=directEl('directQrScannerStatus');modal.hidden=false;status.textContent='Starting camera…';
   try{
     const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});video.srcObject=stream;await video.play();const detector='BarcodeDetector'in globalThis?new BarcodeDetector({formats:['qr_code']}):null;const scan={stream,stopped:false,raf:null};directDuel.scanner=scan;status.textContent='Point the camera at the other player’s QR code.';
-    const tick=async()=>{if(scan.stopped)return;try{let value='';if(detector){const found=await detector.detect(video);value=found[0]?.rawValue||''}else if(globalThis.jsQR&&video.videoWidth){canvas.width=video.videoWidth;canvas.height=video.videoHeight;const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(video,0,0,canvas.width,canvas.height);const img=ctx.getImageData(0,0,canvas.width,canvas.height),found=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});value=found?.data||''}if(value){directStopScanner();if(directDuel.role==='host')await directAcceptAnswer(value);else await directJoinSignal(value);return}}catch{}scan.raf=requestAnimationFrame(tick)};tick()
+    const tick=async()=>{if(scan.stopped)return;try{let value='';if(detector){const found=await detector.detect(video);value=found[0]?.rawValue||''}else if(globalThis.jsQR&&video.videoWidth){canvas.width=video.videoWidth;canvas.height=video.videoHeight;const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(video,0,0,canvas.width,canvas.height);const img=ctx.getImageData(0,0,canvas.width,canvas.height),found=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});value=found?.data||''}if(value){const hostScanning=directDuel.role==='host';directStopScanner();if(hostScanning)await directAcceptAnswer(value);else await directJoinSignal(value,'nearby');return}}catch{}scan.raf=requestAnimationFrame(tick)};tick()
   }catch(e){status.textContent='Camera scanning is unavailable here. Use Copy/Paste instead.';directSetStatus(e.message||'Could not open camera.',{error:true})}
 }
 globalThis.directScanSignal=directScanSignal;
@@ -169,7 +169,7 @@ globalThis.directScanSignal=directScanSignal;
 function bindDirectDuelUi(){
   directEl('duelDirectMode')?.addEventListener('click',directOpenPanel);directEl('duelOnlineMode')?.addEventListener('click',openDuelOnlineMode);
   directEl('duelDirectBack')?.addEventListener('click',directShowHub);directEl('duelDirectNearby')?.addEventListener('click',()=>directCreate('nearby'));directEl('duelDirectRemote')?.addEventListener('click',()=>directCreate('remote'));
-  directEl('duelDirectJoin')?.addEventListener('click',async()=>{let value='';try{value=await navigator.clipboard.readText()}catch{}if(value&&value.includes(DIRECT_SIGNAL_PREFIX))directJoinSignal(value);else{value=prompt('Paste the Direct Duel invite from Player 1:')||'';if(value)directJoinSignal(value)}});
-  directEl('duelDirectScanInvite')?.addEventListener('click',()=>{directDuel.role='guest';directScanSignal()});directEl('duelDirectCopy')?.addEventListener('click',directCopySignal);directEl('duelDirectShare')?.addEventListener('click',directShareSignal);directEl('duelDirectScanReturn')?.addEventListener('click',directScanSignal);directEl('duelDirectPaste')?.addEventListener('click',directPasteAndApply)
+  directEl('duelDirectJoin')?.addEventListener('click',async()=>{let value='';try{value=await navigator.clipboard.readText()}catch{}if(value&&value.includes(DIRECT_SIGNAL_PREFIX))directJoinSignal(value,'remote');else{value=prompt('Paste the Direct Duel invite from Player 1:')||'';if(value)directJoinSignal(value,'remote')}});
+  directEl('duelDirectScanInvite')?.addEventListener('click',()=>{directDuel.role='guest';directDuel.pairing='nearby';directScanSignal()});directEl('duelDirectCopy')?.addEventListener('click',directCopySignal);directEl('duelDirectShare')?.addEventListener('click',directShareSignal);directEl('duelDirectScanReturn')?.addEventListener('click',directScanSignal);directEl('duelDirectPaste')?.addEventListener('click',directPasteAndApply)
 }
 globalThis.bindDirectDuelUi=bindDirectDuelUi;
