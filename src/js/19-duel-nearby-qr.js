@@ -57,7 +57,7 @@ function directPeerErrorMessage(error){
 }
 function directPeerRouteFailureMessage(){
   const ice=directPeerSession.lastIce||'unknown',connection=directPeerSession.lastConnection||'unknown';
-  return `Player 1 was found, but the phones could not establish the direct WebRTC route (ICE: ${ice}, connection: ${connection}). Change networks if needed, then use Refresh Invite on Player 1 or Retry Connection on Player 2. A restrictive network may still need TURN or Hosted Room.`
+  return `Player 1 was found, but the phones could not establish the direct WebRTC route (ICE: ${ice}, connection: ${connection}). Change networks if needed. Player 2 can retry the same live invite; Player 1 only needs Refresh Invite to deliberately create a new one. A restrictive network may still need TURN or Hosted Room.`
 }
 function directSetPeerRole(role){
   directDuel.role=role;directDuel.pairing='nearby';directDuel.seat=role==='host'?H:A;duelSession.seat=directDuel.seat;directPeerSession.role=role
@@ -66,8 +66,16 @@ function directShowRecoveryForRole(role=directPeerSession.role){
   if(role==='host')directRefreshInviteUi(true);
   else if(role==='guest'&&directNearbyRetryPeerId)directRetryConnectionUi(true)
 }
+function directReleaseFailedConnection(conn,{close=false}={}){
+  if(!conn||directPeerSession.opened)return;
+  if(directPeerSession.conn===conn)directPeerSession.conn=null;
+  if(directDuel.channel?.__peerJsConn===conn)directDuel.channel=null;
+  if(directDuel.pc?.__peerJsConn===conn)directDuel.pc=null;
+  if(close){try{conn.close()}catch{}}
+}
+function directHostInviteStillLive(){return directPeerSession.role==='host'&&!!directPeerSession.peer&&!directPeerSession.opened&&Date.now()<directPeerSession.deadline}
 function directPeerChannelAdapter(conn){
-  const channel={readyState:'connecting',onopen:null,onmessage:null,onclose:null,onerror:null,
+  const channel={readyState:'connecting',onopen:null,onmessage:null,onclose:null,onerror:null,__peerJsConn:conn,
     send(value){conn.send(value)},close(){try{conn.close()}catch{}}};
   conn.on('open',()=>{channel.readyState='open';directPeerSession.opened=true;if(directPeerSession.timer)clearTimeout(directPeerSession.timer);directRecoveryActions();directNearbyRetryPeerId='';channel.onopen?.();
     // Existing P2P connections stay alive after PeerJS signaling disconnects.
@@ -76,7 +84,8 @@ function directPeerChannelAdapter(conn){
   conn.on('data',data=>channel.onmessage?.({data:typeof data==='string'?data:JSON.stringify(data)}));
   conn.on('close',()=>{
     const wasOpened=directPeerSession.opened,role=directPeerSession.role;channel.readyState='closed';
-    if(!wasOpened)directShowRecoveryForRole(role);channel.onclose?.()
+    if(!wasOpened){directReleaseFailedConnection(conn);directShowRecoveryForRole(role);if(role==='host'&&directHostInviteStillLive())directSetStatus('That connection attempt failed, but this QR/link is still active. Player 2 can change networks and tap Retry Connection — no new invite is required.',{error:true})}
+    channel.onclose?.()
   });
   conn.on('error',error=>channel.onerror?.(error));
   return channel
@@ -90,20 +99,29 @@ function directObservePeerConnection(conn){
     if(pc.iceConnectionState==='checking')directSetStatus('Player found. Checking direct network paths…');
     if(pc.iceConnectionState==='connected'||pc.iceConnectionState==='completed')directSetStatus('Direct network path found. Opening the game connection…');
     if(pc.iceConnectionState==='failed'||pc.connectionState==='failed'){
-      directConnectionBadge('error','Direct route blocked');
-      directSetStatus(directPeerRouteFailureMessage(),{error:true});directShowRecoveryForRole()
+      const role=directPeerSession.role;directConnectionBadge('error','Direct route blocked');
+      directReleaseFailedConnection(conn,{close:true});directShowRecoveryForRole(role);
+      directSetStatus(role==='host'&&directHostInviteStillLive()?'This attempt was blocked by the network, but the same QR/link is still active. Player 2 can switch networks and tap Retry Connection.':directPeerRouteFailureMessage(),{error:true})
     }
   };
   pc.addEventListener?.('iceconnectionstatechange',update);pc.addEventListener?.('connectionstatechange',update);update()
 }
 function directBindPeerJsConnection(conn){
-  if(directPeerSession.conn&&directPeerSession.conn!==conn){try{conn.close()}catch{};return}
-  directPeerSession.conn=conn;directDuel.pc={close(){directPeerReset()}};
+  if(directPeerSession.conn&&directPeerSession.conn!==conn){
+    // A previous pre-open DataConnection may have failed while the host Peer ID and
+    // invite are still valid. Retire only that failed attempt so a retry using the
+    // exact same QR/link can bind to the still-listening host.
+    if(!directPeerSession.opened){directReleaseFailedConnection(directPeerSession.conn,{close:true})}
+    else{try{conn.close()}catch{};return}
+  }
+  directPeerSession.conn=conn;
+  const pcHandle={__peerJsConn:conn,close(){if(directPeerSession.conn===conn)directPeerReset();else try{conn.close()}catch{}}};
+  directDuel.pc=pcHandle;
   const channel=directPeerChannelAdapter(conn);directBindChannel(channel);
   // Replace the core's deliberately generic channel error with actionable Direct diagnostics.
   channel.onerror=error=>{
-    directConnectionBadge('error','Direct route failed');
-    directSetStatus(directPeerErrorMessage(error),{error:true});directShowRecoveryForRole()
+    const role=directPeerSession.role;directConnectionBadge('error','Direct route failed');directReleaseFailedConnection(conn,{close:true});directShowRecoveryForRole(role);
+    directSetStatus(role==='host'&&directHostInviteStillLive()?'The connection attempt failed, but this invite remains active. Player 2 can retry it after changing networks.':directPeerErrorMessage(error),{error:true})
   };
   directObservePeerConnection(conn);directSetStatus('Peer found. Establishing the direct connection…')
 }
@@ -124,13 +142,13 @@ function directCreatePeer(role){
   peer.on('disconnected',()=>{
     if(directPeerSession.opened)return;
     const interruptedRole=directPeerSession.role;directConnectionBadge('offline','Pairing interrupted');
-    directSetStatus(interruptedRole==='guest'?'Pairing was interrupted. Change networks if needed, then tap Retry Connection.':'Pairing was interrupted. Change networks if needed, then refresh the invite.',{error:true});directShowRecoveryForRole(interruptedRole)
+    directSetStatus(interruptedRole==='guest'?'Pairing was interrupted. Change networks if needed, then tap Retry Connection.':'Pairing broker was interrupted. If this invite no longer accepts retries, refresh it.',{error:true});directShowRecoveryForRole(interruptedRole)
   });
   directPeerSession.timer=setTimeout(()=>{if(!directPeerSession.opened){
     const role=directPeerSession.role,sawIce=directPeerSession.lastIce&&directPeerSession.lastIce!=='new';
     directConnectionBadge('error','Pairing timed out');
     if(role==='host'){
-      directRetireHostInvite({title:'Pairing timed out',copy:'Player 2 did not connect within 90 seconds. Refresh Invite creates a completely new QR code and share link.',status:sawIce?'The previous network attempt failed. Change networks if needed, then refresh the invite.':'The old QR and link are retired. Refresh to create a new invite.'});return
+      directRetireHostInvite({title:'Pairing timed out',copy:'Player 2 did not connect within 90 seconds. Refresh Invite creates a completely new QR code and share link.',status:sawIce?'The invite window expired after a failed network attempt. Refresh to create a new invite.':'The old QR and link are retired. Refresh to create a new invite.'});return
     }
     directSetStatus(sawIce?directPeerRouteFailureMessage():'Direct pairing timed out before the phones found each other. Change networks if needed, then tap Retry Connection.',{error:true});directPeerReset();directRetryConnectionUi(!!directNearbyRetryPeerId)
   }},DIRECT_PEER_TIMEOUT_MS);
@@ -150,7 +168,7 @@ async function directCreateNearby(){
     peer.on('open',id=>{
       const link=directNearbyJoinLink(id),qr=directEl('duelDirectQr'),field=directEl('duelDirectSignal');
       if(field)field.value=link;if(qr){qr.hidden=false;directRenderQr(link)}
-      directNearbyStage({title:'Player 2 · Scan or open link',copy:'Player 2 can scan this QR with the Camera app or open the Clash 4 link you send. If your network changes or pairing gets stuck, Player 1 can refresh this invite at any time.',status:'Waiting for Player 2…',showQr:true});
+      directNearbyStage({title:'Player 2 · Scan or open link',copy:'Player 2 can scan this QR with the Camera app or open the Clash 4 link you send. Failed attempts do not consume the invite: Player 2 can change networks and retry the same link while it remains active.',status:'Waiting for Player 2…',showQr:true});
       directRefreshInviteUi(true);
       if(!globalThis.QRCode)directNearbyManualUi(true)
     })
