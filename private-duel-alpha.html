@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="description" content="Clash 4 mobile beta test build">
-<title>Clash 4 — Fog of War · Duel Modes Alpha 0.15.7</title>
+<title>Clash 4 — Fog of War · Duel Modes Alpha 0.15.8</title>
 
 
 
@@ -658,7 +658,7 @@ body.reducedMotion .duelResultAnimation *,body.reducedMotion .end.duel-result-en
 <body>
 <div id="appRoot" class="app">
 <header>
-  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Arcade RC1 · Duel Modes Alpha 0.15.7</div></div>
+  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Arcade RC1 · Duel Modes Alpha 0.15.8</div></div>
   <div id="fogTurnPill" class="fogTurnPill neutral"><span class="fogTurnDot"></span><span id="fogTurnText">Setup</span></div>
   <div class="topActions">
     <div id="matchDifficultyBadge" class="matchDifficultyBadge" title="Difficulty is chosen before the match"><span>AI</span><strong id="matchDifficultyLabel">Normal</strong></div>
@@ -792,7 +792,7 @@ body.reducedMotion .duelResultAnimation *,body.reducedMotion .end.duel-result-en
       <div class="homeTagline">Connect Four. Win the Clash.</div>
       <p class="homeLede">Build four in a row while Rock–Paper–Scissors combat, Decoys, and hidden enemy identities turn every column into a tactical gamble.</p>
       <div class="homeActions"><button id="homePlayButton" class="homePlay" type="button"><span>Play</span><small>Normal · Default colors · Random start</small></button><button id="homeDuelButton" class="homeDuel" type="button"><span>Duel</span><small>Direct P2P · Pass &amp; Play · Online Room · Alpha</small></button><button id="homeCustomizeButton" class="homeCustomize" type="button"><span>Customize Match</span><small>Difficulty · first move · colors · tips</small></button><button id="homeRulesButton" class="homeSecondary" type="button">How to Play</button></div>
-      <div class="homeMeta"><span>Duel Modes Alpha · 0.15.7</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
+      <div class="homeMeta"><span>Duel Modes Alpha · 0.15.8</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
     </div>
     <div class="homeHero" aria-hidden="true"><div class="homeHeroGlow"></div><div class="heroBoard"><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">🪨</span></div><div class="heroHole"><span class="heroPiece ai ">📄</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">✂️</span></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"><span class="heroPiece player ">📄</span></div><div class="heroHole"><span class="heroPiece ai ">🪨</span></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"><span class="heroPiece ai ">✂️</span></div></div><div class="heroFog"></div></div>
   </section>
@@ -2448,14 +2448,14 @@ function duelResetCompletedMatchUi(){
   try{end.classList.remove('show','duel-result-win','duel-result-loss','duel-result-draw','duel-result-enter')}catch{};
   try{coinOverlay.classList.add('show')}catch{}
 }
-function duelReturnToModeHub(){
+function duelReturnToModeHub({notify=true}={}){
   // Clear the terminal game before transport teardown. Otherwise a late render can
   // resurrect the completed result screen while the Duel hub is opening.
   duelResetCompletedMatchUi();
-  try{directClosePeer({notify:true})}catch{};try{passReset()}catch{};try{duelClearActiveSession()}catch{};try{duelStopPolling()}catch{};
+  try{directClosePeer({notify})}catch{};try{passReset()}catch{};try{duelClearActiveSession()}catch{};try{duelStopPolling()}catch{};
   setMatchControllerMode('duel',{owner:H});coinOverlay.classList.add('show');openDuelHub();queueFit()
 }
-function duelRouteNewDuel(){duelReturnToModeHub()}
+function duelRouteNewDuel(){duelReturnToModeHub({notify:true})}
 globalThis.duelRouteReady=duelRouteReady;
 globalThis.duelRouteMove=duelRouteMove;
 globalThis.duelLeaveAllToHome=duelLeaveAllToHome;
@@ -2792,9 +2792,12 @@ directNearbyStage=function(options={}){
 
 duelEnsureColorUi();
 
-// Duel 0.15.7: robust post-match routing + replay + animated win/loss/draw presentation.
+// Duel 0.15.8: peer-preserving rematch, replay, terminal guard, and animated results.
 'use strict';
 let duelResultAnimationKey='';
+let directRematchVotes={human:false,ai:false};
+let directRematchStarting=false;
+let duelTerminalGuard=null;
 
 function duelPostMatchEnsureVisual(){
   const card=globalThis.end?.querySelector?.('.postMatchSummaryCard');
@@ -2809,13 +2812,16 @@ function duelPostMatchOutcome(){return s.draw?'draw':s.winner===H?'win':'loss'}
 function duelPostMatchCopy(outcome){
   if(outcome==='win'){
     endText.textContent='YOU WIN';
-    endReason.textContent=s.winReason==='clashmate'?'CLASHMATE · You forced the winning position.':'Victory secured · Your Connect Four is locked in.'
+    endReason.textContent=s.winReason==='clashmate'?'CLASHMATE · You forced the winning position.':'Victory secured · Your Connect Four is locked in.';
+    mobileContextKicker.textContent='DUEL VICTORY';mobileContextTitle.textContent='YOU WIN';mobileContextCopy.textContent='Review the finish, replay it, or challenge them again.'
   }else if(outcome==='loss'){
     endText.textContent='YOU LOSE';
-    endReason.textContent='TRY AGAIN · Review the finish or start a New Duel.'
+    endReason.textContent='TRY AGAIN · Review the finish or challenge them again.';
+    mobileContextKicker.textContent='DUEL DEFEAT';mobileContextTitle.textContent='YOU LOSE · TRY AGAIN';mobileContextCopy.textContent='Review the finish, learn from it, and run it back.'
   }else{
     endText.textContent='DRAW';
-    endReason.textContent='No winner this time · Review the board or try again.'
+    endReason.textContent='No winner this time · Review the board or run it back.';
+    mobileContextKicker.textContent='DUEL DRAW';mobileContextTitle.textContent='DRAW';mobileContextCopy.textContent='Review the finish or challenge them again.'
   }
 }
 function duelPostMatchAnimate(){
@@ -2838,36 +2844,118 @@ function duelPostMatchReplayControls(){
     button.disabled=disabled;button.hidden=false;button.textContent=replayPhase!=='idle'?'Replaying…':'Replay Finish'
   }
 }
+function directResetRematchVotes(){directRematchVotes={human:false,ai:false};directRematchStarting=false}
+function duelPostMatchActionControls(){
+  if(matchMode!=='duel')return;
+  const rematchButtons=[restartBottom,reviewRestart,sidebarRematch],newDuelButtons=[homeBottom,reviewHome,sidebarHome];
+  if(directDuel?.active){
+    const local=directDuel.seat,remote=other(local),localVoted=!!directRematchVotes[local],remoteVoted=!!directRematchVotes[remote];
+    const base=s.winner===H?'Rematch':s.draw?'Rematch':'Try Again';
+    for(const b of rematchButtons){b.textContent=localVoted?'Waiting…':remoteVoted?'Accept Rematch':base;b.disabled=localVoted||directRematchStarting}
+    for(const b of newDuelButtons){b.textContent='New Duel';b.disabled=false}
+  }else{
+    for(const b of rematchButtons){b.textContent='New Duel';b.disabled=false}
+    for(const b of newDuelButtons){b.textContent='New Duel';b.disabled=false}
+  }
+}
+function duelBuildFinishReplay(){
+  if(finishReplay?.steps?.length)return;
+  const steps=recentInteractions.slice(-2).map(cloneInteractionForReplay);if(steps.length)finishReplay={steps}
+}
+function duelForceTerminalSummary(){
+  if(matchMode!=='duel'||!(s.winner||s.draw)||replayPhase!=='idle')return false;
+  if(duelTerminalGuard){clearTimeout(duelTerminalGuard);duelTerminalGuard=null}
+  clearPresentationTimers();activePresentation=null;dropPresentation=null;busy=false;hoverCol=null;
+  duelStopPolling();duelBuildFinishReplay();postMatchView='summary';directResetRematchVotes();render();queueFit();return true
+}
+globalThis.duelForceTerminalSummary=duelForceTerminalSummary;
+function duelArmTerminalGuard(){
+  if(matchMode!=='duel'||!(s.winner||s.draw)||!busy||replayPhase!=='idle'||duelTerminalGuard)return;
+  duelTerminalGuard=setTimeout(()=>{duelTerminalGuard=null;duelForceTerminalSummary()},6500)
+}
+function duelStartDirectRematch(payload){
+  if(!payload?.state)return;
+  if(duelTerminalGuard){clearTimeout(duelTerminalGuard);duelTerminalGuard=null}
+  directResetRematchVotes();
+  duelSession.active=false;duelSession.pendingLocal=null;duelSession.deferredPayloads=[];
+  end.classList.remove('show','duel-result-win','duel-result-loss','duel-result-draw','duel-result-enter');
+  duelBeginActive(payload)
+}
+function directTryStartRematch(){
+  if(directDuel.role!=='host'||directRematchStarting||!directRematchVotes[H]||!directRematchVotes[A])return;
+  directRematchStarting=true;
+  directDuel.authority={state:makeLocalDuelState(randomDuelStarter()),version:1};
+  const players=[{seat:H,ready:true,connected:true},{seat:A,ready:true,connected:true}];
+  const guest=localDuelPayload(directDuel.authority.state,A,1,[],players),host=localDuelPayload(directDuel.authority.state,H,1,[],players);
+  directSend({kind:'rematch-start',payload:guest});duelStartDirectRematch(host)
+}
+function duelRequestDirectRematch(){
+  if(!directDuel?.active||!(s.winner||s.draw)||directRematchStarting)return;
+  const seat=directDuel.seat;if(directRematchVotes[seat])return;
+  directRematchVotes[seat]=true;directSend({kind:'rematch-request'});duelPostMatchActionControls();
+  msg('Rematch requested — waiting for your opponent.');if(directDuel.role==='host')directTryStartRematch()
+}
 
-// The shared network adapter already records the final two viewer-projected interactions.
-// Preserve them at terminal instead of the older Alpha behavior that intentionally nulled replay.
+// The shared network adapter records the final two viewer-projected interactions.
+// A bounded terminal guard prevents a presentation callback from stranding mobile
+// in the gameplay shell after the winner has already been received.
 duelFinishNetworkPresentation=function(events,column){
+  let settled=false,guard=null;
   const done=()=>{
+    if(settled)return;settled=true;if(guard)clearTimeout(guard);
     busy=false;
     const deferred=nextDeferredDuelPayload();
     if(deferred){duelAcceptActivePayload(deferred);return}
     if(s.winner||s.draw){
-      duelStopPolling();postMatchView='summary';
-      finishReplay={steps:recentInteractions.slice(-2).map(cloneInteractionForReplay)};
-      render();return
+      duelStopPolling();postMatchView='summary';directResetRematchVotes();duelBuildFinishReplay();render();return
     }
     continueTurnController()
   };
-  if(events.length)playEvents(events,done,column);else done()
+  if(events.length){playEvents(events,done,column);if(s.winner||s.draw)guard=setTimeout(done,6500)}else done()
 };
 
 const renderPostMatchBeforeDuelResult=renderPostMatch;
 renderPostMatch=function(reviewMode){
   const result=renderPostMatchBeforeDuelResult(reviewMode);
-  duelPostMatchReplayControls();duelPostMatchAnimate();return result
+  duelPostMatchReplayControls();duelPostMatchActionControls();duelPostMatchAnimate();duelArmTerminalGuard();return result
 };
 
-// Capture post-match New Duel before the legacy Arcade Rematch listeners.
-// The router now performs an atomic terminal-state reset and re-opens the Duel overlay.
+const directHandleMessageBeforePostMatch=directHandleMessage;
+directHandleMessage=function(data){
+  if(data?.kind==='rematch-request'&&directDuel?.active){
+    directRematchVotes[other(directDuel.seat)]=true;duelPostMatchActionControls();msg('Opponent requested a rematch.');if(directDuel.role==='host')directTryStartRematch();return
+  }
+  if(data?.kind==='rematch-start'&&directDuel?.active&&data.payload){duelStartDirectRematch(data.payload);return}
+  if(data?.kind==='leave'&&matchMode==='duel'&&(s.winner||s.draw)){
+    directDuel.active=false;directConnectionBadge('offline','Duel complete');duelPostMatchActionControls();return
+  }
+  return directHandleMessageBeforePostMatch(data)
+};
+globalThis.directHandleMessage=directHandleMessage;
+
+// A peer closing after the terminal packet is a completed match, not a network error.
+// Preserve the result/replay screen instead of replacing it with "Opponent disconnected".
+const directBindChannelBeforePostMatch=directBindChannel;
+directBindChannel=function(channel){
+  const result=directBindChannelBeforePostMatch(channel),normalClose=channel.onclose;
+  channel.onclose=()=>{
+    if(matchMode==='duel'&&duelSession.active&&(s.winner||s.draw)){
+      directDuel.active=false;directConnectionBadge('offline','Duel complete');duelPostMatchActionControls();duelForceTerminalSummary();return
+    }
+    normalClose?.()
+  };
+  return result
+};
+globalThis.directBindChannel=directBindChannel;
+
+// In Direct Duel the left action is a true rematch/try-again; the right action is New Duel.
+// Other Duel transports keep the simpler New Duel behavior.
 document.addEventListener('click',event=>{
   if(matchMode!=='duel')return;
-  const button=event.target?.closest?.('#restartBottom,#reviewRestart,#sidebarRematch');if(!button)return;
-  event.preventDefault();event.stopImmediatePropagation();globalThis.duelRouteNewDuel?.()
+  const rematch=event.target?.closest?.('#restartBottom,#reviewRestart,#sidebarRematch');
+  if(rematch){event.preventDefault();event.stopImmediatePropagation();if(directDuel?.active)duelRequestDirectRematch();else globalThis.duelRouteNewDuel?.();return}
+  const newDuel=event.target?.closest?.('#homeBottom,#reviewHome,#sidebarHome');
+  if(newDuel){event.preventDefault();event.stopImmediatePropagation();if(duelTerminalGuard){clearTimeout(duelTerminalGuard);duelTerminalGuard=null}globalThis.duelRouteNewDuel?.()}
 },true);
 
 duelPostMatchEnsureVisual();
@@ -3519,7 +3607,7 @@ function renderBoardGrid({viewBoard,winningOrder,display,legal,finalReveal,can})
       const discClass='disc '+p.owner+(showLock?' cooldownDisc':'')+(showLock&&info?.level==='fortified'?' fortifiedDisc':'')+(showLock&&isCritical?' criticalDisc':'')+(isWinning?' winningDisc':'')+((finalReveal&&p.owner===A)?' revealedDisc':'');
       const badge=showLock?`<span class="stateRing ${isCritical?'criticalRing':info?.level==='fortified'?'fortifiedRing':'normalRing'}" aria-hidden="true"></span>`:'';
       const winStyle=isWinning?`--win-index:${winningIndex};`:'';
-      cell.innerHTML=`<div class="${discClass}"${winStyle?` style="${winStyle}"`:''}>${(p.owner===H||finalReveal)?M[p.type][1]:'?'}${badge}</div>`
+      cell.innerHTML=`<div class="${discClass}"${winStyle?` style="${winStyle}"`:''}>${(p.owner===H||finalReveal)?(M[p.type]?.[1]||'?'):'?'}${badge}</div>`
     }
     board.appendChild(cell)
   }
@@ -3826,7 +3914,7 @@ init();
 
 <script>
 (function(){
-  const BUILD='Duel Modes Alpha 0.15.7';
+  const BUILD='Duel Modes Alpha 0.15.8';
   const REPO_ISSUES='https://github.com/typeivciv/clash4-beta/issues/new';
   const $=id=>document.getElementById(id);
   const openBtn=$('betaFeedbackButton'), overlay=$('betaFeedbackOverlay'), closeBtn=$('betaFeedbackClose');
@@ -3862,7 +3950,7 @@ init();
   function issueTitle(){
     const type=$('betaIssueType').value;
     const detail=$('betaWhatHappened').value.trim().replace(/\s+/g,' ').slice(0,72);
-    return `[Duel Modes 0.15.7][${type}] ${detail||'Tester report'}`;
+    return `[Duel Modes 0.15.8][${type}] ${detail||'Tester report'}`;
   }
   function githubUrl(){
     const body=[
