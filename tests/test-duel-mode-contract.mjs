@@ -81,9 +81,15 @@ assert.ok(!colors.includes('bestContrast('),'Direct Duel colors must be independ
 assert.ok(!colors.includes('fetch('),'color/share extension must stay on the existing Direct transport');
 
 for(const token of [
-  'finishReplay={steps:recentInteractions.slice(-2).map(cloneInteractionForReplay)}',
+  'function duelBuildFinishReplay()',
+  'recentInteractions.slice(-2).map(cloneInteractionForReplay)',
   'function duelPostMatchReplayControls()',
   'function duelPostMatchActionControls()',
+  'function duelForceTerminalSummary()',
+  'function duelArmTerminalGuard()',
+  'setTimeout(()=>{duelTerminalGuard=null;duelForceTerminalSummary()},6500)',
+  'const directBindChannelBeforePostMatch=directBindChannel',
+  "directConnectionBadge('offline','Duel complete')",
   "button.hidden=false",
   "#restartBottom,#reviewRestart,#sidebarRematch",
   "#homeBottom,#reviewHome,#sidebarHome",
@@ -92,6 +98,7 @@ for(const token of [
   'function duelPostMatchAnimate()',
   "endText.textContent='YOU WIN'",
   "endText.textContent='YOU LOSE'",
+  "mobileContextTitle.textContent='YOU LOSE · TRY AGAIN'",
   "endReason.textContent='TRY AGAIN · Review the finish or challenge them again.'",
   "'DUEL VICTORY'",
   "'DUEL DEFEAT'",
@@ -128,4 +135,4 @@ assert.ok(lobby.includes('Direct Duel is intended for trusted opponents'),'Direc
 for(const [name,source] of [['direct',direct],['nearby',nearby],['turn',turn],['colors',colors],['postmatch',postmatch],['pass',pass],['router',router]]){
   try{new Function(source)}catch(error){throw new Error(`${name} module syntax failed: ${error.message}`)}
 }
-console.log('PASS Direct Duel + one-scan Nearby + TURN + colors/share + replay/results + rematch/New Duel split + Pass & Play contracts');
+console.log('PASS Direct Duel + one-scan Nearby + TURN + colors/share + terminal-safe replay/results + rematch/New Duel split + Pass & Play contracts');
