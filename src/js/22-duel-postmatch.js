@@ -1,4 +1,4 @@
-// Duel 0.15.8: peer-preserving rematch, replay, terminal guard, and animated results.
+// Duel 0.15.9: unified Arcade/Direct results, peer-preserving rematch, replay, and terminal guard.
 'use strict';
 let duelResultAnimationKey='';
 let directRematchVotes={human:false,ai:false};
@@ -15,30 +15,37 @@ function duelPostMatchEnsureVisual(){
   card.prepend(stage);return stage
 }
 function duelPostMatchOutcome(){return s.draw?'draw':s.winner===H?'win':'loss'}
+function duelPostMatchKicker(outcome){
+  const duel=matchMode==='duel';
+  if(outcome==='win')return duel?'DUEL VICTORY':'VICTORY';
+  if(outcome==='loss')return duel?'DUEL DEFEAT':'DEFEAT';
+  return duel?'DUEL DRAW':'DRAW'
+}
 function duelPostMatchCopy(outcome){
+  const duel=matchMode==='duel',opponent=typeof opponentUiLabel==='function'?opponentUiLabel():(duel?'Opponent':'AI');
   if(outcome==='win'){
     endText.textContent='YOU WIN';
     endReason.textContent=s.winReason==='clashmate'?'CLASHMATE · You forced the winning position.':'Victory secured · Your Connect Four is locked in.';
-    mobileContextKicker.textContent='DUEL VICTORY';mobileContextTitle.textContent='YOU WIN';mobileContextCopy.textContent='Review the finish, replay it, or challenge them again.'
+    mobileContextKicker.textContent=duelPostMatchKicker(outcome);mobileContextTitle.textContent='YOU WIN';mobileContextCopy.textContent='Review the finish, replay it, or rematch.'
   }else if(outcome==='loss'){
-    endText.textContent='YOU LOSE';
-    endReason.textContent='TRY AGAIN · Review the finish or challenge them again.';
-    mobileContextKicker.textContent='DUEL DEFEAT';mobileContextTitle.textContent='YOU LOSE · TRY AGAIN';mobileContextCopy.textContent='Review the finish, learn from it, and run it back.'
+    endText.textContent='TRY AGAIN';
+    endReason.textContent=`${opponent} secured the win · Review the finish and run it back.`;
+    mobileContextKicker.textContent=duelPostMatchKicker(outcome);mobileContextTitle.textContent='TRY AGAIN';mobileContextCopy.textContent='Review the finish, learn from it, and rematch.'
   }else{
     endText.textContent='DRAW';
-    endReason.textContent='No winner this time · Review the board or run it back.';
-    mobileContextKicker.textContent='DUEL DRAW';mobileContextTitle.textContent='DRAW';mobileContextCopy.textContent='Review the finish or challenge them again.'
+    endReason.textContent='No winner this time · Review the board or rematch.';
+    mobileContextKicker.textContent=duelPostMatchKicker(outcome);mobileContextTitle.textContent='DRAW';mobileContextCopy.textContent='Review the finish or rematch.'
   }
 }
 function duelPostMatchAnimate(){
   const stage=duelPostMatchEnsureVisual();if(!stage)return;
-  const visible=matchMode==='duel'&&(s.winner||s.draw)&&postMatchView==='summary'&&!busy;
+  const visible=(s.winner||s.draw)&&postMatchView==='summary'&&!busy;
   if(!visible){stage.hidden=true;end.classList.remove('duel-result-win','duel-result-loss','duel-result-draw','duel-result-enter');duelResultAnimationKey='';return}
-  const outcome=duelPostMatchOutcome(),key=`${s.moveNumber}:${outcome}:${s.winReason||''}`;
+  const outcome=duelPostMatchOutcome(),key=`${matchMode}:${s.moveNumber}:${outcome}:${s.winReason||''}`;
   duelPostMatchCopy(outcome);stage.hidden=false;
   end.classList.remove('duel-result-win','duel-result-loss','duel-result-draw');end.classList.add(`duel-result-${outcome}`);
-  const core=stage.querySelector('.duelResultCore span');if(core)core.textContent=outcome==='win'?'✦':outcome==='loss'?'◆':'＝';
-  const kicker=end.querySelector('.postMatchDeckKicker');if(kicker)kicker.textContent=outcome==='win'?'DUEL VICTORY':outcome==='loss'?'DUEL DEFEAT':'DUEL DRAW';
+  const core=stage.querySelector('.duelResultCore span');if(core)core.textContent=outcome==='win'?'✦':outcome==='loss'?'↻':'＝';
+  const kicker=end.querySelector('.postMatchDeckKicker');if(kicker)kicker.textContent=duelPostMatchKicker(outcome);
   if(key===duelResultAnimationKey)return;
   duelResultAnimationKey=key;end.classList.remove('duel-result-enter');stage.classList.remove('play');void stage.offsetWidth;end.classList.add('duel-result-enter');stage.classList.add('play');
   if(outcome==='win'){try{gameHaptic?.('win')}catch{}}
@@ -52,16 +59,20 @@ function duelPostMatchReplayControls(){
 }
 function directResetRematchVotes(){directRematchVotes={human:false,ai:false};directRematchStarting=false}
 function duelPostMatchActionControls(){
+  const rematchButtons=[restartBottom,reviewRestart,sidebarRematch],newMatchButtons=[homeBottom,reviewHome,sidebarHome];
+  if(matchMode==='arcade'){
+    for(const b of rematchButtons){b.textContent='Rematch';b.disabled=false}
+    for(const b of newMatchButtons){b.textContent='Home';b.disabled=false}
+    return
+  }
   if(matchMode!=='duel')return;
-  const rematchButtons=[restartBottom,reviewRestart,sidebarRematch],newDuelButtons=[homeBottom,reviewHome,sidebarHome];
   if(directDuel?.active){
     const local=directDuel.seat,remote=other(local),localVoted=!!directRematchVotes[local],remoteVoted=!!directRematchVotes[remote];
-    const base=s.winner===H?'Rematch':s.draw?'Rematch':'Try Again';
-    for(const b of rematchButtons){b.textContent=localVoted?'Waiting…':remoteVoted?'Accept Rematch':base;b.disabled=localVoted||directRematchStarting}
-    for(const b of newDuelButtons){b.textContent='New Duel';b.disabled=false}
+    for(const b of rematchButtons){b.textContent=localVoted?'Waiting…':remoteVoted?'Accept Rematch':'Rematch';b.disabled=localVoted||directRematchStarting}
+    for(const b of newMatchButtons){b.textContent='New Duel';b.disabled=false}
   }else{
     for(const b of rematchButtons){b.textContent='New Duel';b.disabled=false}
-    for(const b of newDuelButtons){b.textContent='New Duel';b.disabled=false}
+    for(const b of newMatchButtons){b.textContent='New Duel';b.disabled=false}
   }
 }
 function duelBuildFinishReplay(){
@@ -154,8 +165,7 @@ directBindChannel=function(channel){
 };
 globalThis.directBindChannel=directBindChannel;
 
-// In Direct Duel the left action is a true rematch/try-again; the right action is New Duel.
-// Other Duel transports keep the simpler New Duel behavior.
+// Direct Duel rematches require both peers; Arcade keeps the existing immediate rematch.
 document.addEventListener('click',event=>{
   if(matchMode!=='duel')return;
   const rematch=event.target?.closest?.('#restartBottom,#reviewRestart,#sidebarRematch');
