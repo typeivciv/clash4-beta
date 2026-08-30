@@ -10,9 +10,9 @@ VERSION='0.15.1'
 
 runpy.run_path(str(BASE_BUILDER),run_name='__main__')
 html=OUT.read_text(encoding='utf-8')
-# The base builder stays anchored to the frozen 0.15.0 shell; the Duel Modes wrapper owns
-# the current staging identity so one-scan pairing can advance without touching public Arcade.
-html=html.replace('Duel Modes Alpha 0.15.0',f'Duel Modes Alpha {VERSION}')
+# The base builder stays anchored to the frozen 0.15.0 shell; this wrapper owns the
+# current Duel staging identity and normalizes every Alpha-facing version label.
+html=html.replace('0.15.0',VERSION)
 anchor='// AI evaluation and decision policy. Hidden-information rules remain bounded here.'
 if html.count(anchor)!=1:
     raise SystemExit(f'Nearby signaling injection: expected one AI boundary, found {html.count(anchor)}')
