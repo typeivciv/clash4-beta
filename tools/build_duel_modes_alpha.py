@@ -12,7 +12,7 @@ DUEL_POSTMATCH=ROOT/'src/js/22-duel-postmatch.js'
 TURN_CSS=ROOT/'src/styles/51-duel-turn-alpha.css'
 DUEL_COLORS_CSS=ROOT/'src/styles/52-duel-colors-share.css'
 DUEL_POSTMATCH_CSS=ROOT/'src/styles/53-duel-postmatch.css'
-VERSION='0.15.11'
+VERSION='0.15.12'
 
 runpy.run_path(str(BASE_BUILDER),run_name='__main__')
 html=OUT.read_text(encoding='utf-8')
@@ -31,7 +31,8 @@ html=html.replace(unsafe_icon,safe_icon,1)
 
 # PeerJS Cloud brokers only the initial Direct WebRTC connection. The established
 # DataConnection carries gameplay. TURN remains a staging fallback for restrictive
-# networks; 0.15.11 fixes Player 2 recovery so the retry target survives panel cleanup.
+# networks; 0.15.12 keeps Player 1's host invite alive across failed guest attempts so
+# Player 2 can change networks and retry the same QR/link while its invite window is live.
 peerjs='<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>\n'
 extra_style='<style>\n'+TURN_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DUEL_COLORS_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DUEL_POSTMATCH_CSS.read_text(encoding='utf-8').rstrip()+'\n</style>\n'
 if peerjs not in html:
@@ -55,4 +56,4 @@ if 'duelResultAnimationKey' in html:
     raise SystemExit('Duel post-match module already present; refusing duplicate injection')
 html=html.replace(anchor,nearby+turn+colors+postmatch+anchor,1)
 OUT.write_text(html,encoding='utf-8')
-print(f'Built Duel Modes Alpha {VERSION} with one-scan Direct + guest retry recovery + TURN + colors/share + unified Arcade/Direct post-match into {OUT.name}')
+print(f'Built Duel Modes Alpha {VERSION} with persistent one-scan host invite + guest retry recovery + TURN + colors/share + unified Arcade/Direct post-match into {OUT.name}')
