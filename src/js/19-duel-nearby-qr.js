@@ -1,9 +1,10 @@
-// Nearby Direct Duel one-scan UX using PeerJS Cloud only for connection brokering.
+// Direct Duel one-scan UX using PeerJS Cloud only for connection brokering.
 // The QR carries the host peer ID in a Clash 4 HTTPS deep link. After the WebRTC data
 // connection opens, PeerJS signaling is disconnected and gameplay remains peer-to-peer.
 'use strict';
 const DIRECT_PEER_JOIN_PARAM='c4peer';
-const DIRECT_PEER_TIMEOUT_MS=90_000;
+const DIRECT_PEER_ATTEMPT_TIMEOUT_MS=90_000;
+const DIRECT_HOST_INVITE_TTL_MS=5*60_000;
 let directPeerSession={peer:null,conn:null,role:null,opened:false,deadline:0,timer:null,lastIce:'new',lastConnection:'new'};
 let directNearbyRetryPeerId='';
 
@@ -74,6 +75,7 @@ function directReleaseFailedConnection(conn,{close=false}={}){
   if(close){try{conn.close()}catch{}}
 }
 function directHostInviteStillLive(){return directPeerSession.role==='host'&&!!directPeerSession.peer&&!directPeerSession.opened&&Date.now()<directPeerSession.deadline}
+function directPeerTimeoutForRole(role){return role==='host'?DIRECT_HOST_INVITE_TTL_MS:DIRECT_PEER_ATTEMPT_TIMEOUT_MS}
 function directPeerChannelAdapter(conn){
   const channel={readyState:'connecting',onopen:null,onmessage:null,onclose:null,onerror:null,__peerJsConn:conn,
     send(value){conn.send(value)},close(){try{conn.close()}catch{}}};
@@ -132,9 +134,10 @@ function directRetireHostInvite({title='Invite expired',copy='This invite is no 
   directNearbyStage({title,copy,status,showQr:false});directRefreshInviteUi(true)
 }
 function directCreatePeer(role){
-  if(!globalThis.Peer)throw new Error('Nearby pairing library did not load. Refresh and try again.');
+  if(!globalThis.Peer)throw new Error('Direct pairing library did not load. Refresh and try again.');
   directSetPeerRole(role);
-  const peer=new Peer(undefined,{debug:0,config:DIRECT_RTC_CONFIG});directPeerSession.peer=peer;directPeerSession.deadline=Date.now()+DIRECT_PEER_TIMEOUT_MS;
+  const timeout=directPeerTimeoutForRole(role),peer=new Peer(undefined,{debug:0,config:DIRECT_RTC_CONFIG});
+  directPeerSession.peer=peer;directPeerSession.deadline=Date.now()+timeout;
   peer.on('error',error=>{
     if(directPeerSession.opened)return;
     const failedRole=directPeerSession.role;directConnectionBadge('error','Pairing failed');directSetStatus(directPeerErrorMessage(error),{error:true});directShowRecoveryForRole(failedRole)
@@ -145,13 +148,13 @@ function directCreatePeer(role){
     directSetStatus(interruptedRole==='guest'?'Pairing was interrupted. Change networks if needed, then tap Retry Connection.':'Pairing broker was interrupted. If this invite no longer accepts retries, refresh it.',{error:true});directShowRecoveryForRole(interruptedRole)
   });
   directPeerSession.timer=setTimeout(()=>{if(!directPeerSession.opened){
-    const role=directPeerSession.role,sawIce=directPeerSession.lastIce&&directPeerSession.lastIce!=='new';
-    directConnectionBadge('error','Pairing timed out');
-    if(role==='host'){
-      directRetireHostInvite({title:'Pairing timed out',copy:'Player 2 did not connect within 90 seconds. Refresh Invite creates a completely new QR code and share link.',status:sawIce?'The invite window expired after a failed network attempt. Refresh to create a new invite.':'The old QR and link are retired. Refresh to create a new invite.'});return
+    const activeRole=directPeerSession.role,sawIce=directPeerSession.lastIce&&directPeerSession.lastIce!=='new';
+    directConnectionBadge('error',activeRole==='host'?'Invite expired':'Pairing timed out');
+    if(activeRole==='host'){
+      directRetireHostInvite({title:'Invite expired',copy:'This Direct invite stayed active for 5 minutes without a successful connection. Refresh Invite creates a completely new QR code and share link.',status:sawIce?'The recovery window expired after one or more failed network attempts. Refresh to create a new invite.':'The old QR and link are retired. Refresh to create a new invite.'});return
     }
-    directSetStatus(sawIce?directPeerRouteFailureMessage():'Direct pairing timed out before the phones found each other. Change networks if needed, then tap Retry Connection.',{error:true});directPeerReset();directRetryConnectionUi(!!directNearbyRetryPeerId)
-  }},DIRECT_PEER_TIMEOUT_MS);
+    directSetStatus(sawIce?directPeerRouteFailureMessage():'This connection attempt timed out after 90 seconds. Change networks if needed, then tap Retry Connection while Player 1’s invite is still active.',{error:true});directPeerReset();directRetryConnectionUi(!!directNearbyRetryPeerId)
+  }},timeout);
   return peer
 }
 
@@ -168,7 +171,7 @@ async function directCreateNearby(){
     peer.on('open',id=>{
       const link=directNearbyJoinLink(id),qr=directEl('duelDirectQr'),field=directEl('duelDirectSignal');
       if(field)field.value=link;if(qr){qr.hidden=false;directRenderQr(link)}
-      directNearbyStage({title:'Player 2 · Scan or open link',copy:'Player 2 can scan this QR with the Camera app or open the Clash 4 link you send. Failed attempts do not consume the invite: Player 2 can change networks and retry the same link while it remains active.',status:'Waiting for Player 2…',showQr:true});
+      directNearbyStage({title:'Player 2 · Scan or open link',copy:'This invite stays active for 5 minutes. Player 2 can scan the QR or open the shared link. If a network blocks the first attempt, switch networks and retry the same invite — no resend is required.',status:'Waiting for Player 2 · invite active for 5 minutes…',showQr:true});
       directRefreshInviteUi(true);
       if(!globalThis.QRCode)directNearbyManualUi(true)
     })
@@ -188,7 +191,7 @@ async function directJoinNearbyFromPeerId(hostPeerId){
   // guest retry target. Save this invite only after that cleanup so Player 2 can
   // recover from ICE/network failure without rescanning the QR or reopening the link.
   directOpenPanel();directNearbyRetryPeerId=hostPeerId;directRecoveryActions();directPeerReset();
-  directNearbyStage({title:'Joining Player 1…',copy:'Clash 4 is connecting directly to Player 1. If you change networks, you can retry this same invite without rescanning while it remains active.',status:'Opening the peer-to-peer connection…',showQr:false});
+  directNearbyStage({title:'Joining Player 1…',copy:'Clash 4 is connecting directly to Player 1. If you change networks, you can retry this same invite without rescanning while Player 1’s 5-minute invite remains active.',status:'Opening the peer-to-peer connection…',showQr:false});
   try{
     const peer=directCreatePeer('guest');
     peer.on('open',()=>{
