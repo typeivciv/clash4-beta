@@ -1,4 +1,4 @@
-name: Duel Modes Alpha CI
+name: Multiplayer Alpha CI
 
 on:
   push:
@@ -17,10 +17,12 @@ on:
       - 'src/js/20-duel-turn-alpha.js'
       - 'src/js/21-duel-colors-share.js'
       - 'src/js/22-duel-postmatch.js'
+      - 'src/js/23-duel-alpha-tester.js'
       - 'src/styles/50-private-duel.css'
       - 'src/styles/51-duel-turn-alpha.css'
       - 'src/styles/52-duel-colors-share.css'
       - 'src/styles/53-duel-postmatch.css'
+      - 'src/styles/54-duel-alpha-tester.css'
       - 'src/ui/private-duel-lobby.html'
       - 'tools/build_private_duel_alpha.py'
       - 'tools/build_duel_modes_alpha.py'
@@ -43,10 +45,12 @@ on:
       - 'src/js/20-duel-turn-alpha.js'
       - 'src/js/21-duel-colors-share.js'
       - 'src/js/22-duel-postmatch.js'
+      - 'src/js/23-duel-alpha-tester.js'
       - 'src/styles/50-private-duel.css'
       - 'src/styles/51-duel-turn-alpha.css'
       - 'src/styles/52-duel-colors-share.css'
       - 'src/styles/53-duel-postmatch.css'
+      - 'src/styles/54-duel-alpha-tester.css'
       - 'src/ui/private-duel-lobby.html'
       - 'tools/build_private_duel_alpha.py'
       - 'tools/build_duel_modes_alpha.py'
@@ -83,6 +87,7 @@ jobs:
           node --check src/js/20-duel-turn-alpha.js
           node --check src/js/21-duel-colors-share.js
           node --check src/js/22-duel-postmatch.js
+          node --check src/js/23-duel-alpha-tester.js
           node --check tests/test-direct-duel-soak.mjs
           python3 -m py_compile tools/build_private_duel_alpha.py tools/build_duel_modes_alpha.py
       - name: Client ordering contract
@@ -95,9 +100,9 @@ jobs:
         run: node tests/test-duel-local-core.mjs
       - name: Direct Duel 500-game soak QA
         run: node tests/test-direct-duel-soak.mjs
-      - name: Split-timeout Direct recovery, TURN, colors/share, unified postmatch, rematch, and Pass contracts
+      - name: Multiplayer Alpha packaging and Direct recovery contracts
         run: node tests/test-duel-mode-contract.mjs
-      - name: Build isolated Alpha client
+      - name: Build Multiplayer Alpha client
         run: python3 tools/build_duel_modes_alpha.py
       - name: Generated client contract
         run: node tests/test-private-duel-build.mjs
@@ -108,7 +113,8 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add private-duel-alpha.html
-            git commit -m "Build Duel Modes Alpha 0.15.13 split-timeout recovery"
+            git commit -m "Build Multiplayer Alpha 0.16.0 tester package"
+            git pull --rebase origin main
             git push
           else
             echo "Staging client already matches canonical sources."
