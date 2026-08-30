@@ -108,7 +108,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add private-duel-alpha.html
-            git commit -m "Build Duel Modes Alpha 0.15.7 rematch and postmatch reset"
+            git commit -m "Build Duel Modes Alpha 0.15.8 terminal-safe results"
             git push
           else
             echo "Staging client already matches canonical sources."
