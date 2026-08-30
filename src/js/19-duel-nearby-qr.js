@@ -1,39 +1,17 @@
-// Nearby Direct Duel one-scan UX.
-// A tiny HTTP signaling service exchanges only the WebRTC offer/answer. Once the DataChannel
-// opens, gameplay is peer-to-peer and the service is no longer on the match path.
+// Nearby Direct Duel one-scan UX using PeerJS Cloud only for connection brokering.
+// The QR carries the host peer ID in a Clash 4 HTTPS deep link. After the WebRTC data
+// connection opens, PeerJS signaling is disconnected and gameplay remains peer-to-peer.
 'use strict';
-const DIRECT_JOIN_PARAM='c4join';
-const DIRECT_SIGNAL_POLL_MS=450;
-const DIRECT_SIGNAL_TIMEOUT_MS=2*60*1000;
-let directSignalSession={server:'',id:'',hostToken:'',joinToken:'',pollTimer:null,deadline:0};
+const DIRECT_PEER_JOIN_PARAM='c4peer';
+const DIRECT_PEER_TIMEOUT_MS=90_000;
+let directPeerSession={peer:null,conn:null,role:null,opened:false,deadline:0,timer:null};
 
-function directSignalDescriptorEncode(value){return bytesToB64Url(new TextEncoder().encode(JSON.stringify(value)))}
-function directSignalDescriptorDecode(value){try{return JSON.parse(new TextDecoder().decode(b64UrlToBytes(value)))}catch{return null}}
-function directSignalServer(){return normalizeDuelServer(duelSession.server||initialDuelServer())}
-function directNearbyJoinLink({server,id,joinToken}){
-  const descriptor=directSignalDescriptorEncode({v:1,server:normalizeDuelServer(server),id,joinToken});
-  return `${location.origin}${location.pathname}#${DIRECT_JOIN_PARAM}=${descriptor}`
+function directPeerReset(){
+  if(directPeerSession.timer)clearTimeout(directPeerSession.timer);
+  try{directPeerSession.conn?.close()}catch{}
+  try{directPeerSession.peer?.destroy()}catch{}
+  directPeerSession={peer:null,conn:null,role:null,opened:false,deadline:0,timer:null}
 }
-function directReadNearbyJoin(){
-  const raw=String(location.hash||'').replace(/^#/,'');if(!raw)return null;
-  const params=new URLSearchParams(raw),encoded=params.get(DIRECT_JOIN_PARAM);if(!encoded)return null;
-  const value=directSignalDescriptorDecode(encoded);if(!value||value.v!==1||!value.server||!value.id||!value.joinToken)return null;
-  const server=normalizeDuelServer(value.server);if(!/^https:\/\//i.test(server)&&!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(server))return null;
-  return{server,id:String(value.id).toUpperCase(),joinToken:String(value.joinToken)}
-}
-function directClearNearbyJoinHash(){
-  if(!location.hash.includes(`${DIRECT_JOIN_PARAM}=`))return;
-  try{history.replaceState(null,'',`${location.pathname}${location.search}`)}catch{}
-}
-async function directSignalRequest(server,path,{method='GET',token='',body=null}={}){
-  const headers={'content-type':'application/json'};if(token)headers.authorization=`Bearer ${token}`;
-  const response=await fetch(normalizeDuelServer(server)+path,{method,headers,body:body===null?undefined:JSON.stringify(body),cache:'no-store'});
-  let data={};try{data=await response.json()}catch{}
-  if(!response.ok){const error=new Error(data.error||`http-${response.status}`);error.status=response.status;throw error}
-  return data
-}
-function directStopSignalPolling(){if(directSignalSession.pollTimer)clearTimeout(directSignalSession.pollTimer);directSignalSession.pollTimer=null}
-function directResetSignalSession(){directStopSignalPolling();directSignalSession={server:'',id:'',hostToken:'',joinToken:'',pollTimer:null,deadline:0}}
 function directNearbyManualUi(show){
   const label=directEl('duelDirectSignal')?.closest('.duelSignalLabel'),actions=directEl('duelDirectCopy')?.parentElement,accept=directEl('duelDirectAcceptRow');
   if(label)label.hidden=!show;if(actions)actions.hidden=!show;if(accept)accept.hidden=!show
@@ -43,71 +21,94 @@ function directNearbyStage({title,copy,status,showQr=true}){
   const titleEl=directEl('duelDirectStageTitle'),copyEl=directEl('duelDirectStageCopy'),qr=directEl('duelDirectQr');
   if(titleEl)titleEl.textContent=title;if(copyEl)copyEl.textContent=copy;if(qr)qr.hidden=!showQr;directSetStatus(status||'');queueFit()
 }
-function directSyncPairingServiceUi(){const input=directEl('duelDirectServerInput');if(input)input.value=directSignalServer()}
-function directSavePairingService(){
-  const input=directEl('duelDirectServerInput');if(!input)return;saveDuelServer(input.value);directSyncPairingServiceUi();directSetStatus(duelSession.server?'Pairing service saved.':'Pairing service cleared.',{error:!duelSession.server})
+function directNearbyJoinLink(peerId){return `${location.origin}${location.pathname}#${DIRECT_PEER_JOIN_PARAM}=${encodeURIComponent(peerId)}`}
+function directReadNearbyPeerId(){
+  const raw=String(location.hash||'').replace(/^#/,'');if(!raw)return'';
+  const value=new URLSearchParams(raw).get(DIRECT_PEER_JOIN_PARAM)||'';
+  return /^[A-Za-z0-9_-]{1,128}$/.test(value)?value:''
+}
+function directClearNearbyHash(){
+  if(!location.hash.includes(`${DIRECT_PEER_JOIN_PARAM}=`))return;
+  try{history.replaceState(null,'',`${location.pathname}${location.search}`)}catch{}
+}
+function directPeerErrorMessage(error){
+  const type=String(error?.type||'');
+  if(type==='peer-unavailable')return 'That Nearby invite is no longer available. Ask Player 1 to create a new QR.';
+  if(type==='network'||type==='server-error'||type==='socket-error'||type==='socket-closed')return 'Could not reach the Nearby pairing broker. Check internet access and try again.';
+  if(type==='browser-incompatible')return 'This browser cannot create the Direct WebRTC connection.';
+  return error?.message||'Nearby pairing failed.'
+}
+function directSetPeerRole(role){
+  directDuel.role=role;directDuel.pairing='nearby';directDuel.seat=role==='host'?H:A;duelSession.seat=directDuel.seat;directPeerSession.role=role
+}
+function directPeerChannelAdapter(conn){
+  const channel={readyState:'connecting',onopen:null,onmessage:null,onclose:null,onerror:null,
+    send(value){conn.send(value)},close(){try{conn.close()}catch{}}};
+  conn.on('open',()=>{channel.readyState='open';directPeerSession.opened=true;channel.onopen?.();
+    // PeerJS documents that existing P2P connections remain alive after disconnecting
+    // from the signaling server, so remove signaling from the match path immediately.
+    try{directPeerSession.peer?.disconnect()}catch{}
+  });
+  conn.on('data',data=>channel.onmessage?.({data:typeof data==='string'?data:JSON.stringify(data)}));
+  conn.on('close',()=>{channel.readyState='closed';channel.onclose?.()});
+  conn.on('error',error=>channel.onerror?.(error));
+  return channel
+}
+function directBindPeerJsConnection(conn){
+  if(directPeerSession.conn&&directPeerSession.conn!==conn){try{conn.close()}catch{};return}
+  directPeerSession.conn=conn;directDuel.pc={close(){directPeerReset()}};directBindChannel(directPeerChannelAdapter(conn));
+  directSetStatus('Peer found. Establishing the direct connection…')
+}
+function directCreatePeer(role){
+  if(!globalThis.Peer)throw new Error('Nearby pairing library did not load. Refresh and try again.');
+  directSetPeerRole(role);
+  const peer=new Peer(undefined,{debug:0,config:DIRECT_RTC_CONFIG});directPeerSession.peer=peer;directPeerSession.deadline=Date.now()+DIRECT_PEER_TIMEOUT_MS;
+  peer.on('error',error=>{if(directPeerSession.opened)return;directSetStatus(directPeerErrorMessage(error),{error:true})});
+  peer.on('disconnected',()=>{if(!directPeerSession.opened)directConnectionBadge('offline','Pairing interrupted')});
+  directPeerSession.timer=setTimeout(()=>{if(!directPeerSession.opened){directSetStatus('Nearby pairing timed out. Create a new QR and try again.',{error:true});directPeerReset()}},DIRECT_PEER_TIMEOUT_MS);
+  return peer
 }
 
-const directClosePeerBeforeOneScan=directClosePeer;
-directClosePeer=function(options={}){directResetSignalSession();return directClosePeerBeforeOneScan(options)};
+const directClosePeerBeforePeerJs=directClosePeer;
+directClosePeer=function(options={}){directPeerReset();return directClosePeerBeforePeerJs(options)};
 globalThis.directClosePeer=directClosePeer;
-const directOpenPanelBeforeOneScan=directOpenPanel;
-directOpenPanel=function(){const result=directOpenPanelBeforeOneScan();directSyncPairingServiceUi();return result};
-globalThis.directOpenPanel=directOpenPanel;
 
 async function directCreateNearby(){
-  const server=directSignalServer();directOpenPanel();
-  if(!server){directSetStatus('Save the Pairing service above once, then tap Nearby · One Scan again.',{error:true});return}
-  directDuel.pairing='nearby';directDuel.signalKind='offer';
-  directNearbyStage({title:'Preparing one-scan invite…',copy:'Player 2 will scan one QR with the normal Camera app. No return QR is required.',status:'Creating a short-lived pairing session…',showQr:false});
+  directOpenPanel();directPeerReset();directDuel.pairing='nearby';
+  directNearbyStage({title:'Preparing one-scan invite…',copy:'Player 2 will scan one QR with the normal Camera app. No return QR or service URL is required.',status:'Connecting to the temporary pairing broker…',showQr:false});
   try{
-    const pc=makeDirectPeer('host'),offer=await pc.createOffer();await pc.setLocalDescription(offer);await directWaitForIce(pc);
-    const created=await directSignalRequest(server,'/api/direct/signals',{method:'POST',body:{offer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp}}});
-    directSignalSession={server,id:created.id,hostToken:created.hostToken,joinToken:created.joinToken,pollTimer:null,deadline:Date.now()+Math.min(Number(created.ttlMs)||DIRECT_SIGNAL_TIMEOUT_MS,DIRECT_SIGNAL_TIMEOUT_MS)};
-    const link=directNearbyJoinLink(directSignalSession),qr=directEl('duelDirectQr');
-    if(qr){qr.hidden=false;directRenderQr(link)}
-    const signalField=directEl('duelDirectSignal');if(signalField)signalField.value=link;
-    if(!globalThis.QRCode)directNearbyManualUi(true);
-    directNearbyStage({title:'Player 2 · Scan once to join',copy:'Use the normal Camera app and tap the Clash 4 link. Player 2 will open directly into pairing, and both phones will connect automatically.',status:'Waiting for Player 2 to scan…',showQr:true});
-    if(!globalThis.QRCode)directNearbyManualUi(true);
-    directPollNearbyAnswer()
-  }catch(e){directSetStatus(`Could not create one-scan pairing: ${e.message||'unknown error'}`,{error:true});directClosePeer()}
+    const peer=directCreatePeer('host');
+    peer.on('connection',conn=>directBindPeerJsConnection(conn));
+    peer.on('open',id=>{
+      const link=directNearbyJoinLink(id),qr=directEl('duelDirectQr'),field=directEl('duelDirectSignal');
+      if(field)field.value=link;if(qr){qr.hidden=false;directRenderQr(link)}
+      directNearbyStage({title:'Player 2 · Scan once to join',copy:'Player 2: use the normal Camera app, scan this QR, and tap the Clash 4 link. Both phones will connect automatically.',status:'Waiting for Player 2 to scan…',showQr:true});
+      if(!globalThis.QRCode)directNearbyManualUi(true)
+    })
+  }catch(e){directSetStatus(directPeerErrorMessage(e),{error:true});directPeerReset()}
 }
 globalThis.directCreateNearby=directCreateNearby;
 
-async function directPollNearbyAnswer(){
-  directStopSignalPolling();const session=directSignalSession;if(!session.id||!session.hostToken||directDuel.role!=='host'||!directDuel.pc)return;
-  if(Date.now()>session.deadline){directSetStatus('Pairing invite expired. Create a new Nearby Duel and scan the new QR.',{error:true});return}
+async function directJoinNearbyFromPeerId(hostPeerId){
+  directOpenPanel();directPeerReset();
+  directNearbyStage({title:'Joining Player 1…',copy:'Clash 4 is connecting directly to Player 1. Keep this screen open.',status:'Opening the peer-to-peer connection…',showQr:false});
   try{
-    const result=await directSignalRequest(session.server,`/api/direct/signals/${encodeURIComponent(session.id)}/answer`,{token:session.hostToken});
-    if(result.ready&&result.answer){directStopSignalPolling();await directDuel.pc.setRemoteDescription(result.answer);directSetStatus('Player 2 found. Finishing the direct connection…');return}
-  }catch(e){if(e.status===404){directSetStatus('Pairing invite expired. Create a new Nearby Duel.',{error:true});return}}
-  directSignalSession.pollTimer=setTimeout(directPollNearbyAnswer,DIRECT_SIGNAL_POLL_MS)
+    const peer=directCreatePeer('guest');
+    peer.on('open',()=>{
+      const conn=peer.connect(hostPeerId,{reliable:true,serialization:'json'});directBindPeerJsConnection(conn)
+    })
+  }catch(e){directSetStatus(directPeerErrorMessage(e),{error:true});directPeerReset()}
 }
-
-async function directJoinNearbyFromLink(descriptor){
-  directOpenPanel();directDuel.pairing='nearby';directDuel.signalKind='answer';
-  directNearbyStage({title:'Joining Player 1…',copy:'The QR already contains everything needed to find the temporary pairing session. Keep this screen open.',status:'Receiving Player 1’s WebRTC offer…',showQr:false});
-  try{
-    const result=await directSignalRequest(descriptor.server,`/api/direct/signals/${encodeURIComponent(descriptor.id)}`,{token:descriptor.joinToken});
-    const pc=makeDirectPeer('guest');await pc.setRemoteDescription(result.offer);const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await directWaitForIce(pc);
-    await directSignalRequest(descriptor.server,`/api/direct/signals/${encodeURIComponent(descriptor.id)}/answer`,{method:'POST',token:descriptor.joinToken,body:{answer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp}}});
-    directSetStatus('Pairing response sent. Connecting directly to Player 1…')
-  }catch(e){directSetStatus(`Could not join this Nearby Duel: ${e.message||'pairing failed'}`,{error:true});directClosePeer()}
+async function directHandleNearbyLaunch(){
+  const peerId=directReadNearbyPeerId();if(!peerId)return false;directClearNearbyHash();await directJoinNearbyFromPeerId(peerId);return true
 }
-
-async function directHandleNearbyLaunch(){const descriptor=directReadNearbyJoin();if(!descriptor)return false;directClearNearbyJoinHash();await directJoinNearbyFromLink(descriptor);return true}
 
 const directCreateManual=directCreate;
 directCreate=async function(pairing='nearby'){return pairing==='nearby'?directCreateNearby():directCreateManual(pairing)};
 globalThis.directCreate=directCreate;
 
-function directBootNearbySignalUx(){
-  directSyncPairingServiceUi();directEl('duelDirectSaveServer')?.addEventListener('click',directSavePairingService);
-  directEl('duelDirectServerInput')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();directSavePairingService()}});
-  setTimeout(()=>directHandleNearbyLaunch(),0)
-}
+function directBootNearbyPeerUx(){setTimeout(()=>directHandleNearbyLaunch(),0)}
 globalThis.directNearbyJoinLink=directNearbyJoinLink;
 globalThis.directHandleNearbyLaunch=directHandleNearbyLaunch;
-globalThis.directBootNearbySignalUx=directBootNearbySignalUx;
-directBootNearbySignalUx();
+globalThis.directBootNearbyPeerUx=directBootNearbyPeerUx;
+directBootNearbyPeerUx();
