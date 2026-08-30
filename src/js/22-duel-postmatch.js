@@ -1,4 +1,4 @@
-// Duel 0.15.6: robust post-match routing + animated win/loss/draw presentation.
+// Duel 0.15.6: robust post-match routing + replay + animated win/loss/draw presentation.
 'use strict';
 let duelResultAnimationKey='';
 
@@ -25,9 +25,36 @@ function duelPostMatchAnimate(){
   duelResultAnimationKey=key;end.classList.remove('duel-result-enter');stage.classList.remove('play');void stage.offsetWidth;end.classList.add('duel-result-enter');stage.classList.add('play');
   if(outcome==='win'){try{gameHaptic?.('win')}catch{}}
 }
+function duelPostMatchReplayControls(){
+  if(matchMode!=='duel')return;
+  const disabled=!finishReplay?.steps?.length||replayPhase!=='idle';
+  for(const button of [replayFinishButton,replayFinishReviewButton,sidebarReplayFinish]){
+    button.disabled=disabled;button.hidden=false;button.textContent=replayPhase!=='idle'?'Replaying…':'Replay Finish'
+  }
+}
+
+// The shared network adapter already records the final two viewer-projected interactions.
+// Preserve them at terminal instead of the older Alpha behavior that intentionally nulled replay.
+duelFinishNetworkPresentation=function(events,column){
+  const done=()=>{
+    busy=false;
+    const deferred=nextDeferredDuelPayload();
+    if(deferred){duelAcceptActivePayload(deferred);return}
+    if(s.winner||s.draw){
+      duelStopPolling();postMatchView='summary';
+      finishReplay={steps:recentInteractions.slice(-2).map(cloneInteractionForReplay)};
+      render();return
+    }
+    continueTurnController()
+  };
+  if(events.length)playEvents(events,done,column);else done()
+};
 
 const renderPostMatchBeforeDuelResult=renderPostMatch;
-renderPostMatch=function(reviewMode){const result=renderPostMatchBeforeDuelResult(reviewMode);duelPostMatchAnimate();return result};
+renderPostMatch=function(reviewMode){
+  const result=renderPostMatchBeforeDuelResult(reviewMode);
+  duelPostMatchReplayControls();duelPostMatchAnimate();return result
+};
 
 // Capture the three post-match New Duel buttons before the legacy Rematch listeners.
 // This keeps Direct connection teardown and Duel hub routing deterministic.
@@ -35,6 +62,7 @@ document.addEventListener('click',event=>{
   if(matchMode!=='duel')return;
   const button=event.target?.closest?.('#restartBottom,#reviewRestart,#sidebarRematch');if(!button)return;
   event.preventDefault();event.stopImmediatePropagation();
+  clearPresentationTimers();clearTimer('replay');
   postMatchView='none';replayPhase='idle';replayVisualState=null;replayStepIndex=-1;dropPresentation=null;busy=false;ready=false;
   end.classList.remove('show','duel-result-win','duel-result-loss','duel-result-draw','duel-result-enter');
   globalThis.duelRouteNewDuel?.()
