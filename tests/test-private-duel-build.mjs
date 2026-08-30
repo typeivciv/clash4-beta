@@ -8,7 +8,7 @@ assert.ok(publicIndex.includes('<title>Clash 4 — Mobile Beta 0.13.3</title>'),
 assert.ok(!publicIndex.includes('id="homeDuelButton"'),'public beta must not expose unfinished Duel UI');
 
 for(const required of [
-  'Duel Modes Alpha 0.15.9',
+  'Duel Modes Alpha 0.15.10',
   'id="homeDuelButton"',
   'id="duelLobbyPanel"',
   'id="duelDirectMode"',
@@ -23,6 +23,7 @@ for(const required of [
   "createDataChannel('clash4-duel'",
   'function directCreateNearby()',
   "DIRECT_PEER_JOIN_PARAM='c4peer'",
+  'DIRECT_PEER_TIMEOUT_MS=90_000',
   'new Peer(undefined,{debug:0,config:DIRECT_RTC_CONFIG})',
   'directPeerSession.peer?.disconnect()',
   'No return QR or service URL is required.',
@@ -32,6 +33,13 @@ for(const required of [
   'function directObservePeerConnection(conn)',
   'Direct route blocked',
   'TURN relay or Online Room fallback',
+  'function directExpireHostInvite()',
+  "title:'Invite expired'",
+  'This QR and link have expired.',
+  'function directRefreshNearbyInvite()',
+  "button.textContent='Refresh Invite'",
+  'id="duelDirectRefreshRow"',
+  'id="duelDirectRefreshInvite"',
   'DIRECT_ALPHA_TURN_SERVERS',
   'turn:openrelay.metered.ca:80',
   'turn:openrelay.metered.ca:443?transport=tcp',
@@ -103,4 +111,4 @@ for(let i=0;i<scripts.length;i++){
   catch(error){throw new Error(`generated script ${i+1} failed syntax: ${error.message}`)}
 }
 
-console.log(`PASS generated Duel Modes Alpha 0.15.9 build (${ids.length} unique DOM ids, ${scripts.length} script blocks)`);
+console.log(`PASS generated Duel Modes Alpha 0.15.10 build (${ids.length} unique DOM ids, ${scripts.length} script blocks)`);
