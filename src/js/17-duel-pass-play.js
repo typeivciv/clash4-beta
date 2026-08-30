@@ -28,7 +28,10 @@ function startPassPlay(){
 globalThis.startPassPlay=startPassPlay;
 function passConfirmHandoff(){
   if(!passDuel.active||!passDuel.state)return;passDuel.viewer=passDuel.state.turn;duelSession.seat=passDuel.viewer;
-  const projected=projectDuelState(passDuel.state,passDuel.viewer,{revealAll:!!(passDuel.state.winner||passDuel.state.draw)});s=duelProjectedStateToUi(projected);busy=false;ready=true;hoverCol=null;quickStarterBanner.hidden=true;passHideOverlay();render();queueFit();msg(`${passPlayerLabel(passDuel.viewer)} — your turn.`)
+  const projected=projectDuelState(passDuel.state,passDuel.viewer,{revealAll:!!(passDuel.state.winner||passDuel.state.draw)});s=duelProjectedStateToUi(projected);busy=false;ready=true;hoverCol=null;quickStarterBanner.hidden=true;
+  // Combat/move history is viewer-relative ("You"/"Opponent"). Clear it at handoff so the
+  // next player never inherits mislabeled or privacy-sensitive presentation from the prior view.
+  publicMoveHistory=[];recentInteractions=[];passHideOverlay();render();queueFit();msg(`${passPlayerLabel(passDuel.viewer)} — your turn.`)
 }
 function passFinishPresentation(events,column){
   const done=()=>{
