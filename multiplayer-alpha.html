@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="description" content="Clash 4 mobile beta test build">
-<title>Clash 4 — Fog of War · Multiplayer Alpha 0.16.7</title>
+<title>Clash 4 — Fog of War · Multiplayer Alpha 0.16.8</title>
 
 
 
@@ -746,7 +746,7 @@ body.alpha-tester-modal-open{overflow:hidden}
 @media(max-width:720px){#easyLearningCoach.easyLearningCoach{min-height:40px;grid-template-columns:auto minmax(0,1fr) auto;gap:5px;padding:5px 6px}.easyRpsCompass{grid-column:2/3;justify-self:start;font-size:11px;padding:2px 5px}.easyCoachActions{grid-column:3;grid-row:1/3;flex-direction:column}.easyCoachActions button{min-height:26px;padding:3px 6px}.easyCoachCopy strong{font-size:10px}.easyCoachCopy span{font-size:8.5px}.easyCoachIcon{width:30px;height:25px}.easyLearningSetup{align-items:flex-start;display:grid}.easyLearningSetupActions{width:100%;display:grid;grid-template-columns:1fr 1fr auto;align-items:end}.easyLearningSetupActions label{min-width:0}.easyLearningSetup button{min-height:31px;width:100%}}
 @media(max-width:390px){.easyRpsCompass{display:none}.easyCoachCopy span{font-size:8px}.easyLearningSetup{padding:8px 9px}.easyLearningSetupCopy small{font-size:9px}.easyLearningSetupActions{grid-template-columns:1fr 1fr}.easyLearningSetup .easyLearningReset{grid-column:1/-1}}
 body.reducedMotion .easyLearningPulse{animation:none!important;outline:3px solid rgba(116,174,255,.72);outline-offset:2px}
-/* Multiplayer Alpha 0.16.5: keep combat visually attached to the board, not the right sidebar. */
+/* Multiplayer Alpha 0.16.8: board-centered combat with a readable Easy capture beat. */
 .overlay .card.teachingCombatCard,.overlay .card.teachingSpecialCard{pointer-events:auto}
 @media(min-width:980px){
   .overlay[data-layout="desktop"],.overlay[data-layout="compact"]{
@@ -803,6 +803,49 @@ body.reducedMotion .easyLearningPulse{animation:none!important;outline:3px solid
   .overlay[data-layout="compact"] .easyCombatWhyPanel{font-size:12px;line-height:1.5}
 }
 
+/* Easy combat now has a readable two-stage capture: see both fighters first, then
+   watch the losing fighter resolve as captured. This is presentation only. */
+.teachingCombatCard.capture-staging .fighter.winner,
+.teachingCombatCard.capture-staging .fighter.loser{
+  animation:none!important;
+  transform:none!important;
+  opacity:1!important;
+  filter:none!important;
+}
+.teachingCombatCard.capture-staging .fighter.loser{box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)!important}
+.teachingCombatCard.capture-resolved .fighter.loser{animation:c4-capture-resolve .78s cubic-bezier(.2,.72,.24,1) both!important}
+.teachingCombatCard.capture-resolved .fighter.winner{animation:c4-capture-survivor .58s ease-out both!important}
+.teachingCombatCard.capture-resolved .fighter.loser::after{
+  content:'CAPTURED';
+  position:absolute;
+  left:50%;bottom:7px;transform:translateX(-50%);
+  z-index:4;
+  padding:3px 7px;
+  border:1px solid rgba(255,151,151,.46);
+  border-radius:999px;
+  background:rgba(75,18,27,.82);
+  color:#ffd7d7;
+  font-size:8px;
+  line-height:1;
+  font-weight:950;
+  letter-spacing:.12em;
+  animation:c4-captured-label .34s ease-out .2s both;
+}
+@keyframes c4-capture-resolve{
+  0%{opacity:1;transform:scale(1);filter:none}
+  38%{opacity:.9;transform:scale(.97);filter:saturate(.82)}
+  100%{opacity:.48;transform:scale(.91);filter:saturate(.55) brightness(.78)}
+}
+@keyframes c4-capture-survivor{
+  0%{transform:scale(1);filter:none}
+  46%{transform:scale(1.055);filter:brightness(1.23)}
+  100%{transform:scale(1);filter:none}
+}
+@keyframes c4-captured-label{from{opacity:0;transform:translate(-50%,4px)}to{opacity:1;transform:translate(-50%,0)}}
+body.reducedMotion .teachingCombatCard.capture-resolved .fighter.winner{animation:none!important}
+body.reducedMotion .teachingCombatCard.capture-resolved .fighter.loser{animation:none!important;opacity:.5!important;transform:none!important;filter:saturate(.6)!important}
+body.reducedMotion .teachingCombatCard.capture-resolved .fighter.loser::after{animation:none!important}
+
 /* The learning cue should read as "the board is ready for a drop", never "top row is special". */
 #board.easyLearningBoardCue{animation:c4-easy-board-cue 1.15s ease-in-out 2!important}
 @keyframes c4-easy-board-cue{
@@ -810,7 +853,7 @@ body.reducedMotion .easyLearningPulse{animation:none!important;outline:3px solid
   50%{box-shadow:0 10px 35px rgba(0,0,0,.24),0 0 0 4px rgba(116,174,255,.50),0 0 34px rgba(116,174,255,.34)}
 }
 body.reducedMotion #board.easyLearningBoardCue{animation:none!important;outline:3px solid rgba(116,174,255,.68);outline-offset:4px}
-/* Multiplayer Alpha 0.16.7: compact combat-like learning cards and cohesive opponent HUD. */
+/* Multiplayer Alpha 0.16.8: compact combat-like learning cards and audited opponent HUD. */
 .homeActions .homeLearn.homeCustomize{width:100%}
 
 /* Learning tips share the combat-card visual language, but stay below the board. */
@@ -855,14 +898,27 @@ body.reducedMotion #board.easyLearningBoardCue{animation:none!important;outline:
   #easyLearningCoach[data-placement="player"] .easyCoachCopy strong{font-size:15px!important}
   #easyLearningCoach[data-placement="player"] .easyCoachCopy span{font-size:13px!important}
 
-  /* The desktop sidebar is narrow. Give identity and match stats separate rows so
-     Orange can never sit underneath or behind the remaining-piece text. */
-  .panel.ai .row{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:8px!important;align-items:stretch!important}
-  .panel.ai .row>div:first-child{width:100%;justify-content:flex-start}
-  .panel.ai .aiStatusMeta{width:100%;min-width:0;display:grid!important;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;justify-content:stretch!important;gap:8px!important}
-  .panel.ai .aiRemaining{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
-  .panel.ai .hiddenTypePill{justify-self:end}
-  .panel.ai #aiTurn{justify-self:end}
+  /* Audited at the real 292px sidebar width: make this read as one opponent card,
+     not four tiny metadata fragments. */
+  .panel.ai{padding:11px 12px!important}
+  .panel.ai .row{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:9px!important;align-items:stretch!important}
+  .panel.ai .row>div:first-child{width:100%;justify-content:space-between!important;gap:10px!important;padding:0 1px 1px}
+  .panel.ai .row>div:first-child .eyebrow{font-size:10px!important;letter-spacing:.16em!important;color:#a7b5cb!important}
+  .panel.ai #aiColorLabel{min-height:23px;max-width:118px;padding:4px 8px;font-size:10.5px!important}
+  .panel.ai .aiStatusMeta{
+    width:100%;min-width:0;
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    align-items:center;justify-content:stretch!important;
+    gap:10px!important;
+    padding-top:8px;
+    border-top:1px solid rgba(83,102,138,.42)
+  }
+  .panel.ai .aiRemaining{min-width:0;display:flex!important;align-items:baseline;gap:4px;overflow:visible;text-overflow:clip;white-space:nowrap;color:#9aaac0}
+  .panel.ai .aiRemaining .remainingNumber{min-width:auto!important;font-size:18px!important;line-height:1!important;font-weight:950!important;color:#f0f5ff!important;text-align:left!important}
+  .panel.ai .aiRemaining>span:last-child{font-size:8px!important;line-height:1!important;letter-spacing:.11em;text-transform:uppercase;color:#8495ad;font-weight:900}
+  .panel.ai .hiddenTypePill{justify-self:end;padding:4px 8px;font-size:9px;color:#b9c6d8;border-color:#41516b;background:rgba(13,20,34,.46)}
+  .panel.ai #aiTurn{display:none!important}
 }
 
 @media(max-width:720px){
@@ -888,7 +944,7 @@ body.reducedMotion #board.easyLearningBoardCue{animation:none!important;outline:
 <body>
 <div id="appRoot" class="app">
 <header>
-  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Arcade RC1 · Multiplayer Alpha 0.16.7</div></div>
+  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Arcade RC1 · Multiplayer Alpha 0.16.8</div></div>
   <div id="fogTurnPill" class="fogTurnPill neutral"><span class="fogTurnDot"></span><span id="fogTurnText">Setup</span></div>
   <div class="topActions">
     <div id="matchDifficultyBadge" class="matchDifficultyBadge" title="Difficulty is chosen before the match"><span>AI</span><strong id="matchDifficultyLabel">Normal</strong></div>
@@ -1022,7 +1078,7 @@ body.reducedMotion #board.easyLearningBoardCue{animation:none!important;outline:
       <div class="homeTagline">Connect Four. Win the Clash.</div>
       <p class="homeLede">Build four in a row while Rock–Paper–Scissors combat, Decoys, and hidden enemy identities turn every column into a tactical gamble.</p>
       <div class="homeActions"><button id="homePlayButton" class="homePlay" type="button"><span>Play</span><small>Normal · Default colors · Random start</small></button><button id="homeDuelButton" class="homeDuel" type="button"><span>Multiplayer</span><small>Invite a player · Pass &amp; Play · Alpha test</small></button><button id="homeCustomizeButton" class="homeCustomize" type="button"><span>Customize Match</span><small>Difficulty · first move · colors · tips</small></button><button id="homeRulesButton" class="homeSecondary" type="button">How to Play</button></div>
-      <div class="homeMeta"><span>Duel Modes Alpha · 0.16.7</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
+      <div class="homeMeta"><span>Duel Modes Alpha · 0.16.8</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
     </div>
     <div class="homeHero" aria-hidden="true"><div class="homeHeroGlow"></div><div class="heroBoard"><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">🪨</span></div><div class="heroHole"><span class="heroPiece ai ">📄</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">✂️</span></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"><span class="heroPiece player ">📄</span></div><div class="heroHole"><span class="heroPiece ai ">🪨</span></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"><span class="heroPiece ai ">✂️</span></div></div><div class="heroFog"></div></div>
   </section>
@@ -3321,7 +3377,7 @@ document.addEventListener('click',event=>{
 duelPostMatchEnsureVisual();
 
 'use strict';
-const ALPHA_TESTER_VERSION='0.16.7';
+const ALPHA_TESTER_VERSION='0.16.8';
 function alphaTesterEl(id){return document.getElementById(id)}
 function alphaTesterMode(){
   if(typeof matchMode!=='undefined'&&matchMode==='arcade')return'Arcade / Solo';
@@ -3628,14 +3684,19 @@ globalThis.easyLearningReset=easyLearningReset;
 globalThis.easyLearningShowMe=easyLearningShowMe;
 globalThis.EASY_LEARNING_PACING=EASY_LEARNING_PACING;
 
-// Multiplayer Alpha 0.16.7: board-centered combat and deliberate Easy turn handoff.
+// Multiplayer Alpha 0.16.8: board-centered combat, readable captures, and deliberate Easy turn handoff.
 'use strict';
-const GAMEPLAY_FLOW_VERSION='0.16.7';
+const GAMEPLAY_FLOW_VERSION='0.16.8';
 const EASY_AI_POST_DROP_MS=850;
 const LEARNING_AI_POST_DROP_MS=1150;
 const EASY_AI_POST_COMBAT_MS=350;
 const LEARNING_AI_POST_COMBAT_MS=550;
+const EASY_CAPTURE_HOLD_MS=950;
+const LEARNING_CAPTURE_HOLD_MS=1350;
+const EASY_CHAIN_CAPTURE_HOLD_MS=700;
+const LEARNING_CHAIN_CAPTURE_HOLD_MS=950;
 let gameplayFlowSettleToken=0;
+let gameplayFlowCaptureToken=0;
 
 function gameplayFlowBoardCenter(){
   try{
@@ -3664,6 +3725,34 @@ function gameplayFlowAiSettleMs(){
   }catch{return 0}
 }
 
+function gameplayFlowCaptureHoldMs(e){
+  try{
+    if(typeof easyLearningMode!=='function'||!easyLearningMode())return 0;
+    if(e?.kind!=='combat'||e.decoyContact||e.o==='tie')return 0;
+    const learning=typeof easyLearningAutoActive==='function'&&easyLearningAutoActive();
+    const chained=(e.chainTotal||0)>1&&(e.chainIndex||1)>1;
+    if(chained)return learning?LEARNING_CHAIN_CAPTURE_HOLD_MS:EASY_CHAIN_CAPTURE_HOLD_MS;
+    return learning?LEARNING_CAPTURE_HOLD_MS:EASY_CAPTURE_HOLD_MS
+  }catch{return 0}
+}
+
+function gameplayFlowStageCapture(e){
+  const hold=gameplayFlowCaptureHoldMs(e);
+  if(!hold)return;
+  const card=document.getElementById('overlayCard')||overlayCard;
+  if(!card?.classList.contains('teachingCombatCard'))return;
+  const token=++gameplayFlowCaptureToken;
+  card.classList.remove('capture-resolved');
+  card.classList.add('capture-staging');
+  gameplayFlowMarkPhase('capture-read');
+  scheduleTimer('captureResolve',()=>{
+    if(token!==gameplayFlowCaptureToken||activePresentation?.event!==e)return;
+    card.classList.remove('capture-staging');
+    card.classList.add('capture-resolved');
+    gameplayFlowMarkPhase('capture-resolve')
+  },hold)
+}
+
 // The base transaction changes the state to the player's turn as soon as the AI move
 // finishes presenting. Easy adds one deliberate board-reading beat before the controls
 // reactivate. Learning mode gets a little more time; other modes are unchanged.
@@ -3687,6 +3776,7 @@ showEvent=function(e){
   gameplayFlowBoardCenter();
   gameplayFlowMarkPhase(e?.kind==='combat'?'combat':'special');
   const result=showEventBeforeGameplayFlow(e);
+  gameplayFlowStageCapture(e);
   requestAnimationFrame(gameplayFlowBoardCenter);
   return result
 };
@@ -3714,6 +3804,7 @@ requestAnimationFrame(gameplayFlowBoardCenter);
 
 globalThis.gameplayFlowBoardCenter=gameplayFlowBoardCenter;
 globalThis.gameplayFlowAiSettleMs=gameplayFlowAiSettleMs;
+globalThis.gameplayFlowCaptureHoldMs=gameplayFlowCaptureHoldMs;
 globalThis.GAMEPLAY_FLOW_VERSION=GAMEPLAY_FLOW_VERSION;
 
 // Multiplayer Alpha 0.16.6: one-tap learner entry, compact coaching, and skippable reading time.
@@ -4795,7 +4886,7 @@ init();
 
 <script>
 (function(){
-  const BUILD='Multiplayer Alpha 0.16.7';
+  const BUILD='Multiplayer Alpha 0.16.8';
   const REPO_ISSUES='https://github.com/typeivciv/clash4-beta/issues/new';
   const $=id=>document.getElementById(id);
   const openBtn=$('betaFeedbackButton'), overlay=$('betaFeedbackOverlay'), closeBtn=$('betaFeedbackClose');
@@ -4831,7 +4922,7 @@ init();
   function issueTitle(){
     const type=$('betaIssueType').value;
     const detail=$('betaWhatHappened').value.trim().replace(/\s+/g,' ').slice(0,72);
-    return `[Multiplayer Alpha 0.16.7][${type}] ${detail||'Tester report'}`;
+    return `[Multiplayer Alpha 0.16.8][${type}] ${detail||'Tester report'}`;
   }
   function githubUrl(){
     const body=[
