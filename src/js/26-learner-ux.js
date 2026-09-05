@@ -1,16 +1,19 @@
-// Multiplayer Alpha 0.16.6: one-tap learner entry, concise coach copy, and learner-controlled first explanations.
+// Multiplayer Alpha 0.16.6: one-tap learner entry, compact coaching, and skippable reading time.
 'use strict';
 const LEARNER_UX_VERSION='0.16.6';
-const LEARNER_PRE_REVEAL_MS=520;
-let learnerAwaitingContinue=false;
+const LEARNER_PRE_REVEAL_MS=700;
+const LEARNER_EXPLANATION_MS=10000;
+const LEARNER_PACING={combat:4600,combatChain:3800,special:4000,lock:3000};
+let learnerAwaitingAdvance=false;
+let learnerAdvanceTimer=null;
 
 function learnerEnsureHomeButton(){
   if(document.getElementById('homeLearnButton'))return;
   const actions=document.querySelector('#homePanel .homeActions'),play=document.getElementById('homePlayButton');
   if(!actions||!play)return;
   const button=document.createElement('button');
-  button.id='homeLearnButton';button.className='homeLearn';button.type='button';
-  button.innerHTML='<span>Learn to Play</span><small>Easy · learning help on · start now</small>';
+  button.id='homeLearnButton';button.className='homeLearn homeCustomize';button.type='button';
+  button.innerHTML='<span>Learn to Play</span><small>Easy · guided learning · start now</small>';
   play.after(button);
   button.addEventListener('click',learnerQuickStart)
 }
@@ -26,6 +29,18 @@ function learnerQuickStart(){
   beginRandomMatch('Learn to Play',{useDefaults:false})
 }
 
+// Keep the learning card attached to the player's action area on every layout.
+// On mobile it replaces the generic context tray while learning is active.
+const easyLearningPlaceCoachBeforeLearnerUx=easyLearningPlaceCoach;
+easyLearningPlaceCoach=function(){
+  const coach=document.getElementById('easyLearningCoach'),humanZone=document.querySelector('.humanZone'),humanPanel=humanZone?.querySelector('.panel.human');
+  if(coach&&humanZone&&humanPanel){
+    if(coach.parentElement!==humanZone||coach.nextElementSibling!==humanPanel)humanZone.insertBefore(coach,humanPanel);
+    coach.dataset.placement='player';return
+  }
+  return easyLearningPlaceCoachBeforeLearnerUx()
+};
+
 function learnerConciseCoachCopy(title,text){
   const t=String(title||''),x=String(text||'');
   if(t==='GET 4 IN A ROW')return[t,'Make four of your color touch.'];
@@ -40,7 +55,7 @@ function learnerConciseCoachCopy(title,text){
   }
   if(t==='Pick, then drop')return['PICK → DROP','Choose a piece, then choose its column.'];
   if(t==='Piece dropping')return['WATCH THE DROP','See where it lands.'];
-  return[t,x.length>84?x.slice(0,81).trimEnd()+'…':x]
+  return[t,x.length>72?x.slice(0,69).trimEnd()+'…':x]
 }
 const easyLearningSetCoachBeforeLearnerUx=easyLearningSetCoach;
 easyLearningSetCoach=function(title,text,options={}){
@@ -48,40 +63,54 @@ easyLearningSetCoach=function(title,text,options={}){
   return easyLearningSetCoachBeforeLearnerUx(shortTitle,shortText,options)
 };
 
-function learnerContinueButton(next,event){
-  learnerAwaitingContinue=true;document.body.classList.add('learning-awaiting-continue');
+// Normal Easy already has a slightly slower cadence. Learn-as-you-play gets an
+// additional readable hold, but repeated events still move faster than first lessons.
+const eventDurationBeforeLearnerUx=eventDuration;
+eventDuration=function(e){
+  const base=eventDurationBeforeLearnerUx(e);if(!easyLearningAutoActive())return base;
+  if(e?.kind==='combat')return Math.max(base,e.chainTotal>1&&e.chainIndex>1?LEARNER_PACING.combatChain:LEARNER_PACING.combat);
+  if(e?.kind==='cooldown-earned')return Math.max(base,LEARNER_PACING.lock);
+  if(['fortified','critical-defense','clashmate'].includes(e?.kind))return Math.max(base,LEARNER_PACING.special);
+  return base
+};
+
+function learnerSkipBar(next,event){
+  learnerAwaitingAdvance=true;document.body.classList.add('learning-awaiting-continue');
   let footer=overlayCard.querySelector('.learnerContinueBar');
   if(!footer){footer=document.createElement('div');footer.className='learnerContinueBar';overlayCard.appendChild(footer)}
-  footer.innerHTML='<span>Take your time.</span><button type="button" class="learnerContinueButton">Got it</button>';
+  footer.innerHTML='<span>Learning mode · extra reading time</span><button type="button" class="learnerContinueButton">Skip</button>';
   const button=footer.querySelector('button');
-  button.disabled=true;
-  setTimeout(()=>{button.disabled=false;button.focus({preventScroll:true})},700);
   const proceed=()=>{
-    if(!learnerAwaitingContinue)return;learnerAwaitingContinue=false;document.body.classList.remove('learning-awaiting-continue');footer.remove();next()
+    if(!learnerAwaitingAdvance)return;
+    learnerAwaitingAdvance=false;document.body.classList.remove('learning-awaiting-continue');
+    if(learnerAdvanceTimer){clearTimeout(learnerAdvanceTimer);learnerAdvanceTimer=null}
+    footer.remove();next()
   };
   button.addEventListener('click',proceed,{once:true});
-  button.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!button.disabled){e.preventDefault();proceed()}},{once:true});
-  try{overlay.setAttribute('aria-label',`Learning explanation: ${event?.kind||'game event'}. Continue when ready.`)}catch{}
+  learnerAdvanceTimer=setTimeout(proceed,LEARNER_EXPLANATION_MS);
+  try{overlay.setAttribute('aria-label',`Learning explanation: ${event?.kind||'game event'}. Read it or skip the extra wait.`)}catch{}
 }
 
 const playEventsBeforeLearnerUx=playEvents;
 playEvents=function(events,done,column=null){
   const list=Array.isArray(events)?events:[];
   const hasCombat=list.some(e=>e?.kind==='combat');
-  const needsManual=easyLearningAutoActive()&&list.some(e=>easyLearningNeedsLesson(e));
-  if(!needsManual){
-    if(easyLearningPaced()&&hasCombat){
-      scheduleTimer('learnerPreReveal',()=>playEventsBeforeLearnerUx(list,done,column),LEARNER_PRE_REVEAL_MS);return
-    }
+  const needsExtraRead=easyLearningAutoActive()&&list.some(e=>easyLearningNeedsLesson(e));
+  if(!needsExtraRead){
+    if(easyLearningPaced()&&hasCombat){scheduleTimer('learnerPreReveal',()=>playEventsBeforeLearnerUx(list,done,column),LEARNER_PRE_REVEAL_MS);return}
     return playEventsBeforeLearnerUx(list,done,column)
   }
   let queue=prepareEvents(list),i=0,started=false;
   function next(){
-    if(i>=queue.length){activePresentation=null;overlay.classList.remove('show');document.body.classList.remove('learning-awaiting-continue');learnerAwaitingContinue=false;done();return}
-    const e=queue[i++],needsAck=easyLearningNeedsLesson(e);
+    if(i>=queue.length){
+      activePresentation=null;overlay.classList.remove('show');document.body.classList.remove('learning-awaiting-continue');learnerAwaitingAdvance=false;
+      if(learnerAdvanceTimer){clearTimeout(learnerAdvanceTimer);learnerAdvanceTimer=null}
+      done();return
+    }
+    const e=queue[i++],needsRead=easyLearningNeedsLesson(e);
     const present=()=>{
       activePresentation={event:e,column:presentationColumn(e,column)};render();emitFeedback(feedbackCueForEvent(e));showEvent(e);
-      if(needsAck)learnerContinueButton(next,e);else scheduleTimer('event',next,eventDuration(e))
+      if(needsRead)learnerSkipBar(next,e);else scheduleTimer('event',next,eventDuration(e))
     };
     if(!started&&e?.kind==='combat'){started=true;scheduleTimer('learnerPreReveal',present,LEARNER_PRE_REVEAL_MS)}else{started=true;present()}
   }
@@ -89,5 +118,7 @@ playEvents=function(events,done,column=null){
 };
 
 learnerEnsureHomeButton();
+easyLearningPlaceCoach();
 globalThis.learnerQuickStart=learnerQuickStart;
 globalThis.LEARNER_UX_VERSION=LEARNER_UX_VERSION;
+globalThis.LEARNER_EXPLANATION_MS=LEARNER_EXPLANATION_MS;
