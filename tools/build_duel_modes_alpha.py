@@ -21,7 +21,7 @@ ALPHA_TESTER_CSS=ROOT/'src/styles/54-duel-alpha-tester.css'
 EASY_LEARNING_CSS=ROOT/'src/styles/55-easy-learning.css'
 GAMEPLAY_FLOW_CSS=ROOT/'src/styles/56-gameplay-flow.css'
 LEARNER_UX_CSS=ROOT/'src/styles/57-learner-ux.css'
-VERSION='0.16.6'
+VERSION='0.16.7'
 
 runpy.run_path(str(BASE_BUILDER),run_name='__main__')
 html=OUT.read_text(encoding='utf-8')
@@ -45,9 +45,8 @@ if html.count(unsafe_icon)!=1:
     raise SystemExit(f'terminal piece fallback: expected one renderer anchor, found {html.count(unsafe_icon)}')
 html=html.replace(unsafe_icon,safe_icon,1)
 
-# 0.16.6 keeps multiplayer transport/game rules intact while making the learner path
-# one tap from Home, shortening routine coach copy, and letting first-time explanations
-# remain visible until the learner explicitly continues.
+# 0.16.7 keeps the learner UX and networking contracts intact while adding a deliberate
+# Easy post-AI board-reading beat and separating opponent identity from desktop stats.
 peerjs='<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>\n'
 extra_style='<style>\n'+TURN_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DUEL_COLORS_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DUEL_POSTMATCH_CSS.read_text(encoding='utf-8').rstrip()+'\n'+ALPHA_TESTER_CSS.read_text(encoding='utf-8').rstrip()+'\n'+EASY_LEARNING_CSS.read_text(encoding='utf-8').rstrip()+'\n'+GAMEPLAY_FLOW_CSS.read_text(encoding='utf-8').rstrip()+'\n'+LEARNER_UX_CSS.read_text(encoding='utf-8').rstrip()+'\n</style>\n'
 if peerjs not in html:
@@ -76,4 +75,4 @@ if 'LEARNER_UX_VERSION' in html:raise SystemExit('Learner UX module already pres
 html=html.replace(anchor,nearby+turn+colors+postmatch+tester+easy+flow+learner+anchor,1)
 OUT.write_text(html,encoding='utf-8')
 TESTER_OUT.write_text(html,encoding='utf-8')
-print(f'Built Multiplayer Alpha {VERSION} tester package with one-tap Learn to Play and controlled first explanations into {OUT.name} and {TESTER_OUT.name}')
+print(f'Built Multiplayer Alpha {VERSION} with Easy post-AI settle and separated opponent identity into {OUT.name} and {TESTER_OUT.name}')
