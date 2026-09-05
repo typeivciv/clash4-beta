@@ -11,11 +11,13 @@ TURN_ALPHA=ROOT/'src/js/20-duel-turn-alpha.js'
 DUEL_COLORS=ROOT/'src/js/21-duel-colors-share.js'
 DUEL_POSTMATCH=ROOT/'src/js/22-duel-postmatch.js'
 ALPHA_TESTER=ROOT/'src/js/23-duel-alpha-tester.js'
+EASY_LEARNING=ROOT/'src/js/24-easy-learning.js'
 TURN_CSS=ROOT/'src/styles/51-duel-turn-alpha.css'
 DUEL_COLORS_CSS=ROOT/'src/styles/52-duel-colors-share.css'
 DUEL_POSTMATCH_CSS=ROOT/'src/styles/53-duel-postmatch.css'
 ALPHA_TESTER_CSS=ROOT/'src/styles/54-duel-alpha-tester.css'
-VERSION='0.16.2'
+EASY_LEARNING_CSS=ROOT/'src/styles/55-easy-learning.css'
+VERSION='0.16.3'
 
 runpy.run_path(str(BASE_BUILDER),run_name='__main__')
 html=OUT.read_text(encoding='utf-8')
@@ -40,10 +42,10 @@ if html.count(unsafe_icon)!=1:
 html=html.replace(unsafe_icon,safe_icon,1)
 
 # PeerJS Cloud brokers only the initial Direct WebRTC connection. The established
-# DataConnection carries gameplay. 0.16.2 preserves recovery/post-match polish and
-# restores resilient Copy Link / Share Link controls independent of screen wording.
+# DataConnection carries gameplay. 0.16.3 adds an Easy-mode progressive learning layer
+# without changing game rules, AI strength, Direct transport, or the frozen public beta.
 peerjs='<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>\n'
-extra_style='<style>\n'+TURN_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DUEL_COLORS_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DUEL_POSTMATCH_CSS.read_text(encoding='utf-8').rstrip()+'\n'+ALPHA_TESTER_CSS.read_text(encoding='utf-8').rstrip()+'\n</style>\n'
+extra_style='<style>\n'+TURN_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DUEL_COLORS_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DUEL_POSTMATCH_CSS.read_text(encoding='utf-8').rstrip()+'\n'+ALPHA_TESTER_CSS.read_text(encoding='utf-8').rstrip()+'\n'+EASY_LEARNING_CSS.read_text(encoding='utf-8').rstrip()+'\n</style>\n'
 if peerjs not in html:
     if html.count('</head>')!=1:raise SystemExit('PeerJS injection: expected one </head>')
     html=html.replace('</head>',extra_style+peerjs+'</head>',1)
@@ -56,12 +58,14 @@ turn=TURN_ALPHA.read_text(encoding='utf-8').rstrip()+'\n\n'
 colors=DUEL_COLORS.read_text(encoding='utf-8').rstrip()+'\n\n'
 postmatch=DUEL_POSTMATCH.read_text(encoding='utf-8').rstrip()+'\n\n'
 tester=ALPHA_TESTER.read_text(encoding='utf-8').rstrip()+'\n\n'
+easy=EASY_LEARNING.read_text(encoding='utf-8').rstrip()+'\n\n'
 if 'function directCreateNearby()' in html:raise SystemExit('Nearby PeerJS module already present; refusing duplicate injection')
 if 'DIRECT_ALPHA_TURN_SERVERS' in html:raise SystemExit('Alpha TURN module already present; refusing duplicate injection')
 if 'let duelSeatColors=' in html:raise SystemExit('Duel color/share module already present; refusing duplicate injection')
 if 'duelResultAnimationKey' in html:raise SystemExit('Duel post-match module already present; refusing duplicate injection')
 if 'ALPHA_TESTER_VERSION' in html:raise SystemExit('Alpha tester module already present; refusing duplicate injection')
-html=html.replace(anchor,nearby+turn+colors+postmatch+tester+anchor,1)
+if 'EASY_LEARNING_STORAGE_KEY' in html:raise SystemExit('Easy learning module already present; refusing duplicate injection')
+html=html.replace(anchor,nearby+turn+colors+postmatch+tester+easy+anchor,1)
 OUT.write_text(html,encoding='utf-8')
 TESTER_OUT.write_text(html,encoding='utf-8')
-print(f'Built Multiplayer Alpha {VERSION} tester package into {OUT.name} and {TESTER_OUT.name}')
+print(f'Built Multiplayer Alpha {VERSION} tester package with Easy learnability pass into {OUT.name} and {TESTER_OUT.name}')
