@@ -1,0 +1,63 @@
+/* Multiplayer Alpha 0.16.5: keep combat visually attached to the board, not the right sidebar. */
+@media(min-width:980px){
+  .overlay[data-layout="desktop"],.overlay[data-layout="compact"]{
+    place-items:initial!important;
+    padding:0!important;
+    background:radial-gradient(circle at var(--c4-board-center-x,42%) var(--c4-board-center-y,48%),rgba(8,14,26,.18),rgba(3,6,12,.42))!important;
+  }
+  .overlay[data-layout="desktop"] .card.teachingCombatCard,
+  .overlay[data-layout="desktop"] .card.teachingSpecialCard,
+  .overlay[data-layout="compact"] .card.teachingCombatCard,
+  .overlay[data-layout="compact"] .card.teachingSpecialCard{
+    position:absolute!important;
+    left:var(--c4-board-center-x,50%)!important;
+    top:var(--c4-board-center-y,50%)!important;
+    transform:translate(-50%,-50%)!important;
+    width:min(580px,calc(var(--c4-board-width,760px) * .82),calc(100vw - 48px))!important;
+    max-height:min(680px,calc(100dvh - 56px))!important;
+    padding:22px 24px!important;
+    overflow:auto!important;
+    border-radius:20px!important;
+    box-shadow:0 28px 90px rgba(0,0,0,.58),0 0 0 1px rgba(129,161,217,.10)!important;
+  }
+  .overlay[data-layout="desktop"] .teachingCombatCard .fight,
+  .overlay[data-layout="compact"] .teachingCombatCard .fight{margin:16px 0 14px;gap:14px}
+  .overlay[data-layout="desktop"] .teachingCombatCard .fighter,
+  .overlay[data-layout="compact"] .teachingCombatCard .fighter{min-height:132px;padding:16px 10px;border-radius:16px}
+  .overlay[data-layout="desktop"] .teachingCombatCard .fighter b,
+  .overlay[data-layout="compact"] .teachingCombatCard .fighter b{font-size:56px;line-height:62px}
+  .overlay[data-layout="desktop"] .fighter .combatRole,
+  .overlay[data-layout="compact"] .fighter .combatRole{top:9px;font-size:10px;letter-spacing:.14em}
+  .overlay[data-layout="desktop"] .fighter small,
+  .overlay[data-layout="compact"] .fighter small{font-size:14px;font-weight:800}
+  .overlay[data-layout="desktop"] .combatEquation,
+  .overlay[data-layout="desktop"] .ruleFormula,
+  .overlay[data-layout="compact"] .combatEquation,
+  .overlay[data-layout="compact"] .ruleFormula{margin:4px auto 12px;padding:9px 14px;font-size:13px;line-height:1.25}
+  .overlay[data-layout="desktop"] .combatOutcomeTitle,
+  .overlay[data-layout="compact"] .combatOutcomeTitle{font-size:28px;line-height:1.14;letter-spacing:-.01em}
+  .overlay[data-layout="desktop"] .combatOutcomeDetail,
+  .overlay[data-layout="compact"] .combatOutcomeDetail{max-width:470px;margin:8px auto 10px;font-size:16px;line-height:1.5;color:#c5d0df}
+  .overlay[data-layout="desktop"] .overlayTeachingHint,
+  .overlay[data-layout="compact"] .overlayTeachingHint{margin-top:8px;padding:8px 11px;font-size:13px;line-height:1.45}
+  .overlay[data-layout="desktop"] .specialIcon,
+  .overlay[data-layout="compact"] .specialIcon{font-size:58px;margin:16px 0}
+  .overlay[data-layout="desktop"] .easyCombatLesson,
+  .overlay[data-layout="compact"] .easyCombatLesson{margin-top:14px;padding:13px 14px;gap:7px}
+  .overlay[data-layout="desktop"] .easyCombatLesson strong,
+  .overlay[data-layout="compact"] .easyCombatLesson strong{font-size:15px}
+  .overlay[data-layout="desktop"] .easyCombatLesson span,
+  .overlay[data-layout="compact"] .easyCombatLesson span{font-size:14px;line-height:1.5}
+  .overlay[data-layout="desktop"] .easyCombatLesson button,
+  .overlay[data-layout="compact"] .easyCombatLesson button{min-height:36px;padding:7px 12px;font-size:12px}
+  .overlay[data-layout="desktop"] .easyCombatWhyPanel,
+  .overlay[data-layout="compact"] .easyCombatWhyPanel{font-size:12px;line-height:1.5}
+}
+
+/* The learning cue should read as "the board is ready for a drop", never "top row is special". */
+#board.easyLearningBoardCue{animation:c4-easy-board-cue 1.15s ease-in-out 2!important}
+@keyframes c4-easy-board-cue{
+  0%,100%{box-shadow:0 10px 35px rgba(0,0,0,.24),0 0 0 0 rgba(116,174,255,0)}
+  50%{box-shadow:0 10px 35px rgba(0,0,0,.24),0 0 0 4px rgba(116,174,255,.50),0 0 34px rgba(116,174,255,.34)}
+}
+body.reducedMotion #board.easyLearningBoardCue{animation:none!important;outline:3px solid rgba(116,174,255,.68);outline-offset:4px}
