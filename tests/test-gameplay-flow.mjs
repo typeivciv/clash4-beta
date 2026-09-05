@@ -4,6 +4,7 @@ import fs from 'node:fs';
 const easy=fs.readFileSync('src/js/24-easy-learning.js','utf8');
 const flow=fs.readFileSync('src/js/25-gameplay-flow.js','utf8');
 const css=fs.readFileSync('src/styles/56-gameplay-flow.css','utf8');
+const learnerCss=fs.readFileSync('src/styles/57-learner-ux.css','utf8');
 const base=fs.readFileSync('index.html','utf8');
 
 function numberFrom(source,re,label){const m=source.match(re);assert.ok(m,`missing timing ${label}`);return Number(m[1])}
@@ -19,6 +20,10 @@ const special=numberFrom(easy,/special:(\d+)/,'special');
 const lockNew=numberFrom(easy,/lockNew:(\d+)/,'lockNew');
 const lock=numberFrom(easy,/lock:(\d+)/,'lock');
 const aiBreath=numberFrom(easy,/aiBreath:(\d+)/,'aiBreath');
+const easyAiSettle=numberFrom(flow,/EASY_AI_POST_DROP_MS=(\d+)/,'EASY_AI_POST_DROP_MS');
+const learningAiSettle=numberFrom(flow,/LEARNING_AI_POST_DROP_MS=(\d+)/,'LEARNING_AI_POST_DROP_MS');
+const easyAiCombatSettle=numberFrom(flow,/EASY_AI_POST_COMBAT_MS=(\d+)/,'EASY_AI_POST_COMBAT_MS');
+const learningAiCombatSettle=numberFrom(flow,/LEARNING_AI_POST_COMBAT_MS=(\d+)/,'LEARNING_AI_POST_COMBAT_MS');
 
 // Repeated events should be readable without turning the whole match into a tutorial.
 assert.ok(combat>=2500&&combat<=3100,`repeated Easy combat hold should be 2.5–3.1s, got ${combat}`);
@@ -29,22 +34,38 @@ assert.ok(specialNew>special,'first special-rule teaching must hold longer than 
 assert.ok(lock>=1200&&lock<=1800,'routine Combat Lock acknowledgement should not stall the turn');
 assert.ok(lockNew>lock,'first Combat Lock explanation needs additional reading time');
 
-// No-combat Easy response: human drop settles, then the board gets a short reading beat,
-// AI thinks, commits a visible column, and drops. This is the ordinary turn heartbeat.
+// Human drop -> AI response stays deliberate but does not drag.
 const aiPreDrop=aiBreath+aiThink+aiIntent;
 const routineHandoff=drop+aiPreDrop;
 assert.ok(aiPreDrop>=1300&&aiPreDrop<=1900,`AI pre-drop handoff should be 1.3–1.9s, got ${aiPreDrop}`);
 assert.ok(routineHandoff>=1800&&routineHandoff<=2500,`human drop → AI drop-start rhythm should be 1.8–2.5s, got ${routineHandoff}`);
 
+// After the AI lands, Easy intentionally leaves the finished board on screen before
+// reactivating the player. Learning mode gets the longest observation beat.
+assert.ok(easyAiSettle>=700&&easyAiSettle<=1000,`normal Easy post-AI settle should be 0.7–1.0s, got ${easyAiSettle}`);
+assert.ok(learningAiSettle>=1000&&learningAiSettle<=1400,`learning post-AI settle should be 1.0–1.4s, got ${learningAiSettle}`);
+assert.ok(learningAiSettle>easyAiSettle,'learning mode must give more post-AI reading time than normal Easy');
+assert.ok(easyAiCombatSettle<easyAiSettle&&learningAiCombatSettle<learningAiSettle,'a move that already showed a combat card needs only a shorter final settle');
+assert.ok(learningAiCombatSettle>easyAiCombatSettle,'learning mode keeps a slightly longer post-combat settle too');
+
 for(const token of [
-  "const GAMEPLAY_FLOW_VERSION='0.16.5'",'function gameplayFlowBoardCenter()',"--c4-board-center-x",'requestAnimationFrame(gameplayFlowBoardCenter)',
-  "gameplayFlowMarkPhase(e?.kind==='combat'?'combat':'special')"
+  "const GAMEPLAY_FLOW_VERSION='0.16.7'",'function gameplayFlowBoardCenter()',"--c4-board-center-x",'requestAnimationFrame(gameplayFlowBoardCenter)',
+  "gameplayFlowMarkPhase(e?.kind==='combat'?'combat':'special')",'function gameplayFlowAiSettleMs()',
+  'const continueTurnControllerBeforeGameplayFlow=continueTurnController',"gameplayFlowMarkPhase('ai-settle')","scheduleTimer('aiSettle'"
 ])assert.ok(flow.includes(token),`gameplay-flow anchor missing ${token}`);
 for(const token of [
   'left:var(--c4-board-center-x,50%)','top:var(--c4-board-center-y,50%)','transform:translate(-50%,-50%)',
   'width:min(580px','font-size:56px','font-size:28px','font-size:16px','.easyCombatLesson span{font-size:14px',
   '#board.easyLearningBoardCue','@keyframes c4-easy-board-cue'
 ])assert.ok(css.includes(token),`desktop combat readability contract missing ${token}`);
+
+// The desktop AI identity and remaining-piece metadata occupy separate rows/lanes.
+for(const token of [
+  '.panel.ai .row{display:grid!important;grid-template-columns:minmax(0,1fr)!important',
+  '.panel.ai .aiStatusMeta{width:100%;min-width:0;display:grid!important;grid-template-columns:minmax(0,1fr) auto auto',
+  '.panel.ai .aiRemaining{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap',
+  '#aiColorLabel{display:inline-flex!important'
+])assert.ok(learnerCss.includes(token),`desktop opponent HUD separation missing ${token}`);
 
 // Selecting a piece must cue the board/drop action, not make the accessibility focus row
 // look like a special game row.
@@ -61,4 +82,4 @@ for(const copy of [
 for(const forbidden of ['aiKnow','projectedScore','bestMove','minimax','strategistSearch'])assert.ok(!easy.includes(forbidden),`learning guidance must not use hidden/AI strategy: ${forbidden}`);
 
 for(const [name,source] of [['easy',easy],['flow',flow]]){try{new Function(source)}catch(error){throw new Error(`${name} syntax failed: ${error.message}`)}}
-console.log(`PASS gameplay flow: routine handoff ${routineHandoff}ms; repeated combat ${combat}ms; first-learning combat ${combatNew}ms; desktop combat board-centered and enlarged`);
+console.log(`PASS gameplay flow: human→AI ${routineHandoff}ms; AI→player Easy ${easyAiSettle}ms / learning ${learningAiSettle}ms; desktop opponent HUD separated`);
