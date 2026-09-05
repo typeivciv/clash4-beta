@@ -1,9 +1,9 @@
-// Multiplayer Alpha 0.16.4: paced, player-anchored Easy learning system.
+// Multiplayer Alpha 0.16.5: readable Easy learning, useful tips, and adaptive pacing.
 'use strict';
 const EASY_LEARNING_STORAGE_KEY='clash4.easyLearning.v1';
 const EASY_LEARNING_SETTING_KEY='clash4.easyLearning.enabled';
 const EASY_LEARNING_DEFAULTS={goal:false,choose:false,drop:false,rps:false,fog:false,decoy:false,lock:false,fortified:false,critical:false,clashmate:false};
-const EASY_LEARNING_PACING={combat:3600,combatChain:3200,special:2700,lock:1900,chain:900,aiBreath:900};
+const EASY_LEARNING_PACING={combatNew:3800,combat:2800,combatChainNew:3300,combatChain:2400,specialNew:3200,special:2200,lockNew:2400,lock:1500,chain:750,aiBreath:650};
 let easyLearningEnabled=true;
 let easyLearningProgress={...EASY_LEARNING_DEFAULTS};
 let easyLearningStateRef=null;
@@ -15,17 +15,20 @@ let easyLearningThreatKey='';
 try{easyLearningEnabled=localStorage.getItem(EASY_LEARNING_SETTING_KEY)!=='off'}catch{}
 try{easyLearningProgress={...EASY_LEARNING_DEFAULTS,...JSON.parse(localStorage.getItem(EASY_LEARNING_STORAGE_KEY)||'{}')}}catch{}
 
-function easyLearningActive(){return matchMode==='arcade'&&aiDifficulty==='easy'&&easyLearningEnabled}
+function easyLearningMode(){return matchMode==='arcade'&&aiDifficulty==='easy'}
+function easyLearningAutoActive(){return easyLearningMode()&&easyLearningEnabled}
+function easyLearningActive(){return easyLearningMode()&&(easyLearningEnabled||guideEnabled)}
+function easyLearningPaced(){return easyLearningMode()}
 function easyLearningSave(){try{localStorage.setItem(EASY_LEARNING_STORAGE_KEY,JSON.stringify(easyLearningProgress));localStorage.setItem(EASY_LEARNING_SETTING_KEY,easyLearningEnabled?'on':'off')}catch{}}
 function easyLearningMark(key){if(!(key in easyLearningProgress)||easyLearningProgress[key])return;easyLearningProgress[key]=true;easyLearningSave()}
 function easyLearningBasicsLearned(){return easyLearningProgress.goal&&easyLearningProgress.choose&&easyLearningProgress.drop&&easyLearningProgress.rps&&easyLearningProgress.fog}
-function easyLearningReset(){easyLearningProgress={...EASY_LEARNING_DEFAULTS};easyLearningStateRef=null;easyLearningSelectedThisTurn=false;easyLearningCoachKey='';easyLearningSave();easyLearningSyncSetup();easyLearningSetCoach('Learning tips reset','Easy will explain each idea again as you encounter it.',{tone:'success',showMe:false,lock:2200})}
+function easyLearningReset(){easyLearningProgress={...EASY_LEARNING_DEFAULTS};easyLearningStateRef=null;easyLearningSelectedThisTurn=false;easyLearningCoachKey='';easyLearningSave();easyLearningSyncSetup();if(easyLearningActive())easyLearningSetCoach('Learning tips reset','Easy will explain each idea again as you encounter it.',{tone:'success',showMe:false,lock:2200})}
 
 function easyLearningEnsureSetup(){
   let panel=document.getElementById('easyLearningSetup');if(panel)return panel;
   const cards=document.getElementById('difficultyCards');if(!cards)return null;
   panel=document.createElement('div');panel.id='easyLearningSetup';panel.className='easyLearningSetup';
-  panel.innerHTML='<div class="easyLearningSetupCopy"><span>EASY LEARNING</span><strong>Learn while you play</strong><small>One learning system: automatic explanations, plus optional Guided Tips for extra reminders.</small></div><div class="easyLearningSetupActions"><label><span>Learn as you play</span><button id="easyLearningToggle" type="button" aria-pressed="true">On</button></label><label><span>Guided Tips</span><button id="easyLearningGuidedToggle" type="button" aria-pressed="false">Off</button></label><button id="easyLearningReset" class="easyLearningReset" type="button">Reset tips</button></div>';
+  panel.innerHTML='<div class="easyLearningSetupCopy"><span>EASY LEARNING</span><strong>Learn while you play</strong><small>Automatic explanations teach new mechanics. Guided Tips adds optional reminders about what to look at.</small></div><div class="easyLearningSetupActions"><label><span>Learn as you play</span><button id="easyLearningToggle" type="button" aria-pressed="true">On</button></label><label><span>Guided Tips</span><button id="easyLearningGuidedToggle" type="button" aria-pressed="false">Off</button></label><button id="easyLearningReset" class="easyLearningReset" type="button">Reset tips</button></div>';
   cards.after(panel);
   panel.querySelector('#easyLearningToggle')?.addEventListener('click',()=>{easyLearningEnabled=!easyLearningEnabled;easyLearningSave();easyLearningSyncSetup();easyLearningAfterRender()});
   panel.querySelector('#easyLearningGuidedToggle')?.addEventListener('click',()=>{toggleGuide();easyLearningSyncSetup();easyLearningAfterRender()});
@@ -38,7 +41,7 @@ function easyLearningSyncSetup(){
   setup?.classList.toggle('easyLearningCombinedSetup',aiDifficulty==='easy');
   if(toggle){toggle.textContent=easyLearningEnabled?'On':'Off';toggle.setAttribute('aria-pressed',String(easyLearningEnabled));toggle.classList.toggle('active',easyLearningEnabled)}
   if(guided){guided.textContent=guideEnabled?'On':'Off';guided.setAttribute('aria-pressed',String(guideEnabled));guided.classList.toggle('active',guideEnabled)}
-  const easyCard=document.querySelector('.difficultyCard[data-difficulty="easy"] small');if(easyCard)easyCard.textContent='Forgiving AI · learns while you play'
+  const easyCard=document.querySelector('.difficultyCard[data-difficulty="easy"] small');if(easyCard)easyCard.textContent='Forgiving AI · readable pace · optional learning help'
 }
 
 function easyLearningEnsureCoach(){
@@ -60,7 +63,7 @@ function easyLearningPlaceCoach(){
 }
 function easyLearningSetCoach(title,text,{tone='tip',why=false,showMe=true,lock=0}={}){
   const coach=easyLearningEnsureCoach();if(!coach)return;easyLearningPlaceCoach();
-  const key=`${title}|${text}|${tone}|${why}|${showMe}`;if(key!==easyLearningCoachKey){easyLearningCoachKey=key;document.getElementById('easyCoachWhyPanel').hidden=true}
+  const key=`${title}|${text}|${tone}|${why}|${showMe}`;if(key!==easyLearningCoachKey){easyLearningCoachKey=key;const whyPanel=document.getElementById('easyCoachWhyPanel');if(whyPanel)whyPanel.hidden=true}
   coach.hidden=false;coach.dataset.tone=tone;
   const titleEl=document.getElementById('easyCoachTitle'),textEl=document.getElementById('easyCoachText'),whyBtn=document.getElementById('easyCoachWhy'),showBtn=document.getElementById('easyCoachShowMe');
   if(titleEl)titleEl.textContent=title;if(textEl)textEl.textContent=text;if(whyBtn)whyBtn.hidden=!why;if(showBtn)showBtn.hidden=!showMe;
@@ -68,12 +71,16 @@ function easyLearningSetCoach(title,text,{tone='tip',why=false,showMe=true,lock=
 }
 function easyLearningHideCoach(){const coach=easyLearningEnsureCoach();if(coach)coach.hidden=true;easyLearningCoachKey=''}
 function easyLearningPulse(selector,ms=1200){for(const el of document.querySelectorAll(selector))el.classList.add('easyLearningPulse');setTimeout(()=>{for(const el of document.querySelectorAll(selector))el.classList.remove('easyLearningPulse')},ms)}
+function easyLearningPulseBoard(ms=1450){
+  const boardEl=document.getElementById('board')||board;if(!boardEl)return;
+  boardEl.classList.add('easyLearningBoardCue');setTimeout(()=>boardEl.classList.remove('easyLearningBoardCue'),ms)
+}
 function easyLearningShowMe(){
   if(!easyLearningActive()||!ready||busy||s.winner||s.draw)return;
-  if(s.turn!==H){easyLearningSetCoach('Watch this turn','Your opponent is moving. Your controls will light up when it is your turn.',{showMe:false,lock:1900});return}
-  easyLearningSetCoach('Pick, then drop','First choose a piece. Then tap any glowing column at the top of the board.',{showMe:false,lock:2300});
+  if(s.turn!==H){easyLearningSetCoach('Watch this turn','Watch where the opponent’s color lands. Your controls activate when the turn comes back to you.',{showMe:false,lock:1900});return}
+  easyLearningSetCoach('Pick, then drop','First choose a piece. Then tap anywhere in the column where you want it to fall.',{showMe:false,lock:2300});
   easyLearningPulse('#humanInventory .choice:not(:disabled)',1250);
-  setTimeout(()=>easyLearningPulse('#board .cell[data-column][tabindex="0"]:not(:disabled)',1450),700)
+  setTimeout(()=>easyLearningPulseBoard(1500),700)
 }
 
 function easyLearningThreeThreat(owner){
@@ -86,30 +93,37 @@ function easyLearningThreeThreat(owner){
   }catch{}
   return false
 }
-function easyLearningGuideCopy(){
+function easyLearningGuidedTip(){
   if(!guideEnabled)return'';
-  try{return(String(guideText?.()||'').replace(/^TIP\s*—\s*/,'').trim())}catch{return''}
+  try{
+    if(s.turn!==H)return'Watch where their color lands. If a type is revealed in a clash, remember it before it hides again.';
+    const display=displayCooldowns(s,H);if(display.some(cd=>cd.critical))return'Critical Defense is open. Check that emergency column before choosing your move.';
+    if(easyLearningThreeThreat(H))return'You have three connected. Find the empty space that would complete four.';
+    if(easyLearningThreeThreat(A))return'The opponent has three connected. Find the empty space that could complete their four.';
+    if(s.moveNumber<=2)return'Look at your color pattern first. Then choose the piece and column you want to add.';
+    return'Before moving: check your line of four, check their line of four, then decide which R/P/S risk you want to take.'
+  }catch{return''}
 }
 function easyLearningTurnCoach(){
   if(!easyLearningActive()||!ready||s.winner||s.draw){easyLearningHideCoach();return}
   easyLearningPlaceCoach();if(Date.now()<easyLearningLockUntil)return;
   if(s!==easyLearningStateRef){
     easyLearningStateRef=s;easyLearningSelectedThisTurn=false;easyLearningThreatKey='';
-    if(!easyLearningProgress.goal){easyLearningMark('goal');easyLearningSetCoach('GET 4 IN A ROW','Connect four of your color across, down, or diagonal.',{tone:'goal',showMe:false,lock:3200});return}
+    if(easyLearningAutoActive()&&!easyLearningProgress.goal){easyLearningMark('goal');easyLearningSetCoach('GET 4 IN A ROW','Connect four of your color across, down, or diagonal.',{tone:'goal',showMe:false,lock:3200});return}
   }
-  if(busy||dropPresentation){easyLearningSetCoach('Watch what happens','The game is resolving this move. Follow the piece and any clash before the next turn starts.',{showMe:false});return}
+  if(busy||dropPresentation){if(easyLearningAutoActive())easyLearningSetCoach('Watch what happens','Follow the falling piece and the result of any clash before thinking about the next turn.',{showMe:false});else easyLearningHideCoach();return}
   if(guideEnabled){
     const humanThreat=easyLearningThreeThreat(H),aiThreat=easyLearningThreeThreat(A),threatKey=humanThreat?'human':aiThreat?'ai':'';
-    if(threatKey&&threatKey!==easyLearningThreatKey){easyLearningThreatKey=threatKey;easyLearningSetCoach(humanThreat?'You’re close to 4':'Watch out — opponent is close to 4',humanThreat?'Look for a way to finish your line.':'Look at their connected pieces before you move.',{tone:humanThreat?'success':'warning',showMe:false,lock:2600});return}
+    if(threatKey&&threatKey!==easyLearningThreatKey){easyLearningThreatKey=threatKey;easyLearningSetCoach(humanThreat?'You’re close to 4':'Watch out — opponent is close to 4',humanThreat?'Find the open space that would finish your four.':'Find the open space that could finish their four.',{tone:humanThreat?'success':'warning',showMe:false,lock:2600});return}
   }
   if(s.turn!==H){
-    if(easyLearningBasicsLearned()&&!guideEnabled){easyLearningHideCoach();return}
-    easyLearningSetCoach('Opponent turn',easyLearningGuideCopy()||'Watch the board. Your controls will become active when it comes back to you.',{showMe:false});return
+    if(!guideEnabled&&(easyLearningBasicsLearned()||!easyLearningAutoActive())){easyLearningHideCoach();return}
+    easyLearningSetCoach(guideEnabled?'WHAT TO WATCH':'Opponent turn',easyLearningGuidedTip()||'Watch where the opponent’s color lands. Your controls activate when the turn returns.',{showMe:false});return
   }
-  if(!easyLearningProgress.choose){easyLearningSetCoach('1 · Pick a piece','Choose Rock, Paper, Scissors, or a Decoy.',{tone:'step'});return}
-  if(!easyLearningProgress.drop){easyLearningSetCoach('2 · Tap a column','Your piece falls into the column you choose.',{tone:'step'});return}
-  if(easyLearningBasicsLearned()&&!guideEnabled){easyLearningHideCoach();return}
-  easyLearningSetCoach(guideEnabled?'Guided tip':'Your turn',easyLearningGuideCopy()||'Build toward 4. If pieces meet, the game will show you what happened.',{tone:'quiet'})
+  if(easyLearningAutoActive()&&!easyLearningProgress.choose){easyLearningSetCoach('1 · Pick a piece','Choose Rock, Paper, Scissors, or a Decoy.',{tone:'step'});return}
+  if(easyLearningAutoActive()&&!easyLearningProgress.drop){easyLearningSetCoach('2 · Pick a column','Tap anywhere in the column where you want the piece to fall.',{tone:'step'});return}
+  if(!guideEnabled&&(easyLearningBasicsLearned()||!easyLearningAutoActive())){easyLearningHideCoach();return}
+  easyLearningSetCoach(guideEnabled?'WHAT TO LOOK FOR':'Your turn',easyLearningGuidedTip()||'Build toward four. If pieces meet, the game will explain the result.',{tone:'quiet'})
 }
 function easyLearningAfterRender(){
   easyLearningEnsureSetup();easyLearningEnsureCoach();easyLearningSyncSetup();easyLearningPlaceCoach();
@@ -118,26 +132,32 @@ function easyLearningAfterRender(){
   easyLearningTurnCoach()
 }
 
+function easyLearningNeedsLesson(e){
+  if(!easyLearningAutoActive()||!e)return false;
+  if(e.kind==='combat')return e.decoyContact?!easyLearningProgress.decoy:(!easyLearningProgress.rps||!easyLearningProgress.fog);
+  const map={'cooldown-earned':'lock','fortified':'fortified','critical-defense':'critical','clashmate':'clashmate'};
+  return map[e.kind]?!easyLearningProgress[map[e.kind]]:false
+}
 function easyLearningCombatLesson(e){
-  if(!easyLearningActive()||e?.kind!=='combat')return;
+  if(!easyLearningAutoActive()||e?.kind!=='combat')return;
   document.querySelector('.easyCombatLesson')?.remove();
   const lesson=document.createElement('div');lesson.className='easyCombatLesson';
-  if(e.decoyContact){easyLearningMark('decoy');lesson.innerHTML='<strong>Decoy rule</strong><span>Decoys do not fight. Both pieces stay, and the chain stops.</span>'}
+  if(e.decoyContact){easyLearningMark('decoy');lesson.innerHTML='<strong>WHAT HAPPENED · Decoy contact</strong><span>Decoys do not fight. Both pieces stay, and the chain stops.</span>'}
   else{
     const a=e.atk?.type?M[e.atk.type]?.[0]:'Hidden',d=e.def?.type?M[e.def.type]?.[0]:'Hidden';
-    if(!easyLearningProgress.rps){easyLearningMark('rps');lesson.innerHTML=`<strong>${a} vs ${d}</strong><span>${e.o==='tie'?'Same type means neither wins this clash.':`${a} ${e.o==='win'?'beats':'loses to'} ${d}.`} This result stays on screen longer in Easy so you can follow it.</span><button type="button" class="easyCombatWhy">Why?</button>`}
-    if(!easyLearningProgress.fog){easyLearningMark('fog');lesson.innerHTML+=(lesson.innerHTML?'':'<strong>Hidden pieces</strong>')+'<span>After the clash, an enemy Rock/Paper/Scissors identity hides behind <b>?</b> again.</span>'}
+    if(!easyLearningProgress.rps){easyLearningMark('rps');lesson.innerHTML=`<strong>WHAT HAPPENED · ${a} vs ${d}</strong><span>${e.o==='tie'?'Same type means neither wins this clash.':`${a} ${e.o==='win'?'beats':'loses to'} ${d}.`}</span><button type="button" class="easyCombatWhy">Why?</button>`}
+    if(!easyLearningProgress.fog){easyLearningMark('fog');lesson.innerHTML+=(lesson.innerHTML?'':'<strong>WHAT HAPPENED · Hidden pieces</strong>')+'<span>After the clash, an enemy Rock/Paper/Scissors identity hides behind <b>?</b> again.</span>'}
   }
   if(!lesson.innerHTML)return;overlayCard.appendChild(lesson);
   lesson.querySelector('.easyCombatWhy')?.addEventListener('click',()=>{let p=lesson.querySelector('.easyCombatWhyPanel');if(!p){p=document.createElement('div');p.className='easyCombatWhyPanel';p.textContent='🪨 Rock beats ✂️ Scissors · ✂️ Scissors beat 📄 Paper · 📄 Paper beats 🪨 Rock.';lesson.appendChild(p)}p.hidden=!p.hidden})
 }
 function easyLearningSpecialLesson(e){
-  if(!easyLearningActive())return;
+  if(!easyLearningAutoActive())return;
   const map={
-    'cooldown-earned':['lock','Combat Lock','A winning survivor is protected through the opponent’s next turn.'],
-    'fortified':['fortified','Fortified','A stronger protected piece was earned after a powerful chain.'],
-    'critical-defense':['critical','Critical Defense','The game opened an emergency challenge because an immediate loss was otherwise unavoidable.'],
-    'clashmate':['clashmate','Clashmate','The connected three is protected and the next Connect 4 cannot be stopped.']
+    'cooldown-earned':['lock','WHAT HAPPENED · Combat Lock','The winning survivor is protected through the opponent’s next turn.'],
+    'fortified':['fortified','WHAT HAPPENED · Fortified','A stronger protected piece was earned after a powerful chain.'],
+    'critical-defense':['critical','WHAT HAPPENED · Critical Defense','The game opened an emergency challenge because an immediate loss was otherwise unavoidable.'],
+    'clashmate':['clashmate','WHAT HAPPENED · Clashmate','The connected three is protected and the next Connect 4 cannot be stopped.']
   },entry=map[e?.kind];if(!entry||easyLearningProgress[entry[0]])return;easyLearningMark(entry[0]);
   const lesson=document.createElement('div');lesson.className='easyCombatLesson easySpecialLesson';lesson.innerHTML=`<strong>${entry[1]}</strong><span>${entry[2]}</span>`;overlayCard.appendChild(lesson)
 }
@@ -150,41 +170,50 @@ combatHistoryMode=function(){return easyLearningActive()?'recent':combatHistoryM
 
 const eventDurationBeforeEasyLearning=eventDuration;
 eventDuration=function(e){
-  const base=eventDurationBeforeEasyLearning(e);if(!easyLearningActive())return base;
-  if(e?.kind==='combat')return Math.max(base,e.chainTotal>1&&e.chainIndex>1?EASY_LEARNING_PACING.combatChain:EASY_LEARNING_PACING.combat);
+  const base=eventDurationBeforeEasyLearning(e);if(!easyLearningPaced())return base;
+  const fresh=!!e?.__easyLearningFreshLesson;
+  if(e?.kind==='combat'){
+    if(e.chainTotal>1&&e.chainIndex>1)return Math.max(base,fresh?EASY_LEARNING_PACING.combatChainNew:EASY_LEARNING_PACING.combatChain);
+    return Math.max(base,fresh?EASY_LEARNING_PACING.combatNew:EASY_LEARNING_PACING.combat)
+  }
   if(e?.kind==='chain-continue')return Math.max(base,EASY_LEARNING_PACING.chain);
-  if(e?.kind==='cooldown-earned')return Math.max(base,EASY_LEARNING_PACING.lock);
-  if(['fortified','critical-defense','clashmate'].includes(e?.kind))return Math.max(base,EASY_LEARNING_PACING.special);
+  if(e?.kind==='cooldown-earned')return Math.max(base,fresh?EASY_LEARNING_PACING.lockNew:EASY_LEARNING_PACING.lock);
+  if(['fortified','critical-defense','clashmate'].includes(e?.kind))return Math.max(base,fresh?EASY_LEARNING_PACING.specialNew:EASY_LEARNING_PACING.special);
   return base
 };
 
 const startAiTurnBeforeEasyLearning=startAiTurn;
 startAiTurn=async function(){
-  if(easyLearningActive()&&ready&&!busy&&!s.winner&&!s.draw&&s.turn===A){
-    easyLearningSetCoach('Opponent turn','Take a moment to read the board before the opponent moves.',{showMe:false});
+  if(easyLearningPaced()&&ready&&!busy&&!s.winner&&!s.draw&&s.turn===A){
+    if(easyLearningActive())easyLearningSetCoach(guideEnabled?'WHAT TO WATCH':'Opponent turn',easyLearningGuidedTip()||'Take a moment to read the board before the opponent moves.',{showMe:false});
     await new Promise(resolve=>setTimeout(resolve,EASY_LEARNING_PACING.aiBreath));
-    if(!easyLearningActive()||!ready||busy||s.winner||s.draw||s.turn!==A)return
+    if(!easyLearningPaced()||!ready||busy||s.winner||s.draw||s.turn!==A)return
   }
   return startAiTurnBeforeEasyLearning()
 };
 
 const showEventBeforeEasyLearning=showEvent;
-showEvent=function(e){const result=showEventBeforeEasyLearning(e);easyLearningCombatLesson(e);easyLearningSpecialLesson(e);return result};
+showEvent=function(e){
+  if(e&&easyLearningNeedsLesson(e))e.__easyLearningFreshLesson=true;
+  const result=showEventBeforeEasyLearning(e);easyLearningCombatLesson(e);easyLearningSpecialLesson(e);return result
+};
 
 const renderBeforeEasyLearning=render;
 render=function(){const result=renderBeforeEasyLearning();easyLearningAfterRender();return result};
 
 humanInventory?.addEventListener('click',event=>{
   if(!easyLearningActive())return;const choice=event.target?.closest?.('.choice');if(!choice||choice.disabled)return;
-  easyLearningSelectedThisTurn=true;easyLearningMark('choose');
+  easyLearningSelectedThisTurn=true;if(easyLearningAutoActive())easyLearningMark('choose');
   const name=choice.querySelector('.name')?.textContent||'';
-  if(name==='Decoy')easyLearningSetCoach('Decoy','It does not fight, but it still counts toward your 4-in-a-row.',{tone:'decoy',showMe:false,lock:2800});
-  else easyLearningSetCoach('2 · Tap a column','Now tap a glowing column to drop your piece.',{tone:'step',showMe:true,lock:1400});
-  setTimeout(()=>easyLearningPulse('#board .cell[data-column][tabindex="0"]:not(:disabled)',1250),160)
+  if(easyLearningAutoActive()&&name==='Decoy')easyLearningSetCoach('Decoy','It does not fight, but it still counts toward your 4-in-a-row.',{tone:'decoy',showMe:false,lock:2800});
+  else if(easyLearningAutoActive())easyLearningSetCoach('2 · Pick a column','Tap anywhere in the column where you want this piece to fall.',{tone:'step',showMe:true,lock:1400});
+  else if(guideEnabled)easyLearningSetCoach('WHAT TO LOOK FOR',easyLearningGuidedTip(),{tone:'quiet',showMe:true,lock:1400});
+  setTimeout(()=>easyLearningPulseBoard(1450),160)
 });
 function easyLearningRegisterDrop(event){
   if(!easyLearningActive())return;const cell=event.target?.closest?.('#board .cell[data-column][tabindex="0"]');if(!cell||cell.disabled)return;
-  easyLearningMark('drop');easyLearningSelectedThisTurn=false;easyLearningSetCoach('Piece dropping','Watch where it lands. If it meets another piece, the clash will stay visible long enough to follow.',{showMe:false,lock:1500})
+  if(easyLearningAutoActive())easyLearningMark('drop');easyLearningSelectedThisTurn=false;
+  if(easyLearningAutoActive())easyLearningSetCoach('Piece dropping','Watch where it lands. If it meets another piece, read the clash before the next turn begins.',{showMe:false,lock:1500})
 }
 board?.addEventListener('pointerdown',easyLearningRegisterDrop,true);board?.addEventListener('click',easyLearningRegisterDrop,true);
 window.addEventListener('resize',easyLearningPlaceCoach,{passive:true});
@@ -192,3 +221,4 @@ window.addEventListener('resize',easyLearningPlaceCoach,{passive:true});
 easyLearningEnsureSetup();easyLearningEnsureCoach();easyLearningSyncSetup();easyLearningAfterRender();
 globalThis.easyLearningReset=easyLearningReset;
 globalThis.easyLearningShowMe=easyLearningShowMe;
+globalThis.EASY_LEARNING_PACING=EASY_LEARNING_PACING;
