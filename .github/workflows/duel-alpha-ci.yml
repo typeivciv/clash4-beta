@@ -19,17 +19,20 @@ on:
       - 'src/js/22-duel-postmatch.js'
       - 'src/js/23-duel-alpha-tester.js'
       - 'src/js/24-easy-learning.js'
+      - 'src/js/25-gameplay-flow.js'
       - 'src/styles/50-private-duel.css'
       - 'src/styles/51-duel-turn-alpha.css'
       - 'src/styles/52-duel-colors-share.css'
       - 'src/styles/53-duel-postmatch.css'
       - 'src/styles/54-duel-alpha-tester.css'
       - 'src/styles/55-easy-learning.css'
+      - 'src/styles/56-gameplay-flow.css'
       - 'src/ui/private-duel-lobby.html'
       - 'tools/build_private_duel_alpha.py'
       - 'tools/build_duel_modes_alpha.py'
       - 'tests/test-duel-*.mjs'
       - 'tests/test-direct-*.mjs'
+      - 'tests/test-gameplay-flow.mjs'
       - 'tests/test-private-duel-build.mjs'
       - '.github/workflows/duel-alpha-ci.yml'
   pull_request:
@@ -49,17 +52,20 @@ on:
       - 'src/js/22-duel-postmatch.js'
       - 'src/js/23-duel-alpha-tester.js'
       - 'src/js/24-easy-learning.js'
+      - 'src/js/25-gameplay-flow.js'
       - 'src/styles/50-private-duel.css'
       - 'src/styles/51-duel-turn-alpha.css'
       - 'src/styles/52-duel-colors-share.css'
       - 'src/styles/53-duel-postmatch.css'
       - 'src/styles/54-duel-alpha-tester.css'
       - 'src/styles/55-easy-learning.css'
+      - 'src/styles/56-gameplay-flow.css'
       - 'src/ui/private-duel-lobby.html'
       - 'tools/build_private_duel_alpha.py'
       - 'tools/build_duel_modes_alpha.py'
       - 'tests/test-duel-*.mjs'
       - 'tests/test-direct-*.mjs'
+      - 'tests/test-gameplay-flow.mjs'
       - 'tests/test-private-duel-build.mjs'
       - '.github/workflows/duel-alpha-ci.yml'
 
@@ -93,7 +99,9 @@ jobs:
           node --check src/js/22-duel-postmatch.js
           node --check src/js/23-duel-alpha-tester.js
           node --check src/js/24-easy-learning.js
+          node --check src/js/25-gameplay-flow.js
           node --check tests/test-direct-duel-soak.mjs
+          node --check tests/test-gameplay-flow.mjs
           python3 -m py_compile tools/build_private_duel_alpha.py tools/build_duel_modes_alpha.py
       - name: Client ordering contract
         run: node tests/test-duel-client-contract.mjs
@@ -105,6 +113,8 @@ jobs:
         run: node tests/test-duel-local-core.mjs
       - name: Direct Duel 500-game soak QA
         run: node tests/test-direct-duel-soak.mjs
+      - name: Gameplay pacing and visual-flow contract
+        run: node tests/test-gameplay-flow.mjs
       - name: Multiplayer Alpha packaging and Easy learning contracts
         run: node tests/test-duel-mode-contract.mjs
       - name: Build Multiplayer Alpha client
@@ -118,7 +128,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add private-duel-alpha.html multiplayer-alpha.html
-            git commit -m "Build Multiplayer Alpha 0.16.3 learnability pass"
+            git commit -m "Build Multiplayer Alpha 0.16.5 gameplay flow pass"
             git pull --rebase origin main
             git push
           else
