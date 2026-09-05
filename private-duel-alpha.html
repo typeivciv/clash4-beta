@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="description" content="Clash 4 mobile beta test build">
-<title>Clash 4 — Fog of War · Multiplayer Alpha 0.16.5</title>
+<title>Clash 4 — Fog of War · Multiplayer Alpha 0.16.6</title>
 
 
 
@@ -810,13 +810,57 @@ body.reducedMotion .easyLearningPulse{animation:none!important;outline:3px solid
   50%{box-shadow:0 10px 35px rgba(0,0,0,.24),0 0 0 4px rgba(116,174,255,.50),0 0 34px rgba(116,174,255,.34)}
 }
 body.reducedMotion #board.easyLearningBoardCue{animation:none!important;outline:3px solid rgba(116,174,255,.68);outline-offset:4px}
+/* Multiplayer Alpha 0.16.6: low-clutter learner entry and readable coaching. */
+.homeActions .homeLearn{border-color:rgba(103,162,255,.68);background:linear-gradient(180deg,rgba(30,67,118,.96),rgba(18,40,72,.96));box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 10px 28px rgba(0,0,0,.18)}
+.homeActions .homeLearn span{font-weight:950;letter-spacing:.01em}.homeActions .homeLearn small{color:#c8dcff}
+
+/* Routine learning cues should read like a HUD cue, not another paragraph card. */
+#easyLearningCoach.easyLearningCoach{min-height:48px!important;padding:8px 10px!important;gap:9px!important}
+#easyLearningCoach .easyCoachCopy strong{font-size:13px!important;line-height:1.1!important;letter-spacing:.02em}
+#easyLearningCoach .easyCoachCopy span{font-size:12px!important;line-height:1.35!important}
+#easyLearningCoach .easyCoachIcon{width:38px!important;height:32px!important;font-size:9px!important}
+#easyLearningCoach .easyRpsCompass{font-size:15px!important}
+#easyLearningCoach .easyCoachActions button{font-size:11px!important;min-height:32px!important}
+
+/* First-time explanations are learner-controlled instead of timer-controlled. */
+.learning-awaiting-continue .overlay{pointer-events:auto!important}
+.learning-awaiting-continue .overlay .card{pointer-events:auto!important}
+.learnerContinueBar{margin-top:14px;padding-top:12px;border-top:1px solid rgba(100,127,171,.38);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.learnerContinueBar span{font-size:13px;color:#aebbd0;font-weight:750}
+.learnerContinueButton{min-width:104px;min-height:42px;border:1px solid rgba(116,174,255,.72);border-radius:10px;background:#1c4f91;color:#fff;padding:8px 16px;font-size:14px;font-weight:950;cursor:pointer}
+.learnerContinueButton:disabled{opacity:.45;cursor:default}.learnerContinueButton:focus-visible{outline:3px solid rgba(174,209,255,.78);outline-offset:3px}
+
+@media(min-width:980px){
+  #easyLearningCoach[data-placement="player"]{min-height:58px!important;padding:10px 13px!important}
+  #easyLearningCoach[data-placement="player"] .easyCoachCopy strong{font-size:15px!important}
+  #easyLearningCoach[data-placement="player"] .easyCoachCopy span{font-size:13px!important}
+  #easyLearningCoach[data-placement="player"] .easyRpsCompass{font-size:17px!important;padding:5px 9px!important}
+  .homeActions .homeLearn{min-height:66px}
+}
+
+@media(max-width:720px){
+  #easyLearningCoach.easyLearningCoach{grid-template-columns:auto minmax(0,1fr) auto!important;min-height:50px!important;padding:7px 8px!important}
+  #easyLearningCoach .easyCoachCopy strong{font-size:11.5px!important}
+  #easyLearningCoach .easyCoachCopy span{font-size:10.5px!important;line-height:1.28!important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  #easyLearningCoach .easyRpsCompass{display:none!important}
+  #easyLearningCoach .easyCoachActions{grid-column:3!important;grid-row:1!important;align-self:center!important}
+  #easyLearningCoach .easyCoachActions button{min-height:34px!important;font-size:10px!important}
+  #easyLearningCoach #easyCoachWhy{display:none!important}
+  .learnerContinueBar{position:sticky;bottom:0;margin:12px -2px -2px;padding:11px 2px 2px;background:linear-gradient(180deg,rgba(16,24,38,0),rgba(16,24,38,.98) 34%)}
+  .learnerContinueBar span{font-size:11px}.learnerContinueButton{min-width:96px;min-height:44px;font-size:13px}
+}
+
+@media(max-width:390px){
+  #easyLearningCoach .easyCoachIcon{display:none!important}
+  #easyLearningCoach.easyLearningCoach{grid-template-columns:minmax(0,1fr) auto!important}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
 </head>
 <body>
 <div id="appRoot" class="app">
 <header>
-  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Arcade RC1 · Multiplayer Alpha 0.16.5</div></div>
+  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Arcade RC1 · Multiplayer Alpha 0.16.6</div></div>
   <div id="fogTurnPill" class="fogTurnPill neutral"><span class="fogTurnDot"></span><span id="fogTurnText">Setup</span></div>
   <div class="topActions">
     <div id="matchDifficultyBadge" class="matchDifficultyBadge" title="Difficulty is chosen before the match"><span>AI</span><strong id="matchDifficultyLabel">Normal</strong></div>
@@ -950,7 +994,7 @@ body.reducedMotion #board.easyLearningBoardCue{animation:none!important;outline:
       <div class="homeTagline">Connect Four. Win the Clash.</div>
       <p class="homeLede">Build four in a row while Rock–Paper–Scissors combat, Decoys, and hidden enemy identities turn every column into a tactical gamble.</p>
       <div class="homeActions"><button id="homePlayButton" class="homePlay" type="button"><span>Play</span><small>Normal · Default colors · Random start</small></button><button id="homeDuelButton" class="homeDuel" type="button"><span>Multiplayer</span><small>Invite a player · Pass &amp; Play · Alpha test</small></button><button id="homeCustomizeButton" class="homeCustomize" type="button"><span>Customize Match</span><small>Difficulty · first move · colors · tips</small></button><button id="homeRulesButton" class="homeSecondary" type="button">How to Play</button></div>
-      <div class="homeMeta"><span>Duel Modes Alpha · 0.16.5</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
+      <div class="homeMeta"><span>Duel Modes Alpha · 0.16.6</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
     </div>
     <div class="homeHero" aria-hidden="true"><div class="homeHeroGlow"></div><div class="heroBoard"><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">🪨</span></div><div class="heroHole"><span class="heroPiece ai ">📄</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">✂️</span></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"><span class="heroPiece player ">📄</span></div><div class="heroHole"><span class="heroPiece ai ">🪨</span></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"><span class="heroPiece ai ">✂️</span></div></div><div class="heroFog"></div></div>
   </section>
@@ -3610,6 +3654,100 @@ requestAnimationFrame(gameplayFlowBoardCenter);
 globalThis.gameplayFlowBoardCenter=gameplayFlowBoardCenter;
 globalThis.GAMEPLAY_FLOW_VERSION=GAMEPLAY_FLOW_VERSION;
 
+// Multiplayer Alpha 0.16.6: one-tap learner entry, concise coach copy, and learner-controlled first explanations.
+'use strict';
+const LEARNER_UX_VERSION='0.16.6';
+const LEARNER_PRE_REVEAL_MS=520;
+let learnerAwaitingContinue=false;
+
+function learnerEnsureHomeButton(){
+  if(document.getElementById('homeLearnButton'))return;
+  const actions=document.querySelector('#homePanel .homeActions'),play=document.getElementById('homePlayButton');
+  if(!actions||!play)return;
+  const button=document.createElement('button');
+  button.id='homeLearnButton';button.className='homeLearn';button.type='button';
+  button.innerHTML='<span>Learn to Play</span><small>Easy · learning help on · start now</small>';
+  play.after(button);
+  button.addEventListener('click',learnerQuickStart)
+}
+function learnerQuickStart(){
+  try{setMatchControllerMode('arcade',{owner:H})}catch{}
+  easyLearningEnabled=true;try{easyLearningSave()}catch{}
+  if(!guideEnabled){guideEnabled=true;try{updateGuideButtons()}catch{}}
+  aiDifficulty='easy';colorMode='default';
+  try{setColorMode('default')}catch{}
+  try{setAiDifficulty('easy')}catch{}
+  try{humanColor=presetColor('blue');aiColor=presetColor('orange');applyColors()}catch{}
+  try{easyLearningSyncSetup()}catch{}
+  beginRandomMatch('Learn to Play',{useDefaults:false})
+}
+
+function learnerConciseCoachCopy(title,text){
+  const t=String(title||''),x=String(text||'');
+  if(t==='GET 4 IN A ROW')return[t,'Make four of your color touch.'];
+  if(t.startsWith('1 ·'))return['PICK A PIECE','Choose Rock, Paper, Scissors, or Decoy.'];
+  if(t.startsWith('2 ·'))return['PICK A COLUMN','Tap the column where it should fall.'];
+  if(t==='Watch what happens')return['WATCH THE MOVE','Follow the drop. Read the clash.'];
+  if(t==='Opponent turn'||t==='WHAT TO WATCH')return['WATCH THEIR MOVE','See where their piece lands.'];
+  if(t==='WHAT TO LOOK FOR'){
+    if(x.includes('Before moving:'))return['CHECK THE BOARD','Your 4 → their 4 → then R/P/S.'];
+    if(x.includes('three connected'))return['CHECK THE LINE',x.replace('Find the empty space that ','Find where ').replace('would complete','finishes').replace('could complete','could finish')];
+    return['CHECK THE BOARD','Your line first. Their line second.'];
+  }
+  if(t==='Pick, then drop')return['PICK → DROP','Choose a piece, then choose its column.'];
+  if(t==='Piece dropping')return['WATCH THE DROP','See where it lands.'];
+  return[t,x.length>84?x.slice(0,81).trimEnd()+'…':x]
+}
+const easyLearningSetCoachBeforeLearnerUx=easyLearningSetCoach;
+easyLearningSetCoach=function(title,text,options={}){
+  const [shortTitle,shortText]=learnerConciseCoachCopy(title,text);
+  return easyLearningSetCoachBeforeLearnerUx(shortTitle,shortText,options)
+};
+
+function learnerContinueButton(next,event){
+  learnerAwaitingContinue=true;document.body.classList.add('learning-awaiting-continue');
+  let footer=overlayCard.querySelector('.learnerContinueBar');
+  if(!footer){footer=document.createElement('div');footer.className='learnerContinueBar';overlayCard.appendChild(footer)}
+  footer.innerHTML='<span>Take your time.</span><button type="button" class="learnerContinueButton">Got it</button>';
+  const button=footer.querySelector('button');
+  button.disabled=true;
+  setTimeout(()=>{button.disabled=false;button.focus({preventScroll:true})},700);
+  const proceed=()=>{
+    if(!learnerAwaitingContinue)return;learnerAwaitingContinue=false;document.body.classList.remove('learning-awaiting-continue');footer.remove();next()
+  };
+  button.addEventListener('click',proceed,{once:true});
+  button.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!button.disabled){e.preventDefault();proceed()}},{once:true});
+  try{overlay.setAttribute('aria-label',`Learning explanation: ${event?.kind||'game event'}. Continue when ready.`)}catch{}
+}
+
+const playEventsBeforeLearnerUx=playEvents;
+playEvents=function(events,done,column=null){
+  const list=Array.isArray(events)?events:[];
+  const hasCombat=list.some(e=>e?.kind==='combat');
+  const needsManual=easyLearningAutoActive()&&list.some(e=>easyLearningNeedsLesson(e));
+  if(!needsManual){
+    if(easyLearningPaced()&&hasCombat){
+      scheduleTimer('learnerPreReveal',()=>playEventsBeforeLearnerUx(list,done,column),LEARNER_PRE_REVEAL_MS);return
+    }
+    return playEventsBeforeLearnerUx(list,done,column)
+  }
+  let queue=prepareEvents(list),i=0,started=false;
+  function next(){
+    if(i>=queue.length){activePresentation=null;overlay.classList.remove('show');document.body.classList.remove('learning-awaiting-continue');learnerAwaitingContinue=false;done();return}
+    const e=queue[i++],needsAck=easyLearningNeedsLesson(e);
+    const present=()=>{
+      activePresentation={event:e,column:presentationColumn(e,column)};render();emitFeedback(feedbackCueForEvent(e));showEvent(e);
+      if(needsAck)learnerContinueButton(next,e);else scheduleTimer('event',next,eventDuration(e))
+    };
+    if(!started&&e?.kind==='combat'){started=true;scheduleTimer('learnerPreReveal',present,LEARNER_PRE_REVEAL_MS)}else{started=true;present()}
+  }
+  next()
+};
+
+learnerEnsureHomeButton();
+globalThis.learnerQuickStart=learnerQuickStart;
+globalThis.LEARNER_UX_VERSION=LEARNER_UX_VERSION;
+
 // AI evaluation and decision policy. Hidden-information rules remain bounded here.
 function projectedScore(board,owner,c){
   if(board[c].length>=ROWS)return-Infinity;
@@ -4564,7 +4702,7 @@ init();
 
 <script>
 (function(){
-  const BUILD='Multiplayer Alpha 0.16.5';
+  const BUILD='Multiplayer Alpha 0.16.6';
   const REPO_ISSUES='https://github.com/typeivciv/clash4-beta/issues/new';
   const $=id=>document.getElementById(id);
   const openBtn=$('betaFeedbackButton'), overlay=$('betaFeedbackOverlay'), closeBtn=$('betaFeedbackClose');
@@ -4600,7 +4738,7 @@ init();
   function issueTitle(){
     const type=$('betaIssueType').value;
     const detail=$('betaWhatHappened').value.trim().replace(/\s+/g,' ').slice(0,72);
-    return `[Multiplayer Alpha 0.16.5][${type}] ${detail||'Tester report'}`;
+    return `[Multiplayer Alpha 0.16.6][${type}] ${detail||'Tester report'}`;
   }
   function githubUrl(){
     const body=[
