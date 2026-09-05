@@ -810,49 +810,68 @@ body.reducedMotion .easyLearningPulse{animation:none!important;outline:3px solid
   50%{box-shadow:0 10px 35px rgba(0,0,0,.24),0 0 0 4px rgba(116,174,255,.50),0 0 34px rgba(116,174,255,.34)}
 }
 body.reducedMotion #board.easyLearningBoardCue{animation:none!important;outline:3px solid rgba(116,174,255,.68);outline-offset:4px}
-/* Multiplayer Alpha 0.16.6: low-clutter learner entry and readable coaching. */
-.homeActions .homeLearn{border-color:rgba(103,162,255,.68);background:linear-gradient(180deg,rgba(30,67,118,.96),rgba(18,40,72,.96));box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 10px 28px rgba(0,0,0,.18)}
-.homeActions .homeLearn span{font-weight:950;letter-spacing:.01em}.homeActions .homeLearn small{color:#c8dcff}
+/* Multiplayer Alpha 0.16.6: compact combat-like learning cards and cohesive HUD cleanup. */
+.homeActions .homeLearn.homeCustomize{width:100%}
 
-/* Routine learning cues should read like a HUD cue, not another paragraph card. */
-#easyLearningCoach.easyLearningCoach{min-height:48px!important;padding:8px 10px!important;gap:9px!important}
-#easyLearningCoach .easyCoachCopy strong{font-size:13px!important;line-height:1.1!important;letter-spacing:.02em}
-#easyLearningCoach .easyCoachCopy span{font-size:12px!important;line-height:1.35!important}
-#easyLearningCoach .easyCoachIcon{width:38px!important;height:32px!important;font-size:9px!important}
-#easyLearningCoach .easyRpsCompass{font-size:15px!important}
-#easyLearningCoach .easyCoachActions button{font-size:11px!important;min-height:32px!important}
+/* Learning tips share the combat-card visual language, but stay below the board. */
+#easyLearningCoach.easyLearningCoach{
+  min-height:58px!important;
+  padding:9px 12px!important;
+  gap:10px!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  align-items:center!important;
+  border:1px solid var(--fog-line,#3a4a66)!important;
+  border-radius:15px!important;
+  background:linear-gradient(180deg,var(--fog-ink-600,#111a2a),var(--fog-ink-700,#0c1421))!important;
+  box-shadow:0 12px 30px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.035)!important;
+}
+#easyLearningCoach .easyCoachIcon,#easyLearningCoach .easyRpsCompass{display:none!important}
+#easyLearningCoach .easyCoachCopy{display:grid!important;gap:2px!important;min-width:0!important}
+#easyLearningCoach .easyCoachCopy::before{content:'LEARNING TIP';font-size:8px;line-height:1;letter-spacing:.15em;font-weight:950;color:#8fa0b8}
+#easyLearningCoach .easyCoachCopy strong{font-size:14px!important;line-height:1.15!important;letter-spacing:.015em!important;color:#f2f6fd!important}
+#easyLearningCoach .easyCoachCopy span{font-size:12.5px!important;line-height:1.35!important;color:#b8c4d6!important;white-space:normal!important}
+#easyLearningCoach .easyCoachActions{grid-column:2!important;grid-row:1!important;align-self:center!important;display:flex!important;gap:6px!important}
+#easyLearningCoach .easyCoachActions button{min-height:36px!important;padding:6px 10px!important;border:1px solid #3a4b6b!important;border-radius:9px!important;background:#121d30!important;color:#edf4ff!important;font-size:11px!important;font-weight:900!important}
+#easyLearningCoach #easyCoachWhy{display:none!important}
+#easyLearningCoach .easyCoachWhyPanel{display:none!important}
+.easy-learning-active .mobileContextTray{display:none!important}
 
-/* First-time explanations are learner-controlled instead of timer-controlled. */
+/* First-time explanations stay up longer, with Skip only in Learn-as-you-play mode. */
 .learning-awaiting-continue .overlay{pointer-events:auto!important}
 .learning-awaiting-continue .overlay .card{pointer-events:auto!important}
-.learnerContinueBar{margin-top:14px;padding-top:12px;border-top:1px solid rgba(100,127,171,.38);display:flex;align-items:center;justify-content:space-between;gap:12px}
-.learnerContinueBar span{font-size:13px;color:#aebbd0;font-weight:750}
-.learnerContinueButton{min-width:104px;min-height:42px;border:1px solid rgba(116,174,255,.72);border-radius:10px;background:#1c4f91;color:#fff;padding:8px 16px;font-size:14px;font-weight:950;cursor:pointer}
-.learnerContinueButton:disabled{opacity:.45;cursor:default}.learnerContinueButton:focus-visible{outline:3px solid rgba(174,209,255,.78);outline-offset:3px}
+.learnerContinueBar{margin-top:13px;padding-top:11px;border-top:1px solid rgba(100,127,171,.38);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.learnerContinueBar span{font-size:12px;color:#aebbd0;font-weight:750}
+.learnerContinueButton{min-width:86px;min-height:40px;border:1px solid rgba(116,174,255,.72);border-radius:10px;background:#1b3559;color:#f7fbff;padding:7px 14px;font-size:13px;font-weight:950;cursor:pointer}
+.learnerContinueButton:hover,.learnerContinueButton:focus-visible{border-color:#9bc3ff;background:#214571}.learnerContinueButton:focus-visible{outline:3px solid rgba(174,209,255,.68);outline-offset:3px}
+
+/* Opponent identity is one compact unit instead of ARCADE AI with a loose color word below. */
+.panel.ai .row>div:first-child{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:nowrap}
+#opponentEyebrow{white-space:nowrap;line-height:1.05;margin:0}
+#aiColorLabel{display:inline-flex!important;align-items:center;min-height:22px;padding:3px 7px;border:1px solid color-mix(in srgb,var(--orange) 46%,#3b4a62);border-radius:999px;background:color-mix(in srgb,var(--orange) 11%,transparent);color:var(--orange)!important;font-size:10px!important;line-height:1!important;font-weight:900!important;white-space:nowrap}
 
 @media(min-width:980px){
-  #easyLearningCoach[data-placement="player"]{min-height:58px!important;padding:10px 13px!important}
+  #easyLearningCoach[data-placement="player"]{min-height:64px!important;padding:10px 14px!important;border-left:3px solid var(--blue)!important}
+  #easyLearningCoach[data-placement="player"] .easyCoachCopy::before{font-size:9px}
   #easyLearningCoach[data-placement="player"] .easyCoachCopy strong{font-size:15px!important}
   #easyLearningCoach[data-placement="player"] .easyCoachCopy span{font-size:13px!important}
-  #easyLearningCoach[data-placement="player"] .easyRpsCompass{font-size:17px!important;padding:5px 9px!important}
-  .homeActions .homeLearn{min-height:66px}
 }
 
 @media(max-width:720px){
-  #easyLearningCoach.easyLearningCoach{grid-template-columns:auto minmax(0,1fr) auto!important;min-height:50px!important;padding:7px 8px!important}
-  #easyLearningCoach .easyCoachCopy strong{font-size:11.5px!important}
+  .easy-learning-active .layout-mobile .humanZone{grid-template-rows:auto auto!important;gap:5px!important}
+  #easyLearningCoach.easyLearningCoach{min-height:54px!important;padding:7px 9px!important;gap:7px!important;border-radius:13px!important}
+  #easyLearningCoach .easyCoachCopy::before{font-size:7px;letter-spacing:.13em}
+  #easyLearningCoach .easyCoachCopy strong{font-size:12px!important}
   #easyLearningCoach .easyCoachCopy span{font-size:10.5px!important;line-height:1.28!important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-  #easyLearningCoach .easyRpsCompass{display:none!important}
-  #easyLearningCoach .easyCoachActions{grid-column:3!important;grid-row:1!important;align-self:center!important}
-  #easyLearningCoach .easyCoachActions button{min-height:34px!important;font-size:10px!important}
-  #easyLearningCoach #easyCoachWhy{display:none!important}
-  .learnerContinueBar{position:sticky;bottom:0;margin:12px -2px -2px;padding:11px 2px 2px;background:linear-gradient(180deg,rgba(16,24,38,0),rgba(16,24,38,.98) 34%)}
-  .learnerContinueBar span{font-size:11px}.learnerContinueButton{min-width:96px;min-height:44px;font-size:13px}
+  #easyLearningCoach .easyCoachActions button{min-height:36px!important;padding:5px 8px!important;font-size:10px!important}
+  .learnerContinueBar{position:sticky;bottom:0;margin:11px -1px -1px;padding:10px 1px 1px;background:linear-gradient(180deg,rgba(16,24,38,0),rgba(16,24,38,.98) 34%)}
+  .learnerContinueBar span{font-size:10.5px}.learnerContinueButton{min-width:78px;min-height:42px;font-size:12px;padding-inline:12px}
+  .panel.ai .row>div:first-child{gap:6px}.panel.ai #opponentEyebrow{font-size:9px}.panel.ai #aiColorLabel{font-size:9px!important;min-height:20px;padding:3px 6px}
 }
 
 @media(max-width:390px){
-  #easyLearningCoach .easyCoachIcon{display:none!important}
   #easyLearningCoach.easyLearningCoach{grid-template-columns:minmax(0,1fr) auto!important}
+  #easyLearningCoach .easyCoachCopy span{-webkit-line-clamp:1}
+  .learnerContinueBar span{max-width:150px;line-height:1.2}
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
@@ -3654,19 +3673,22 @@ requestAnimationFrame(gameplayFlowBoardCenter);
 globalThis.gameplayFlowBoardCenter=gameplayFlowBoardCenter;
 globalThis.GAMEPLAY_FLOW_VERSION=GAMEPLAY_FLOW_VERSION;
 
-// Multiplayer Alpha 0.16.6: one-tap learner entry, concise coach copy, and learner-controlled first explanations.
+// Multiplayer Alpha 0.16.6: one-tap learner entry, compact coaching, and skippable reading time.
 'use strict';
 const LEARNER_UX_VERSION='0.16.6';
-const LEARNER_PRE_REVEAL_MS=520;
-let learnerAwaitingContinue=false;
+const LEARNER_PRE_REVEAL_MS=700;
+const LEARNER_EXPLANATION_MS=10000;
+const LEARNER_PACING={combat:4600,combatChain:3800,special:4000,lock:3000};
+let learnerAwaitingAdvance=false;
+let learnerAdvanceTimer=null;
 
 function learnerEnsureHomeButton(){
   if(document.getElementById('homeLearnButton'))return;
   const actions=document.querySelector('#homePanel .homeActions'),play=document.getElementById('homePlayButton');
   if(!actions||!play)return;
   const button=document.createElement('button');
-  button.id='homeLearnButton';button.className='homeLearn';button.type='button';
-  button.innerHTML='<span>Learn to Play</span><small>Easy · learning help on · start now</small>';
+  button.id='homeLearnButton';button.className='homeLearn homeCustomize';button.type='button';
+  button.innerHTML='<span>Learn to Play</span><small>Easy · guided learning · start now</small>';
   play.after(button);
   button.addEventListener('click',learnerQuickStart)
 }
@@ -3682,6 +3704,18 @@ function learnerQuickStart(){
   beginRandomMatch('Learn to Play',{useDefaults:false})
 }
 
+// Keep the learning card attached to the player's action area on every layout.
+// On mobile it replaces the generic context tray while learning is active.
+const easyLearningPlaceCoachBeforeLearnerUx=easyLearningPlaceCoach;
+easyLearningPlaceCoach=function(){
+  const coach=document.getElementById('easyLearningCoach'),humanZone=document.querySelector('.humanZone'),humanPanel=humanZone?.querySelector('.panel.human');
+  if(coach&&humanZone&&humanPanel){
+    if(coach.parentElement!==humanZone||coach.nextElementSibling!==humanPanel)humanZone.insertBefore(coach,humanPanel);
+    coach.dataset.placement='player';return
+  }
+  return easyLearningPlaceCoachBeforeLearnerUx()
+};
+
 function learnerConciseCoachCopy(title,text){
   const t=String(title||''),x=String(text||'');
   if(t==='GET 4 IN A ROW')return[t,'Make four of your color touch.'];
@@ -3696,7 +3730,7 @@ function learnerConciseCoachCopy(title,text){
   }
   if(t==='Pick, then drop')return['PICK → DROP','Choose a piece, then choose its column.'];
   if(t==='Piece dropping')return['WATCH THE DROP','See where it lands.'];
-  return[t,x.length>84?x.slice(0,81).trimEnd()+'…':x]
+  return[t,x.length>72?x.slice(0,69).trimEnd()+'…':x]
 }
 const easyLearningSetCoachBeforeLearnerUx=easyLearningSetCoach;
 easyLearningSetCoach=function(title,text,options={}){
@@ -3704,40 +3738,54 @@ easyLearningSetCoach=function(title,text,options={}){
   return easyLearningSetCoachBeforeLearnerUx(shortTitle,shortText,options)
 };
 
-function learnerContinueButton(next,event){
-  learnerAwaitingContinue=true;document.body.classList.add('learning-awaiting-continue');
+// Normal Easy already has a slightly slower cadence. Learn-as-you-play gets an
+// additional readable hold, but repeated events still move faster than first lessons.
+const eventDurationBeforeLearnerUx=eventDuration;
+eventDuration=function(e){
+  const base=eventDurationBeforeLearnerUx(e);if(!easyLearningAutoActive())return base;
+  if(e?.kind==='combat')return Math.max(base,e.chainTotal>1&&e.chainIndex>1?LEARNER_PACING.combatChain:LEARNER_PACING.combat);
+  if(e?.kind==='cooldown-earned')return Math.max(base,LEARNER_PACING.lock);
+  if(['fortified','critical-defense','clashmate'].includes(e?.kind))return Math.max(base,LEARNER_PACING.special);
+  return base
+};
+
+function learnerSkipBar(next,event){
+  learnerAwaitingAdvance=true;document.body.classList.add('learning-awaiting-continue');
   let footer=overlayCard.querySelector('.learnerContinueBar');
   if(!footer){footer=document.createElement('div');footer.className='learnerContinueBar';overlayCard.appendChild(footer)}
-  footer.innerHTML='<span>Take your time.</span><button type="button" class="learnerContinueButton">Got it</button>';
+  footer.innerHTML='<span>Learning mode · extra reading time</span><button type="button" class="learnerContinueButton">Skip</button>';
   const button=footer.querySelector('button');
-  button.disabled=true;
-  setTimeout(()=>{button.disabled=false;button.focus({preventScroll:true})},700);
   const proceed=()=>{
-    if(!learnerAwaitingContinue)return;learnerAwaitingContinue=false;document.body.classList.remove('learning-awaiting-continue');footer.remove();next()
+    if(!learnerAwaitingAdvance)return;
+    learnerAwaitingAdvance=false;document.body.classList.remove('learning-awaiting-continue');
+    if(learnerAdvanceTimer){clearTimeout(learnerAdvanceTimer);learnerAdvanceTimer=null}
+    footer.remove();next()
   };
   button.addEventListener('click',proceed,{once:true});
-  button.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!button.disabled){e.preventDefault();proceed()}},{once:true});
-  try{overlay.setAttribute('aria-label',`Learning explanation: ${event?.kind||'game event'}. Continue when ready.`)}catch{}
+  learnerAdvanceTimer=setTimeout(proceed,LEARNER_EXPLANATION_MS);
+  try{overlay.setAttribute('aria-label',`Learning explanation: ${event?.kind||'game event'}. Read it or skip the extra wait.`)}catch{}
 }
 
 const playEventsBeforeLearnerUx=playEvents;
 playEvents=function(events,done,column=null){
   const list=Array.isArray(events)?events:[];
   const hasCombat=list.some(e=>e?.kind==='combat');
-  const needsManual=easyLearningAutoActive()&&list.some(e=>easyLearningNeedsLesson(e));
-  if(!needsManual){
-    if(easyLearningPaced()&&hasCombat){
-      scheduleTimer('learnerPreReveal',()=>playEventsBeforeLearnerUx(list,done,column),LEARNER_PRE_REVEAL_MS);return
-    }
+  const needsExtraRead=easyLearningAutoActive()&&list.some(e=>easyLearningNeedsLesson(e));
+  if(!needsExtraRead){
+    if(easyLearningPaced()&&hasCombat){scheduleTimer('learnerPreReveal',()=>playEventsBeforeLearnerUx(list,done,column),LEARNER_PRE_REVEAL_MS);return}
     return playEventsBeforeLearnerUx(list,done,column)
   }
   let queue=prepareEvents(list),i=0,started=false;
   function next(){
-    if(i>=queue.length){activePresentation=null;overlay.classList.remove('show');document.body.classList.remove('learning-awaiting-continue');learnerAwaitingContinue=false;done();return}
-    const e=queue[i++],needsAck=easyLearningNeedsLesson(e);
+    if(i>=queue.length){
+      activePresentation=null;overlay.classList.remove('show');document.body.classList.remove('learning-awaiting-continue');learnerAwaitingAdvance=false;
+      if(learnerAdvanceTimer){clearTimeout(learnerAdvanceTimer);learnerAdvanceTimer=null}
+      done();return
+    }
+    const e=queue[i++],needsRead=easyLearningNeedsLesson(e);
     const present=()=>{
       activePresentation={event:e,column:presentationColumn(e,column)};render();emitFeedback(feedbackCueForEvent(e));showEvent(e);
-      if(needsAck)learnerContinueButton(next,e);else scheduleTimer('event',next,eventDuration(e))
+      if(needsRead)learnerSkipBar(next,e);else scheduleTimer('event',next,eventDuration(e))
     };
     if(!started&&e?.kind==='combat'){started=true;scheduleTimer('learnerPreReveal',present,LEARNER_PRE_REVEAL_MS)}else{started=true;present()}
   }
@@ -3745,8 +3793,10 @@ playEvents=function(events,done,column=null){
 };
 
 learnerEnsureHomeButton();
+easyLearningPlaceCoach();
 globalThis.learnerQuickStart=learnerQuickStart;
 globalThis.LEARNER_UX_VERSION=LEARNER_UX_VERSION;
+globalThis.LEARNER_EXPLANATION_MS=LEARNER_EXPLANATION_MS;
 
 // AI evaluation and decision policy. Hidden-information rules remain bounded here.
 function projectedScore(board,owner,c){
