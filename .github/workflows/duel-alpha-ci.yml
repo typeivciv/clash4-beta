@@ -18,11 +18,13 @@ on:
       - 'src/js/21-duel-colors-share.js'
       - 'src/js/22-duel-postmatch.js'
       - 'src/js/23-duel-alpha-tester.js'
+      - 'src/js/24-easy-learning.js'
       - 'src/styles/50-private-duel.css'
       - 'src/styles/51-duel-turn-alpha.css'
       - 'src/styles/52-duel-colors-share.css'
       - 'src/styles/53-duel-postmatch.css'
       - 'src/styles/54-duel-alpha-tester.css'
+      - 'src/styles/55-easy-learning.css'
       - 'src/ui/private-duel-lobby.html'
       - 'tools/build_private_duel_alpha.py'
       - 'tools/build_duel_modes_alpha.py'
@@ -46,11 +48,13 @@ on:
       - 'src/js/21-duel-colors-share.js'
       - 'src/js/22-duel-postmatch.js'
       - 'src/js/23-duel-alpha-tester.js'
+      - 'src/js/24-easy-learning.js'
       - 'src/styles/50-private-duel.css'
       - 'src/styles/51-duel-turn-alpha.css'
       - 'src/styles/52-duel-colors-share.css'
       - 'src/styles/53-duel-postmatch.css'
       - 'src/styles/54-duel-alpha-tester.css'
+      - 'src/styles/55-easy-learning.css'
       - 'src/ui/private-duel-lobby.html'
       - 'tools/build_private_duel_alpha.py'
       - 'tools/build_duel_modes_alpha.py'
@@ -88,6 +92,7 @@ jobs:
           node --check src/js/21-duel-colors-share.js
           node --check src/js/22-duel-postmatch.js
           node --check src/js/23-duel-alpha-tester.js
+          node --check src/js/24-easy-learning.js
           node --check tests/test-direct-duel-soak.mjs
           python3 -m py_compile tools/build_private_duel_alpha.py tools/build_duel_modes_alpha.py
       - name: Client ordering contract
@@ -100,7 +105,7 @@ jobs:
         run: node tests/test-duel-local-core.mjs
       - name: Direct Duel 500-game soak QA
         run: node tests/test-direct-duel-soak.mjs
-      - name: Multiplayer Alpha packaging and Direct recovery contracts
+      - name: Multiplayer Alpha packaging and Easy learning contracts
         run: node tests/test-duel-mode-contract.mjs
       - name: Build Multiplayer Alpha client
         run: python3 tools/build_duel_modes_alpha.py
@@ -113,7 +118,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add private-duel-alpha.html multiplayer-alpha.html
-            git commit -m "Build Multiplayer Alpha 0.16.1 post-match polish"
+            git commit -m "Build Multiplayer Alpha 0.16.3 learnability pass"
             git pull --rebase origin main
             git push
           else
