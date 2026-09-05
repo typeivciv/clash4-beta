@@ -17,7 +17,7 @@ DUEL_COLORS_CSS=ROOT/'src/styles/52-duel-colors-share.css'
 DUEL_POSTMATCH_CSS=ROOT/'src/styles/53-duel-postmatch.css'
 ALPHA_TESTER_CSS=ROOT/'src/styles/54-duel-alpha-tester.css'
 EASY_LEARNING_CSS=ROOT/'src/styles/55-easy-learning.css'
-VERSION='0.16.3'
+VERSION='0.16.4'
 
 runpy.run_path(str(BASE_BUILDER),run_name='__main__')
 html=OUT.read_text(encoding='utf-8')
@@ -42,8 +42,8 @@ if html.count(unsafe_icon)!=1:
 html=html.replace(unsafe_icon,safe_icon,1)
 
 # PeerJS Cloud brokers only the initial Direct WebRTC connection. The established
-# DataConnection carries gameplay. 0.16.3 adds an Easy-mode progressive learning layer
-# without changing game rules, AI strength, Direct transport, or the frozen public beta.
+# DataConnection carries gameplay. 0.16.4 slows Easy teaching moments, anchors the
+# coach to the player's controls on desktop, and unifies Guided Tips under Easy learning.
 peerjs='<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>\n'
 extra_style='<style>\n'+TURN_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DUEL_COLORS_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DUEL_POSTMATCH_CSS.read_text(encoding='utf-8').rstrip()+'\n'+ALPHA_TESTER_CSS.read_text(encoding='utf-8').rstrip()+'\n'+EASY_LEARNING_CSS.read_text(encoding='utf-8').rstrip()+'\n</style>\n'
 if peerjs not in html:
@@ -68,4 +68,4 @@ if 'EASY_LEARNING_STORAGE_KEY' in html:raise SystemExit('Easy learning module al
 html=html.replace(anchor,nearby+turn+colors+postmatch+tester+easy+anchor,1)
 OUT.write_text(html,encoding='utf-8')
 TESTER_OUT.write_text(html,encoding='utf-8')
-print(f'Built Multiplayer Alpha {VERSION} tester package with Easy learnability pass into {OUT.name} and {TESTER_OUT.name}')
+print(f'Built Multiplayer Alpha {VERSION} tester package with paced Easy learning into {OUT.name} and {TESTER_OUT.name}')
