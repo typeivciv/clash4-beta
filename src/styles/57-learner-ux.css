@@ -1,4 +1,4 @@
-/* Multiplayer Alpha 0.16.7: compact combat-like learning cards and cohesive opponent HUD. */
+/* Multiplayer Alpha 0.16.8: compact combat-like learning cards and audited opponent HUD. */
 .homeActions .homeLearn.homeCustomize{width:100%}
 
 /* Learning tips share the combat-card visual language, but stay below the board. */
@@ -43,14 +43,27 @@
   #easyLearningCoach[data-placement="player"] .easyCoachCopy strong{font-size:15px!important}
   #easyLearningCoach[data-placement="player"] .easyCoachCopy span{font-size:13px!important}
 
-  /* The desktop sidebar is narrow. Give identity and match stats separate rows so
-     Orange can never sit underneath or behind the remaining-piece text. */
-  .panel.ai .row{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:8px!important;align-items:stretch!important}
-  .panel.ai .row>div:first-child{width:100%;justify-content:flex-start}
-  .panel.ai .aiStatusMeta{width:100%;min-width:0;display:grid!important;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;justify-content:stretch!important;gap:8px!important}
-  .panel.ai .aiRemaining{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
-  .panel.ai .hiddenTypePill{justify-self:end}
-  .panel.ai #aiTurn{justify-self:end}
+  /* Audited at the real 292px sidebar width: make this read as one opponent card,
+     not four tiny metadata fragments. */
+  .panel.ai{padding:11px 12px!important}
+  .panel.ai .row{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:9px!important;align-items:stretch!important}
+  .panel.ai .row>div:first-child{width:100%;justify-content:space-between!important;gap:10px!important;padding:0 1px 1px}
+  .panel.ai .row>div:first-child .eyebrow{font-size:10px!important;letter-spacing:.16em!important;color:#a7b5cb!important}
+  .panel.ai #aiColorLabel{min-height:23px;max-width:118px;padding:4px 8px;font-size:10.5px!important}
+  .panel.ai .aiStatusMeta{
+    width:100%;min-width:0;
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    align-items:center;justify-content:stretch!important;
+    gap:10px!important;
+    padding-top:8px;
+    border-top:1px solid rgba(83,102,138,.42)
+  }
+  .panel.ai .aiRemaining{min-width:0;display:flex!important;align-items:baseline;gap:4px;overflow:visible;text-overflow:clip;white-space:nowrap;color:#9aaac0}
+  .panel.ai .aiRemaining .remainingNumber{min-width:auto!important;font-size:18px!important;line-height:1!important;font-weight:950!important;color:#f0f5ff!important;text-align:left!important}
+  .panel.ai .aiRemaining>span:last-child{font-size:8px!important;line-height:1!important;letter-spacing:.11em;text-transform:uppercase;color:#8495ad;font-weight:900}
+  .panel.ai .hiddenTypePill{justify-self:end;padding:4px 8px;font-size:9px;color:#b9c6d8;border-color:#41516b;background:rgba(13,20,34,.46)}
+  .panel.ai #aiTurn{display:none!important}
 }
 
 @media(max-width:720px){
