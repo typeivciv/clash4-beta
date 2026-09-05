@@ -1,4 +1,4 @@
-/* Multiplayer Alpha 0.16.5: keep combat visually attached to the board, not the right sidebar. */
+/* Multiplayer Alpha 0.16.8: board-centered combat with a readable Easy capture beat. */
 .overlay .card.teachingCombatCard,.overlay .card.teachingSpecialCard{pointer-events:auto}
 @media(min-width:980px){
   .overlay[data-layout="desktop"],.overlay[data-layout="compact"]{
@@ -54,6 +54,49 @@
   .overlay[data-layout="desktop"] .easyCombatWhyPanel,
   .overlay[data-layout="compact"] .easyCombatWhyPanel{font-size:12px;line-height:1.5}
 }
+
+/* Easy combat now has a readable two-stage capture: see both fighters first, then
+   watch the losing fighter resolve as captured. This is presentation only. */
+.teachingCombatCard.capture-staging .fighter.winner,
+.teachingCombatCard.capture-staging .fighter.loser{
+  animation:none!important;
+  transform:none!important;
+  opacity:1!important;
+  filter:none!important;
+}
+.teachingCombatCard.capture-staging .fighter.loser{box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)!important}
+.teachingCombatCard.capture-resolved .fighter.loser{animation:c4-capture-resolve .78s cubic-bezier(.2,.72,.24,1) both!important}
+.teachingCombatCard.capture-resolved .fighter.winner{animation:c4-capture-survivor .58s ease-out both!important}
+.teachingCombatCard.capture-resolved .fighter.loser::after{
+  content:'CAPTURED';
+  position:absolute;
+  left:50%;bottom:7px;transform:translateX(-50%);
+  z-index:4;
+  padding:3px 7px;
+  border:1px solid rgba(255,151,151,.46);
+  border-radius:999px;
+  background:rgba(75,18,27,.82);
+  color:#ffd7d7;
+  font-size:8px;
+  line-height:1;
+  font-weight:950;
+  letter-spacing:.12em;
+  animation:c4-captured-label .34s ease-out .2s both;
+}
+@keyframes c4-capture-resolve{
+  0%{opacity:1;transform:scale(1);filter:none}
+  38%{opacity:.9;transform:scale(.97);filter:saturate(.82)}
+  100%{opacity:.48;transform:scale(.91);filter:saturate(.55) brightness(.78)}
+}
+@keyframes c4-capture-survivor{
+  0%{transform:scale(1);filter:none}
+  46%{transform:scale(1.055);filter:brightness(1.23)}
+  100%{transform:scale(1);filter:none}
+}
+@keyframes c4-captured-label{from{opacity:0;transform:translate(-50%,4px)}to{opacity:1;transform:translate(-50%,0)}}
+body.reducedMotion .teachingCombatCard.capture-resolved .fighter.winner{animation:none!important}
+body.reducedMotion .teachingCombatCard.capture-resolved .fighter.loser{animation:none!important;opacity:.5!important;transform:none!important;filter:saturate(.6)!important}
+body.reducedMotion .teachingCombatCard.capture-resolved .fighter.loser::after{animation:none!important}
 
 /* The learning cue should read as "the board is ready for a drop", never "top row is special". */
 #board.easyLearningBoardCue{animation:c4-easy-board-cue 1.15s ease-in-out 2!important}
