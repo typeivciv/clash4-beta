@@ -49,15 +49,25 @@ assert.ok(!easy.includes("easyLearningPulse('#board .cell[data-column][tabindex=
 for(const token of ["const GAMEPLAY_FLOW_VERSION='0.16.5'",'function gameplayFlowBoardCenter()',"--c4-board-center-x",'--c4-board-center-y'])assert.ok(flow.includes(token),`gameplay flow module missing ${token}`);
 for(const token of ['left:var(--c4-board-center-x,50%)','top:var(--c4-board-center-y,50%)','transform:translate(-50%,-50%)','#board.easyLearningBoardCue'])assert.ok(flowCss.includes(token),`gameplay flow CSS missing ${token}`);
 
-// Learner UX removes setup friction and turns first-time explanations into learner-paced steps.
+// Learn as You Play is intentionally slower than normal Easy and exposes a Skip control
+// only during a first-time learning explanation. Normal Easy never gets the Skip UI.
 for(const token of [
-  "const LEARNER_UX_VERSION='0.16.6'","const LEARNER_PRE_REVEAL_MS=520",'function learnerEnsureHomeButton()',"button.id='homeLearnButton'",'<span>Learn to Play</span><small>Easy · learning help on · start now</small>',
+  "const LEARNER_UX_VERSION='0.16.6'","const LEARNER_PRE_REVEAL_MS=700","const LEARNER_EXPLANATION_MS=10000",
+  'const LEARNER_PACING={combat:4600,combatChain:3800,special:4000,lock:3000}',
+  'function learnerEnsureHomeButton()',"button.id='homeLearnButton'","button.className='homeLearn homeCustomize'",'<span>Learn to Play</span><small>Easy · guided learning · start now</small>',
   'function learnerQuickStart()','easyLearningEnabled=true','if(!guideEnabled){guideEnabled=true',"aiDifficulty='easy'","colorMode='default'","beginRandomMatch('Learn to Play',{useDefaults:false})",
+  'const easyLearningPlaceCoachBeforeLearnerUx=easyLearningPlaceCoach','humanZone.insertBefore(coach,humanPanel)',
   'function learnerConciseCoachCopy(',"['CHECK THE BOARD','Your 4 → their 4 → then R/P/S.']",'const easyLearningSetCoachBeforeLearnerUx=easyLearningSetCoach',
-  'function learnerContinueButton(next,event)',"document.body.classList.add('learning-awaiting-continue')",'>Got it</button>',
-  'const playEventsBeforeLearnerUx=playEvents','const needsManual=easyLearningAutoActive()&&list.some(e=>easyLearningNeedsLesson(e))','scheduleTimer(\'learnerPreReveal\'',
+  'const eventDurationBeforeLearnerUx=eventDuration','if(!easyLearningAutoActive())return base','LEARNER_PACING.combat',
+  'function learnerSkipBar(next,event)',"document.body.classList.add('learning-awaiting-continue')",'>Skip</button>',
+  'const playEventsBeforeLearnerUx=playEvents','const needsExtraRead=easyLearningAutoActive()&&list.some(e=>easyLearningNeedsLesson(e))',"scheduleTimer('learnerPreReveal'"
 ])assert.ok(learner.includes(token),`learner UX contract missing ${token}`);
-for(const token of ['.homeActions .homeLearn','.learning-awaiting-continue .overlay','.learnerContinueBar','.learnerContinueButton','#easyLearningCoach .easyRpsCompass{display:none!important}'])assert.ok(learnerCss.includes(token),`learner UX CSS missing ${token}`);
+assert.ok(!learner.includes('>Got it</button>'),'learner explanation should auto-advance slowly and offer Skip, not require acknowledgment');
+for(const token of [
+  '.homeActions .homeLearn.homeCustomize','.learning-awaiting-continue .overlay','.learnerContinueBar','.learnerContinueButton',
+  '#easyLearningCoach .easyCoachCopy::before','.easy-learning-active .mobileContextTray{display:none!important}',
+  '.panel.ai .row>div:first-child','#aiColorLabel{display:inline-flex!important'
+])assert.ok(learnerCss.includes(token),`learner UX CSS missing ${token}`);
 for(const [name,source] of [['direct',direct],['nearby',nearby],['turn',turn],['colors',colors],['postmatch',postmatch],['tester',tester],['easy',easy],['flow',flow],['learner',learner],['pass',pass],['router',router]]){
   try{new Function(source)}catch(error){throw new Error(`${name} module syntax failed: ${error.message}`)}
 }
@@ -65,4 +75,4 @@ for(const token of ['passDuelOverlay','passShowHandoff','passDuelMove'])assert.o
 for(const token of ['if(passDuel.active)','if(directDuel.active)','return duelMove(owner,type,column)'])assert.ok(router.includes(token),`transport router missing ${token}`);
 for(const id of ['duelDirectMode','duelPassMode','duelOnlineMode','duelDirectNearby','duelDirectRefreshInvite','duelDirectRetryConnection','alphaTesterBar'])assert.ok(lobby.includes(`id="${id}"`),`Alpha lobby missing ${id}`);
 
-console.log('PASS Multiplayer Alpha 0.16.6: one-tap learner entry + learner-controlled explanations + concise coaching + board-centered combat + Direct recovery/share');
+console.log('PASS Multiplayer Alpha 0.16.6: skippable slow learner explanations + compact combat-like tips + cohesive opponent HUD + Direct recovery/share');
