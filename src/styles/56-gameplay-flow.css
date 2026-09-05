@@ -1,4 +1,5 @@
 /* Multiplayer Alpha 0.16.5: keep combat visually attached to the board, not the right sidebar. */
+.overlay .card.teachingCombatCard,.overlay .card.teachingSpecialCard{pointer-events:auto}
 @media(min-width:980px){
   .overlay[data-layout="desktop"],.overlay[data-layout="compact"]{
     place-items:initial!important;
