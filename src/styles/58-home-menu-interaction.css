@@ -1,0 +1,58 @@
+/* Multiplayer Alpha 0.16.9: home actions behave like menu actions, not preselected settings. */
+#homePanel .homeActions>button{
+  position:relative;
+  border:1px solid #394963!important;
+  background:linear-gradient(180deg,#141f31,#101927)!important;
+  color:#eef4ff!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 6px 18px rgba(0,0,0,.12)!important;
+  transform:translateY(0) scale(1);
+  transition:transform 140ms ease,border-color 140ms ease,background 140ms ease,box-shadow 140ms ease,filter 140ms ease;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+#homePanel .homeActions>button span{color:#f1f5fc!important;transition:color 140ms ease}
+#homePanel .homeActions>button small{color:#9eacc0!important;transition:color 140ms ease}
+
+/* Play is the first action, not an already-selected option. */
+#homePanel .homeActions>.homePlay{
+  border-color:#43536d!important;
+  background:linear-gradient(180deg,#151f31,#101927)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 6px 18px rgba(0,0,0,.12)!important;
+}
+
+/* Pointer devices get a clear game-menu hover state. Keyboard focus matches it. */
+@media(hover:hover) and (pointer:fine){
+  #homePanel .homeActions>button:hover{
+    z-index:1;
+    border-color:#76aaf6!important;
+    background:linear-gradient(180deg,#1c3152,#15243d)!important;
+    box-shadow:0 0 0 1px rgba(116,174,255,.18),0 12px 30px rgba(0,0,0,.24),0 0 26px rgba(70,126,213,.14)!important;
+    transform:translateY(-2px) scale(1.01);
+  }
+  #homePanel .homeActions>button:hover span{color:#fff!important}
+  #homePanel .homeActions>button:hover small{color:#c2d2e8!important}
+}
+#homePanel .homeActions>button:focus-visible{
+  z-index:2;
+  outline:3px solid rgba(151,195,255,.72)!important;
+  outline-offset:3px!important;
+  border-color:#89b8ff!important;
+  background:linear-gradient(180deg,#1c3152,#15243d)!important;
+  box-shadow:0 0 0 1px rgba(116,174,255,.2),0 12px 30px rgba(0,0,0,.24)!important;
+  transform:translateY(-1px) scale(1.008);
+}
+
+/* Touch/mouse press is the selected/committed feedback for action buttons. */
+#homePanel .homeActions>button:active{
+  border-color:#9ac4ff!important;
+  background:linear-gradient(180deg,#193862,#132c4e)!important;
+  box-shadow:inset 0 3px 9px rgba(0,0,0,.28),0 0 0 2px rgba(116,174,255,.22)!important;
+  transform:translateY(1px) scale(.985)!important;
+  filter:brightness(1.07);
+}
+
+/* Actual persistent choices elsewhere keep their existing selected/active styling. */
+body.reducedMotion #homePanel .homeActions>button{transition:none!important}
+body.reducedMotion #homePanel .homeActions>button:hover,
+body.reducedMotion #homePanel .homeActions>button:focus-visible,
+body.reducedMotion #homePanel .homeActions>button:active{transform:none!important}
