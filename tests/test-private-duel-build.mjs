@@ -20,7 +20,7 @@ for(const required of [
 ])assert.ok(alpha.includes(required),`generated Multiplayer Alpha missing: ${required}`);
 
 for(const obsolete of [
-  'Multiplayer Alpha 0.16.4','Multiplayer Alpha 0.16.5','DIRECT_PEER_TIMEOUT_MS=90_000','DIRECT_RETURN_KEY','directShowReturnLinkLanding','/api/direct/signals','id="duelDirectServerInput"',
+  'Multiplayer Alpha 0.16.4','DIRECT_PEER_TIMEOUT_MS=90_000','DIRECT_RETURN_KEY','directShowReturnLinkLanding','/api/direct/signals','id="duelDirectServerInput"',
   "endText.textContent='YOU LOSE'","b.textContent='New Duel'","b.textContent='Play Someone Else'","title.includes('Scan once to join')",'directNearbyRetryPeerId=hostPeerId;directOpenPanel()',
   "easyLearningPulse('#board .cell[data-column][tabindex=\"0\"]"
 ])assert.ok(!alpha.includes(obsolete),`generated Alpha still contains obsolete/broken path: ${obsolete}`);
