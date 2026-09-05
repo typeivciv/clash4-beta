@@ -1,6 +1,11 @@
-// Multiplayer Alpha 0.16.5: board-centered combat presentation and flow instrumentation.
+// Multiplayer Alpha 0.16.7: board-centered combat and deliberate Easy turn handoff.
 'use strict';
-const GAMEPLAY_FLOW_VERSION='0.16.5';
+const GAMEPLAY_FLOW_VERSION='0.16.7';
+const EASY_AI_POST_DROP_MS=850;
+const LEARNING_AI_POST_DROP_MS=1150;
+const EASY_AI_POST_COMBAT_MS=350;
+const LEARNING_AI_POST_COMBAT_MS=550;
+let gameplayFlowSettleToken=0;
 
 function gameplayFlowBoardCenter(){
   try{
@@ -18,6 +23,34 @@ function gameplayFlowBoardCenter(){
 function gameplayFlowMarkPhase(phase){
   try{document.body.dataset.gameplayFlow=phase||''}catch{}
 }
+
+function gameplayFlowAiSettleMs(){
+  try{
+    if(typeof easyLearningMode!=='function'||!easyLearningMode())return 0;
+    if(!s||s.lastMove?.owner!==A||s.turn!==H||s.winner||s.draw)return 0;
+    const learning=typeof easyLearningAutoActive==='function'&&easyLearningAutoActive();
+    if(s.lastMove?.hadCombat)return learning?LEARNING_AI_POST_COMBAT_MS:EASY_AI_POST_COMBAT_MS;
+    return learning?LEARNING_AI_POST_DROP_MS:EASY_AI_POST_DROP_MS
+  }catch{return 0}
+}
+
+// The base transaction changes the state to the player's turn as soon as the AI move
+// finishes presenting. Easy adds one deliberate board-reading beat before the controls
+// reactivate. Learning mode gets a little more time; other modes are unchanged.
+const continueTurnControllerBeforeGameplayFlow=continueTurnController;
+continueTurnController=function(){
+  const settleMs=gameplayFlowAiSettleMs();
+  if(!settleMs)return continueTurnControllerBeforeGameplayFlow();
+  const token=++gameplayFlowSettleToken;
+  busy=true;
+  gameplayFlowMarkPhase('ai-settle');
+  scheduleTimer('aiSettle',()=>{
+    if(token!==gameplayFlowSettleToken)return;
+    busy=false;
+    gameplayFlowMarkPhase('handoff');
+    continueTurnControllerBeforeGameplayFlow()
+  },settleMs)
+};
 
 const showEventBeforeGameplayFlow=showEvent;
 showEvent=function(e){
@@ -50,4 +83,5 @@ try{new ResizeObserver(()=>requestAnimationFrame(gameplayFlowBoardCenter)).obser
 requestAnimationFrame(gameplayFlowBoardCenter);
 
 globalThis.gameplayFlowBoardCenter=gameplayFlowBoardCenter;
+globalThis.gameplayFlowAiSettleMs=gameplayFlowAiSettleMs;
 globalThis.GAMEPLAY_FLOW_VERSION=GAMEPLAY_FLOW_VERSION;
