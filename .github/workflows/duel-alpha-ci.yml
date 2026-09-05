@@ -20,6 +20,7 @@ on:
       - 'src/js/23-duel-alpha-tester.js'
       - 'src/js/24-easy-learning.js'
       - 'src/js/25-gameplay-flow.js'
+      - 'src/js/26-learner-ux.js'
       - 'src/styles/50-private-duel.css'
       - 'src/styles/51-duel-turn-alpha.css'
       - 'src/styles/52-duel-colors-share.css'
@@ -27,6 +28,7 @@ on:
       - 'src/styles/54-duel-alpha-tester.css'
       - 'src/styles/55-easy-learning.css'
       - 'src/styles/56-gameplay-flow.css'
+      - 'src/styles/57-learner-ux.css'
       - 'src/ui/private-duel-lobby.html'
       - 'tools/build_private_duel_alpha.py'
       - 'tools/build_duel_modes_alpha.py'
@@ -53,13 +55,16 @@ on:
       - 'src/js/23-duel-alpha-tester.js'
       - 'src/js/24-easy-learning.js'
       - 'src/js/25-gameplay-flow.js'
+      - 'src/js/26-learner-ux.js'
       - 'src/styles/50-private-duel.css'
       - 'src/styles/51-duel-turn-alpha.css'
+      - 'src/styles/52-duel-turn-alpha.css'
       - 'src/styles/52-duel-colors-share.css'
       - 'src/styles/53-duel-postmatch.css'
       - 'src/styles/54-duel-alpha-tester.css'
       - 'src/styles/55-easy-learning.css'
       - 'src/styles/56-gameplay-flow.css'
+      - 'src/styles/57-learner-ux.css'
       - 'src/ui/private-duel-lobby.html'
       - 'tools/build_private_duel_alpha.py'
       - 'tools/build_duel_modes_alpha.py'
@@ -100,6 +105,7 @@ jobs:
           node --check src/js/23-duel-alpha-tester.js
           node --check src/js/24-easy-learning.js
           node --check src/js/25-gameplay-flow.js
+          node --check src/js/26-learner-ux.js
           node --check tests/test-direct-duel-soak.mjs
           node --check tests/test-gameplay-flow.mjs
           python3 -m py_compile tools/build_private_duel_alpha.py tools/build_duel_modes_alpha.py
@@ -115,7 +121,7 @@ jobs:
         run: node tests/test-direct-duel-soak.mjs
       - name: Gameplay pacing and visual-flow contract
         run: node tests/test-gameplay-flow.mjs
-      - name: Multiplayer Alpha packaging and Easy learning contracts
+      - name: Multiplayer Alpha packaging and learner UX contracts
         run: node tests/test-duel-mode-contract.mjs
       - name: Build Multiplayer Alpha client
         run: python3 tools/build_duel_modes_alpha.py
@@ -128,7 +134,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add private-duel-alpha.html multiplayer-alpha.html
-            git commit -m "Build Multiplayer Alpha 0.16.5 gameplay flow pass"
+            git commit -m "Build Multiplayer Alpha 0.16.6 learner UX pass"
             git pull --rebase origin main
             git push
           else
