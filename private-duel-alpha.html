@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="description" content="Clash 4 mobile beta test build">
-<title>Clash 4 — Fog of War · Multiplayer Alpha 0.16.2</title>
+<title>Clash 4 — Fog of War · Multiplayer Alpha 0.16.3</title>
 
 
 
@@ -722,13 +722,32 @@ body.reducedMotion .duelResultAnimation *,body.reducedMotion .duelResultAnimatio
 body.alpha-tester-modal-open{overflow:hidden}
 @media(max-width:720px){.alphaPrimaryModes,.alphaMoreGrid,.alphaChecklistGrid,.alphaInviteExplain{grid-template-columns:1fr}.alphaTesterBar{align-items:flex-start;flex-direction:column}.alphaTesterBar>div{justify-content:flex-start}.alphaTesterNotice{align-items:start}.alphaTesterPill{margin-top:1px}}
 @media(max-width:390px){.alphaTesterNotice{grid-template-columns:1fr}.alphaTesterPill{justify-self:start}.alphaTesterModal{padding:9px}.alphaTesterModalCard{padding:12px}.alphaTesterModalActions{grid-template-columns:1fr}}
+/* Multiplayer Alpha 0.16.3 Easy learn-while-playing coach. */
+.easyLearningSetup{margin:10px 0 2px;padding:10px 12px;border:1px solid rgba(83,116,172,.58);border-radius:12px;background:linear-gradient(180deg,rgba(24,37,67,.92),rgba(16,25,45,.92));display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left}
+.easyLearningSetup[hidden]{display:none!important}.easyLearningSetupCopy{display:grid;gap:2px;min-width:0}.easyLearningSetupCopy>span{font-size:8px;letter-spacing:.13em;font-weight:900;color:#8fb9ff}.easyLearningSetupCopy strong{font-size:13px}.easyLearningSetupCopy small{font-size:10px;line-height:1.35;color:#aebbd0}.easyLearningSetupActions{display:flex;gap:6px;flex:0 0 auto}.easyLearningSetup button{min-height:34px;border:1px solid #3a4b6b;border-radius:9px;background:#111a2a;color:#eaf2ff;padding:6px 10px;font-size:10px;font-weight:850}.easyLearningSetup button.active{border-color:#6ea9ff;background:#18345d;box-shadow:inset 0 0 0 1px rgba(116,174,255,.2)}
+.easyCoachBarAnchor{display:contents}.easyCoachBarAnchor[hidden]{display:none!important}
+.easyCoachIcon{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:rgba(93,143,225,.16);border:1px solid rgba(116,174,255,.45);color:#b7d4ff;font-size:13px;flex:0 0 auto}
+.easyCoachCopy{min-width:0;display:grid;gap:1px;text-align:left}.easyCoachCopy strong{font-size:11px;line-height:1.05;color:#f3f7ff}.easyCoachCopy span{font-size:9px;line-height:1.25;color:#aebbd0;white-space:normal}
+.easyRpsCompass{display:flex;align-items:center;gap:2px;white-space:nowrap;font-size:13px;padding:3px 6px;border:1px solid rgba(60,77,111,.65);border-radius:999px;background:rgba(9,15,28,.72)}.easyRpsCompass b{font-size:9px;color:#7588a6}
+.easyCoachActions{display:flex;gap:5px;flex:0 0 auto}.easyCoachActions button{min-height:28px;border:1px solid #3a4b6b;border-radius:8px;background:#101a2a;color:#edf4ff;padding:4px 7px;font-size:9px;font-weight:850}.easyCoachActions button:hover,.easyCoachActions button:focus-visible{border-color:#6ea9ff}
+.easyCoachWhyPanel{grid-column:1/-1;margin-top:2px;padding:6px 8px;border:1px solid rgba(67,91,133,.55);border-radius:8px;background:rgba(8,14,25,.78);display:grid;gap:2px;text-align:left}.easyCoachWhyPanel[hidden]{display:none!important}.easyCoachWhyPanel b{font-size:9px;color:#dce9ff}.easyCoachWhyPanel span{font-size:9px;line-height:1.35;color:#aebbd0}
+#easyLearningCoach.easyLearningCoach{width:100%;min-height:34px;padding:4px 7px;border:1px solid rgba(64,86,126,.72);border-radius:10px;background:linear-gradient(90deg,rgba(16,27,49,.95),rgba(12,20,37,.95));display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:7px;box-shadow:0 8px 24px rgba(0,0,0,.15)}
+#easyLearningCoach.easyLearningCoach[hidden]{display:none!important}.easy-learning-active #message{display:none!important}.easy-learning-active #easyLearningCoach{display:grid}
+#easyLearningCoach[data-tone="goal"]{border-color:rgba(216,176,74,.72);background:linear-gradient(90deg,rgba(55,43,19,.94),rgba(19,28,48,.94))}#easyLearningCoach[data-tone="goal"] .easyCoachIcon{color:#ffe5a0;border-color:rgba(225,185,75,.65);background:rgba(225,185,75,.12)}
+#easyLearningCoach[data-tone="step"]{border-color:rgba(89,144,230,.76)}#easyLearningCoach[data-tone="success"]{border-color:rgba(74,189,156,.70)}#easyLearningCoach[data-tone="warning"]{border-color:rgba(226,150,78,.76)}#easyLearningCoach[data-tone="decoy"]{border-color:rgba(155,126,214,.72)}#easyLearningCoach[data-tone="quiet"]{opacity:.92}
+.easyLearningPulse{position:relative!important;z-index:8!important;animation:easy-learning-pulse .88s ease-in-out 2!important;box-shadow:0 0 0 3px rgba(116,174,255,.24),0 0 22px rgba(116,174,255,.48)!important}
+@keyframes easy-learning-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+.easyCombatLesson{margin-top:10px;padding:9px 10px;border:1px solid rgba(96,129,187,.58);border-radius:10px;background:rgba(10,18,33,.86);display:grid;gap:4px;text-align:left}.easyCombatLesson strong{font-size:11px;letter-spacing:.02em;color:#f3f7ff}.easyCombatLesson span{font-size:10px;line-height:1.4;color:#b9c6d9}.easyCombatLesson button{justify-self:start;min-height:30px;border:1px solid rgba(100,145,220,.65);border-radius:8px;background:#172a49;color:#f2f7ff;padding:5px 9px;font-size:9px;font-weight:850}.easyCombatWhyPanel{margin-top:3px;padding:6px 8px;border-radius:8px;background:rgba(22,34,57,.82);font-size:9px;line-height:1.4;color:#cfdaeb}.easySpecialLesson{border-color:rgba(208,172,75,.5)}
+@media(max-width:720px){#easyLearningCoach.easyLearningCoach{min-height:38px;grid-template-columns:auto minmax(0,1fr) auto;gap:5px;padding:4px 6px}.easyRpsCompass{grid-column:2/3;justify-self:start;font-size:11px;padding:2px 5px}.easyCoachActions{grid-column:3;grid-row:1/3;flex-direction:column}.easyCoachActions button{min-height:26px;padding:3px 6px}.easyCoachCopy strong{font-size:10px}.easyCoachCopy span{font-size:8.5px}.easyCoachIcon{width:25px;height:25px}.easyLearningSetup{align-items:flex-start}.easyLearningSetupActions{flex-direction:column}.easyLearningSetup button{min-height:30px}}
+@media(max-width:390px){.easyRpsCompass{display:none}.easyCoachCopy span{font-size:8px}.easyLearningSetup{padding:8px 9px}.easyLearningSetupCopy small{font-size:9px}}
+body.reducedMotion .easyLearningPulse{animation:none!important;outline:3px solid rgba(116,174,255,.72);outline-offset:2px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
 </head>
 <body>
 <div id="appRoot" class="app">
 <header>
-  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Arcade RC1 · Multiplayer Alpha 0.16.2</div></div>
+  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Arcade RC1 · Multiplayer Alpha 0.16.3</div></div>
   <div id="fogTurnPill" class="fogTurnPill neutral"><span class="fogTurnDot"></span><span id="fogTurnText">Setup</span></div>
   <div class="topActions">
     <div id="matchDifficultyBadge" class="matchDifficultyBadge" title="Difficulty is chosen before the match"><span>AI</span><strong id="matchDifficultyLabel">Normal</strong></div>
@@ -862,7 +881,7 @@ body.alpha-tester-modal-open{overflow:hidden}
       <div class="homeTagline">Connect Four. Win the Clash.</div>
       <p class="homeLede">Build four in a row while Rock–Paper–Scissors combat, Decoys, and hidden enemy identities turn every column into a tactical gamble.</p>
       <div class="homeActions"><button id="homePlayButton" class="homePlay" type="button"><span>Play</span><small>Normal · Default colors · Random start</small></button><button id="homeDuelButton" class="homeDuel" type="button"><span>Multiplayer</span><small>Invite a player · Pass &amp; Play · Alpha test</small></button><button id="homeCustomizeButton" class="homeCustomize" type="button"><span>Customize Match</span><small>Difficulty · first move · colors · tips</small></button><button id="homeRulesButton" class="homeSecondary" type="button">How to Play</button></div>
-      <div class="homeMeta"><span>Duel Modes Alpha · 0.16.2</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
+      <div class="homeMeta"><span>Duel Modes Alpha · 0.16.3</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
     </div>
     <div class="homeHero" aria-hidden="true"><div class="homeHeroGlow"></div><div class="heroBoard"><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">🪨</span></div><div class="heroHole"><span class="heroPiece ai ">📄</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">✂️</span></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"><span class="heroPiece player ">📄</span></div><div class="heroHole"><span class="heroPiece ai ">🪨</span></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"><span class="heroPiece ai ">✂️</span></div></div><div class="heroFog"></div></div>
   </section>
@@ -3161,7 +3180,7 @@ document.addEventListener('click',event=>{
 duelPostMatchEnsureVisual();
 
 'use strict';
-const ALPHA_TESTER_VERSION='0.16.2';
+const ALPHA_TESTER_VERSION='0.16.3';
 function alphaTesterEl(id){return document.getElementById(id)}
 function alphaTesterMode(){
   if(typeof matchMode!=='undefined'&&matchMode==='arcade')return'Arcade / Solo';
@@ -3242,6 +3261,158 @@ globalThis.alphaTesterInfo=alphaTesterInfo;
 globalThis.alphaConnectionHelp=alphaConnectionHelp;
 globalThis.alphaReportProblem=alphaReportProblem;
 alphaBootTesterTools();
+
+// Multiplayer Alpha 0.16.3: progressive Easy-mode learnability layer.
+'use strict';
+const EASY_LEARNING_STORAGE_KEY='clash4.easyLearning.v1';
+const EASY_LEARNING_SETTING_KEY='clash4.easyLearning.enabled';
+const EASY_LEARNING_DEFAULTS={goal:false,choose:false,drop:false,rps:false,fog:false,decoy:false,lock:false,fortified:false,critical:false,clashmate:false};
+let easyLearningEnabled=true;
+let easyLearningProgress={...EASY_LEARNING_DEFAULTS};
+let easyLearningStateRef=null;
+let easyLearningSelectedThisTurn=false;
+let easyLearningLockUntil=0;
+let easyLearningCoachKey='';
+let easyLearningThreatKey='';
+
+try{easyLearningEnabled=localStorage.getItem(EASY_LEARNING_SETTING_KEY)!=='off'}catch{}
+try{easyLearningProgress={...EASY_LEARNING_DEFAULTS,...JSON.parse(localStorage.getItem(EASY_LEARNING_STORAGE_KEY)||'{}')}}catch{}
+
+function easyLearningActive(){return matchMode==='arcade'&&aiDifficulty==='easy'&&easyLearningEnabled}
+function easyLearningSave(){try{localStorage.setItem(EASY_LEARNING_STORAGE_KEY,JSON.stringify(easyLearningProgress));localStorage.setItem(EASY_LEARNING_SETTING_KEY,easyLearningEnabled?'on':'off')}catch{}}
+function easyLearningMark(key){if(!(key in easyLearningProgress)||easyLearningProgress[key])return;easyLearningProgress[key]=true;easyLearningSave()}
+function easyLearningReset(){easyLearningProgress={...EASY_LEARNING_DEFAULTS};easyLearningStateRef=null;easyLearningSelectedThisTurn=false;easyLearningCoachKey='';easyLearningSave();easyLearningSyncSetup();easyLearningSetCoach('Learning tips reset','Easy will explain each idea again as you encounter it.',{tone:'success',showMe:false,lock:1600})}
+
+function easyLearningEnsureSetup(){
+  let panel=document.getElementById('easyLearningSetup');if(panel)return panel;
+  const cards=document.getElementById('difficultyCards');if(!cards)return null;
+  panel=document.createElement('div');panel.id='easyLearningSetup';panel.className='easyLearningSetup';
+  panel.innerHTML='<div class="easyLearningSetupCopy"><span>LEARNING HELP</span><strong>Learn while you play</strong><small>Easy explains new situations only when they happen.</small></div><div class="easyLearningSetupActions"><button id="easyLearningToggle" type="button" aria-pressed="true">On</button><button id="easyLearningReset" type="button">Reset tips</button></div>';
+  cards.after(panel);
+  panel.querySelector('#easyLearningToggle')?.addEventListener('click',()=>{easyLearningEnabled=!easyLearningEnabled;easyLearningSave();easyLearningSyncSetup();easyLearningAfterRender()});
+  panel.querySelector('#easyLearningReset')?.addEventListener('click',easyLearningReset);
+  return panel
+}
+function easyLearningSyncSetup(){
+  const panel=easyLearningEnsureSetup(),toggle=document.getElementById('easyLearningToggle');
+  if(panel)panel.hidden=aiDifficulty!=='easy';
+  if(toggle){toggle.textContent=easyLearningEnabled?'On':'Off';toggle.setAttribute('aria-pressed',String(easyLearningEnabled));toggle.classList.toggle('active',easyLearningEnabled)}
+  const easyCard=document.querySelector('.difficultyCard[data-difficulty="easy"] small');if(easyCard)easyCard.textContent='Forgiving AI · learns while you play'
+}
+
+function easyLearningEnsureCoach(){
+  let coach=document.getElementById('easyLearningCoach');if(coach)return coach;
+  const message=document.getElementById('message');if(!message)return null;
+  coach=document.createElement('aside');coach.id='easyLearningCoach';coach.className='easyLearningCoach';coach.hidden=true;coach.setAttribute('aria-live','polite');
+  coach.innerHTML='<div class="easyCoachIcon" aria-hidden="true">✦</div><div class="easyCoachCopy"><strong id="easyCoachTitle">Learn while you play</strong><span id="easyCoachText">Clash 4 will explain new situations as they happen.</span></div><div class="easyRpsCompass" aria-label="Rock beats Scissors, Scissors beats Paper, Paper beats Rock"><span>🪨</span><b>›</b><span>✂️</span><b>›</b><span>📄</span><b>›</b><span>🪨</span></div><div class="easyCoachActions"><button id="easyCoachWhy" type="button" hidden>Why?</button><button id="easyCoachShowMe" type="button">Show Me</button></div><div id="easyCoachWhyPanel" class="easyCoachWhyPanel" hidden><b>Rock–Paper–Scissors</b><span>🪨 Rock beats ✂️ Scissors · ✂️ Scissors beat 📄 Paper · 📄 Paper beats 🪨 Rock.</span></div>';
+  message.after(coach);
+  coach.querySelector('#easyCoachShowMe')?.addEventListener('click',easyLearningShowMe);
+  coach.querySelector('#easyCoachWhy')?.addEventListener('click',()=>{const p=document.getElementById('easyCoachWhyPanel');if(p)p.hidden=!p.hidden});
+  return coach
+}
+function easyLearningSetCoach(title,text,{tone='tip',why=false,showMe=true,lock=0}={}){
+  const coach=easyLearningEnsureCoach();if(!coach)return;
+  const key=`${title}|${text}|${tone}|${why}|${showMe}`;if(key!==easyLearningCoachKey){easyLearningCoachKey=key;document.getElementById('easyCoachWhyPanel').hidden=true}
+  coach.hidden=false;coach.dataset.tone=tone;
+  const titleEl=document.getElementById('easyCoachTitle'),textEl=document.getElementById('easyCoachText'),whyBtn=document.getElementById('easyCoachWhy'),showBtn=document.getElementById('easyCoachShowMe');
+  if(titleEl)titleEl.textContent=title;if(textEl)textEl.textContent=text;if(whyBtn)whyBtn.hidden=!why;if(showBtn)showBtn.hidden=!showMe;
+  if(lock){easyLearningLockUntil=Date.now()+lock;setTimeout(()=>{if(Date.now()>=easyLearningLockUntil)easyLearningAfterRender()},lock+30)}
+}
+function easyLearningHideCoach(){const coach=easyLearningEnsureCoach();if(coach)coach.hidden=true;easyLearningCoachKey=''}
+function easyLearningPulse(selector,ms=950){for(const el of document.querySelectorAll(selector))el.classList.add('easyLearningPulse');setTimeout(()=>{for(const el of document.querySelectorAll(selector))el.classList.remove('easyLearningPulse')},ms)}
+function easyLearningShowMe(){
+  if(!easyLearningActive()||!ready||busy||s.winner||s.draw)return;
+  if(s.turn!==H){easyLearningSetCoach('Watch this turn','Your opponent is moving. Your controls will light up when it is your turn.',{showMe:false,lock:1300});return}
+  easyLearningSetCoach('Pick, then drop','First choose a piece. Then tap any glowing column at the top of the board.',{showMe:false,lock:1500});
+  easyLearningPulse('#humanInventory .choice:not(:disabled)',900);
+  setTimeout(()=>easyLearningPulse('#board .cell[data-column][tabindex="0"]:not(:disabled)',1100),520)
+}
+
+function easyLearningThreeThreat(owner){
+  try{
+    const g=gridOf(s.board),rows=g.length,cols=g[0]?.length||0,dirs=[[0,1],[1,0],[1,1],[1,-1]];
+    for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)for(const [dr,dc] of dirs){
+      const cells=[];for(let i=0;i<4;i++){const rr=r+dr*i,cc=c+dc*i;if(rr<0||rr>=rows||cc<0||cc>=cols){cells.length=0;break}cells.push(g[rr][cc])}
+      if(cells.length===4&&cells.filter(p=>p?.owner===owner).length===3&&cells.filter(Boolean).length===3)return true
+    }
+  }catch{}
+  return false
+}
+function easyLearningTurnCoach(){
+  if(!easyLearningActive()||!ready||s.winner||s.draw){easyLearningHideCoach();return}
+  if(Date.now()<easyLearningLockUntil)return;
+  if(s!==easyLearningStateRef){
+    easyLearningStateRef=s;easyLearningSelectedThisTurn=false;easyLearningThreatKey='';
+    if(!easyLearningProgress.goal){easyLearningMark('goal');easyLearningSetCoach('GET 4 IN A ROW','Connect four of your color across, down, or diagonal.',{tone:'goal',showMe:false,lock:2200});return}
+  }
+  if(busy||dropPresentation){easyLearningSetCoach('Watch what happens','Pieces can clash when they land on each other.',{showMe:false});return}
+  const humanThreat=easyLearningThreeThreat(H),aiThreat=easyLearningThreeThreat(A),threatKey=humanThreat?'human':aiThreat?'ai':'';
+  if(threatKey&&threatKey!==easyLearningThreatKey){easyLearningThreatKey=threatKey;easyLearningSetCoach(humanThreat?'You’re close to 4':'Watch out — opponent is close to 4',humanThreat?'Look for a way to finish your line.':'Look at their connected pieces before you move.',{tone:humanThreat?'success':'warning',showMe:false,lock:1700});return}
+  if(s.turn!==H){easyLearningSetCoach('Opponent turn','Watch the board. You only need to decide when it comes back to you.',{showMe:false});return}
+  if(!easyLearningProgress.choose){easyLearningSetCoach('1 · Pick a piece','Choose Rock, Paper, Scissors, or a Decoy.',{tone:'step'});return}
+  if(!easyLearningProgress.drop){easyLearningSetCoach('2 · Tap a column','Your piece falls into the column you choose.',{tone:'step'});return}
+  easyLearningSetCoach('Your turn','Build toward 4. If pieces meet, the game will show you what happened.',{tone:'quiet'})
+}
+function easyLearningAfterRender(){
+  easyLearningEnsureSetup();easyLearningEnsureCoach();easyLearningSyncSetup();
+  const active=easyLearningActive();document.body.classList.toggle('easy-learning-active',active);
+  if(!active){easyLearningHideCoach();return}
+  easyLearningTurnCoach()
+}
+
+function easyLearningCombatLesson(e){
+  if(!easyLearningActive()||e?.kind!=='combat')return;
+  document.querySelector('.easyCombatLesson')?.remove();
+  const lesson=document.createElement('div');lesson.className='easyCombatLesson';
+  if(e.decoyContact){easyLearningMark('decoy');lesson.innerHTML='<strong>Decoy rule</strong><span>Decoys do not fight. Both pieces stay, and the chain stops.</span>'}
+  else{
+    const a=e.atk?.type?M[e.atk.type]?.[0]:'Hidden',d=e.def?.type?M[e.def.type]?.[0]:'Hidden';
+    if(!easyLearningProgress.rps){easyLearningMark('rps');lesson.innerHTML=`<strong>${a} vs ${d}</strong><span>${e.o==='tie'?'Same type means neither wins this clash.':`${a} ${e.o==='win'?'beats':'loses to'} ${d}.`} Use <b>Why?</b> if you forget the cycle.</span><button type="button" class="easyCombatWhy">Why?</button>`}
+    if(!easyLearningProgress.fog){easyLearningMark('fog');lesson.innerHTML+=(lesson.innerHTML?'':'<strong>Hidden pieces</strong>')+'<span>After the clash, an enemy Rock/Paper/Scissors identity hides behind <b>?</b> again.</span>'}
+  }
+  if(!lesson.innerHTML)return;overlayCard.appendChild(lesson);
+  lesson.querySelector('.easyCombatWhy')?.addEventListener('click',()=>{let p=lesson.querySelector('.easyCombatWhyPanel');if(!p){p=document.createElement('div');p.className='easyCombatWhyPanel';p.textContent='🪨 Rock beats ✂️ Scissors · ✂️ Scissors beat 📄 Paper · 📄 Paper beats 🪨 Rock.';lesson.appendChild(p)}p.hidden=!p.hidden})
+}
+function easyLearningSpecialLesson(e){
+  if(!easyLearningActive())return;
+  const map={
+    'cooldown-earned':['lock','Combat Lock','A winning survivor is protected through the opponent’s next turn.'],
+    'fortified':['fortified','Fortified','A stronger protected piece was earned after a powerful chain.'],
+    'critical-defense':['critical','Critical Defense','The game opened an emergency challenge because an immediate loss was otherwise unavoidable.'],
+    'clashmate':['clashmate','Clashmate','The connected three is protected and the next Connect 4 cannot be stopped.']
+  },entry=map[e?.kind];if(!entry||easyLearningProgress[entry[0]])return;easyLearningMark(entry[0]);
+  const lesson=document.createElement('div');lesson.className='easyCombatLesson easySpecialLesson';lesson.innerHTML=`<strong>${entry[1]}</strong><span>${entry[2]}</span>`;overlayCard.appendChild(lesson)
+}
+
+const setAiDifficultyBeforeEasyLearning=setAiDifficulty;
+setAiDifficulty=function(value){const result=setAiDifficultyBeforeEasyLearning(value);easyLearningSyncSetup();easyLearningAfterRender();return result};
+
+const combatHistoryModeBeforeEasyLearning=combatHistoryMode;
+combatHistoryMode=function(){return easyLearningActive()?'recent':combatHistoryModeBeforeEasyLearning()};
+
+const showEventBeforeEasyLearning=showEvent;
+showEvent=function(e){const result=showEventBeforeEasyLearning(e);easyLearningCombatLesson(e);easyLearningSpecialLesson(e);return result};
+
+const renderBeforeEasyLearning=render;
+render=function(){const result=renderBeforeEasyLearning();easyLearningAfterRender();return result};
+
+humanInventory?.addEventListener('click',event=>{
+  if(!easyLearningActive())return;const choice=event.target?.closest?.('.choice');if(!choice||choice.disabled)return;
+  easyLearningSelectedThisTurn=true;easyLearningMark('choose');
+  const name=choice.querySelector('.name')?.textContent||'';
+  if(name==='Decoy')easyLearningSetCoach('Decoy','It does not fight, but it still counts toward your 4-in-a-row.',{tone:'decoy',showMe:false,lock:1700});
+  else easyLearningSetCoach('2 · Tap a column','Now tap a glowing column to drop your piece.',{tone:'step',showMe:true,lock:800});
+  setTimeout(()=>easyLearningPulse('#board .cell[data-column][tabindex="0"]:not(:disabled)',900),100)
+});
+function easyLearningRegisterDrop(event){
+  if(!easyLearningActive())return;const cell=event.target?.closest?.('#board .cell[data-column][tabindex="0"]');if(!cell||cell.disabled)return;
+  easyLearningMark('drop');easyLearningSelectedThisTurn=false;easyLearningSetCoach('Piece dropping','Watch where it lands. If it meets another piece, a clash may start.',{showMe:false,lock:1000})
+}
+board?.addEventListener('pointerdown',easyLearningRegisterDrop,true);board?.addEventListener('click',easyLearningRegisterDrop,true);
+
+easyLearningEnsureSetup();easyLearningEnsureCoach();easyLearningSyncSetup();easyLearningAfterRender();
+globalThis.easyLearningReset=easyLearningReset;
+globalThis.easyLearningShowMe=easyLearningShowMe;
 
 // AI evaluation and decision policy. Hidden-information rules remain bounded here.
 function projectedScore(board,owner,c){
@@ -4197,7 +4368,7 @@ init();
 
 <script>
 (function(){
-  const BUILD='Multiplayer Alpha 0.16.2';
+  const BUILD='Multiplayer Alpha 0.16.3';
   const REPO_ISSUES='https://github.com/typeivciv/clash4-beta/issues/new';
   const $=id=>document.getElementById(id);
   const openBtn=$('betaFeedbackButton'), overlay=$('betaFeedbackOverlay'), closeBtn=$('betaFeedbackClose');
@@ -4233,7 +4404,7 @@ init();
   function issueTitle(){
     const type=$('betaIssueType').value;
     const detail=$('betaWhatHappened').value.trim().replace(/\s+/g,' ').slice(0,72);
-    return `[Multiplayer Alpha 0.16.2][${type}] ${detail||'Tester report'}`;
+    return `[Multiplayer Alpha 0.16.3][${type}] ${detail||'Tester report'}`;
   }
   function githubUrl(){
     const body=[
