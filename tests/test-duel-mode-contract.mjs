@@ -16,6 +16,7 @@ const testerCss=read('src/styles/54-duel-alpha-tester.css');
 const easyCss=read('src/styles/55-easy-learning.css');
 const flowCss=read('src/styles/56-gameplay-flow.css');
 const learnerCss=read('src/styles/57-learner-ux.css');
+const homeMenuCss=read('src/styles/58-home-menu-interaction.css');
 const pass=read('src/js/17-duel-pass-play.js');
 const router=read('src/js/18-duel-router.js');
 const lobby=read('src/ui/private-duel-lobby.html');
@@ -32,7 +33,7 @@ for(const token of ["endText.textContent='YOU WIN'","endText.textContent='TRY AG
 assert.ok(!postmatch.includes("endText.textContent='YOU LOSE'"),'loss headline must remain TRY AGAIN');
 for(const token of ['text-align:center','@keyframes duel-win-title','@keyframes duel-loss-title','@keyframes duel-win-rays','@keyframes duel-loss-card'])assert.ok(postmatchCss.includes(token),`post-match visual contract missing ${token}`);
 
-assert.ok(tester.includes("const ALPHA_TESTER_VERSION='0.16.8'"),'tester diagnostics must report 0.16.8');
+assert.ok(tester.includes("const ALPHA_TESTER_VERSION='0.16.9'"),'tester diagnostics must report 0.16.9');
 for(const token of ['function alphaTesterInfo()','function alphaConnectionHelp()','function alphaReportProblem()'])assert.ok(tester.includes(token),`tester utility missing ${token}`);
 assert.ok(!tester.includes('location.hash'),'tester diagnostics must never copy the live invite hash');
 for(const token of ['.alphaTesterNotice','.alphaTesterBar','.alphaTesterModal'])assert.ok(testerCss.includes(token),`tester CSS missing ${token}`);
@@ -58,8 +59,6 @@ for(const token of [
   '.teachingCombatCard.capture-staging .fighter.loser','.teachingCombatCard.capture-resolved .fighter.loser',"content:'CAPTURED'"
 ])assert.ok(flowCss.includes(token),`gameplay flow CSS missing ${token}`);
 
-// Learn as You Play is intentionally slower than normal Easy and exposes a Skip control
-// only during a first-time learning explanation. Normal Easy never gets the Skip UI.
 for(const token of [
   "const LEARNER_UX_VERSION='0.16.6'","const LEARNER_PRE_REVEAL_MS=700","const LEARNER_EXPLANATION_MS=10000",
   'const LEARNER_PACING={combat:4600,combatChain:3800,special:4000,lock:3000}',
@@ -80,6 +79,17 @@ for(const token of [
   'grid-template-columns:minmax(0,1fr) auto!important','border-top:1px solid rgba(83,102,138,.42)',
   '.panel.ai .aiRemaining .remainingNumber{min-width:auto!important;font-size:18px!important','.panel.ai #aiTurn{display:none!important'
 ])assert.ok(learnerCss.includes(token),`learner UX CSS missing ${token}`);
+
+for(const token of [
+  '#homePanel .homeActions>button{',
+  '#homePanel .homeActions>.homePlay{',
+  '@media(hover:hover) and (pointer:fine)',
+  '#homePanel .homeActions>button:hover{',
+  '#homePanel .homeActions>button:focus-visible{',
+  '#homePanel .homeActions>button:active{',
+  'Play is the first action, not an already-selected option.'
+])assert.ok(homeMenuCss.includes(token),`home menu interaction CSS missing ${token}`);
+
 for(const [name,source] of [['direct',direct],['nearby',nearby],['turn',turn],['colors',colors],['postmatch',postmatch],['tester',tester],['easy',easy],['flow',flow],['learner',learner],['pass',pass],['router',router]]){
   try{new Function(source)}catch(error){throw new Error(`${name} module syntax failed: ${error.message}`)}
 }
@@ -87,4 +97,4 @@ for(const token of ['passDuelOverlay','passShowHandoff','passDuelMove'])assert.o
 for(const token of ['if(passDuel.active)','if(directDuel.active)','return duelMove(owner,type,column)'])assert.ok(router.includes(token),`transport router missing ${token}`);
 for(const id of ['duelDirectMode','duelPassMode','duelOnlineMode','duelDirectNearby','duelDirectRefreshInvite','duelDirectRetryConnection','alphaTesterBar'])assert.ok(lobby.includes(`id="${id}"`),`Alpha lobby missing ${id}`);
 
-console.log('PASS Multiplayer Alpha 0.16.8: staged Easy captures + audited opponent HUD + slower AI handoff + skippable learner explanations + Direct recovery/share');
+console.log('PASS Multiplayer Alpha 0.16.9: consistent home menu hover/focus/press + staged Easy captures + audited opponent HUD + learner/networking contracts');
