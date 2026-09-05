@@ -1,4 +1,4 @@
-/* Multiplayer Alpha 0.16.6: compact combat-like learning cards and cohesive HUD cleanup. */
+/* Multiplayer Alpha 0.16.7: compact combat-like learning cards and cohesive opponent HUD. */
 .homeActions .homeLearn.homeCustomize{width:100%}
 
 /* Learning tips share the combat-card visual language, but stay below the board. */
@@ -32,16 +32,25 @@
 .learnerContinueButton{min-width:86px;min-height:40px;border:1px solid rgba(116,174,255,.72);border-radius:10px;background:#1b3559;color:#f7fbff;padding:7px 14px;font-size:13px;font-weight:950;cursor:pointer}
 .learnerContinueButton:hover,.learnerContinueButton:focus-visible{border-color:#9bc3ff;background:#214571}.learnerContinueButton:focus-visible{outline:3px solid rgba(174,209,255,.68);outline-offset:3px}
 
-/* Opponent identity is one compact unit instead of ARCADE AI with a loose color word below. */
+/* Opponent identity is one unit; the color badge never shares the stat lane. */
 .panel.ai .row>div:first-child{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:nowrap}
-#opponentEyebrow{white-space:nowrap;line-height:1.05;margin:0}
-#aiColorLabel{display:inline-flex!important;align-items:center;min-height:22px;padding:3px 7px;border:1px solid color-mix(in srgb,var(--orange) 46%,#3b4a62);border-radius:999px;background:color-mix(in srgb,var(--orange) 11%,transparent);color:var(--orange)!important;font-size:10px!important;line-height:1!important;font-weight:900!important;white-space:nowrap}
+.panel.ai .row>div:first-child .eyebrow{white-space:nowrap;line-height:1.05;margin:0}
+#aiColorLabel{display:inline-flex!important;align-items:center;min-height:22px;max-width:104px;padding:3px 7px;border:1px solid color-mix(in srgb,var(--orange) 46%,#3b4a62);border-radius:999px;background:color-mix(in srgb,var(--orange) 11%,transparent);color:var(--orange)!important;font-size:10px!important;line-height:1!important;font-weight:900!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 @media(min-width:980px){
   #easyLearningCoach[data-placement="player"]{min-height:64px!important;padding:10px 14px!important;border-left:3px solid var(--blue)!important}
   #easyLearningCoach[data-placement="player"] .easyCoachCopy::before{font-size:9px}
   #easyLearningCoach[data-placement="player"] .easyCoachCopy strong{font-size:15px!important}
   #easyLearningCoach[data-placement="player"] .easyCoachCopy span{font-size:13px!important}
+
+  /* The desktop sidebar is narrow. Give identity and match stats separate rows so
+     Orange can never sit underneath or behind the remaining-piece text. */
+  .panel.ai .row{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:8px!important;align-items:stretch!important}
+  .panel.ai .row>div:first-child{width:100%;justify-content:flex-start}
+  .panel.ai .aiStatusMeta{width:100%;min-width:0;display:grid!important;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;justify-content:stretch!important;gap:8px!important}
+  .panel.ai .aiRemaining{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
+  .panel.ai .hiddenTypePill{justify-self:end}
+  .panel.ai #aiTurn{justify-self:end}
 }
 
 @media(max-width:720px){
@@ -53,7 +62,7 @@
   #easyLearningCoach .easyCoachActions button{min-height:36px!important;padding:5px 8px!important;font-size:10px!important}
   .learnerContinueBar{position:sticky;bottom:0;margin:11px -1px -1px;padding:10px 1px 1px;background:linear-gradient(180deg,rgba(16,24,38,0),rgba(16,24,38,.98) 34%)}
   .learnerContinueBar span{font-size:10.5px}.learnerContinueButton{min-width:78px;min-height:42px;font-size:12px;padding-inline:12px}
-  .panel.ai .row>div:first-child{gap:6px}.panel.ai #opponentEyebrow{font-size:9px}.panel.ai #aiColorLabel{font-size:9px!important;min-height:20px;padding:3px 6px}
+  .panel.ai .row>div:first-child{gap:6px}.panel.ai .row>div:first-child .eyebrow{font-size:9px}.panel.ai #aiColorLabel{font-size:9px!important;min-height:20px;padding:3px 6px}
 }
 
 @media(max-width:390px){
