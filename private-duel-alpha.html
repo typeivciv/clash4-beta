@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="description" content="Clash 4 mobile beta test build">
-<title>Clash 4 — Fog of War · Multiplayer Alpha 0.16.6</title>
+<title>Clash 4 — Fog of War · Multiplayer Alpha 0.16.7</title>
 
 
 
@@ -810,7 +810,7 @@ body.reducedMotion .easyLearningPulse{animation:none!important;outline:3px solid
   50%{box-shadow:0 10px 35px rgba(0,0,0,.24),0 0 0 4px rgba(116,174,255,.50),0 0 34px rgba(116,174,255,.34)}
 }
 body.reducedMotion #board.easyLearningBoardCue{animation:none!important;outline:3px solid rgba(116,174,255,.68);outline-offset:4px}
-/* Multiplayer Alpha 0.16.6: compact combat-like learning cards and cohesive HUD cleanup. */
+/* Multiplayer Alpha 0.16.7: compact combat-like learning cards and cohesive opponent HUD. */
 .homeActions .homeLearn.homeCustomize{width:100%}
 
 /* Learning tips share the combat-card visual language, but stay below the board. */
@@ -844,16 +844,25 @@ body.reducedMotion #board.easyLearningBoardCue{animation:none!important;outline:
 .learnerContinueButton{min-width:86px;min-height:40px;border:1px solid rgba(116,174,255,.72);border-radius:10px;background:#1b3559;color:#f7fbff;padding:7px 14px;font-size:13px;font-weight:950;cursor:pointer}
 .learnerContinueButton:hover,.learnerContinueButton:focus-visible{border-color:#9bc3ff;background:#214571}.learnerContinueButton:focus-visible{outline:3px solid rgba(174,209,255,.68);outline-offset:3px}
 
-/* Opponent identity is one compact unit instead of ARCADE AI with a loose color word below. */
+/* Opponent identity is one unit; the color badge never shares the stat lane. */
 .panel.ai .row>div:first-child{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:nowrap}
-#opponentEyebrow{white-space:nowrap;line-height:1.05;margin:0}
-#aiColorLabel{display:inline-flex!important;align-items:center;min-height:22px;padding:3px 7px;border:1px solid color-mix(in srgb,var(--orange) 46%,#3b4a62);border-radius:999px;background:color-mix(in srgb,var(--orange) 11%,transparent);color:var(--orange)!important;font-size:10px!important;line-height:1!important;font-weight:900!important;white-space:nowrap}
+.panel.ai .row>div:first-child .eyebrow{white-space:nowrap;line-height:1.05;margin:0}
+#aiColorLabel{display:inline-flex!important;align-items:center;min-height:22px;max-width:104px;padding:3px 7px;border:1px solid color-mix(in srgb,var(--orange) 46%,#3b4a62);border-radius:999px;background:color-mix(in srgb,var(--orange) 11%,transparent);color:var(--orange)!important;font-size:10px!important;line-height:1!important;font-weight:900!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 @media(min-width:980px){
   #easyLearningCoach[data-placement="player"]{min-height:64px!important;padding:10px 14px!important;border-left:3px solid var(--blue)!important}
   #easyLearningCoach[data-placement="player"] .easyCoachCopy::before{font-size:9px}
   #easyLearningCoach[data-placement="player"] .easyCoachCopy strong{font-size:15px!important}
   #easyLearningCoach[data-placement="player"] .easyCoachCopy span{font-size:13px!important}
+
+  /* The desktop sidebar is narrow. Give identity and match stats separate rows so
+     Orange can never sit underneath or behind the remaining-piece text. */
+  .panel.ai .row{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:8px!important;align-items:stretch!important}
+  .panel.ai .row>div:first-child{width:100%;justify-content:flex-start}
+  .panel.ai .aiStatusMeta{width:100%;min-width:0;display:grid!important;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;justify-content:stretch!important;gap:8px!important}
+  .panel.ai .aiRemaining{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
+  .panel.ai .hiddenTypePill{justify-self:end}
+  .panel.ai #aiTurn{justify-self:end}
 }
 
 @media(max-width:720px){
@@ -865,7 +874,7 @@ body.reducedMotion #board.easyLearningBoardCue{animation:none!important;outline:
   #easyLearningCoach .easyCoachActions button{min-height:36px!important;padding:5px 8px!important;font-size:10px!important}
   .learnerContinueBar{position:sticky;bottom:0;margin:11px -1px -1px;padding:10px 1px 1px;background:linear-gradient(180deg,rgba(16,24,38,0),rgba(16,24,38,.98) 34%)}
   .learnerContinueBar span{font-size:10.5px}.learnerContinueButton{min-width:78px;min-height:42px;font-size:12px;padding-inline:12px}
-  .panel.ai .row>div:first-child{gap:6px}.panel.ai #opponentEyebrow{font-size:9px}.panel.ai #aiColorLabel{font-size:9px!important;min-height:20px;padding:3px 6px}
+  .panel.ai .row>div:first-child{gap:6px}.panel.ai .row>div:first-child .eyebrow{font-size:9px}.panel.ai #aiColorLabel{font-size:9px!important;min-height:20px;padding:3px 6px}
 }
 
 @media(max-width:390px){
@@ -879,7 +888,7 @@ body.reducedMotion #board.easyLearningBoardCue{animation:none!important;outline:
 <body>
 <div id="appRoot" class="app">
 <header>
-  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Arcade RC1 · Multiplayer Alpha 0.16.6</div></div>
+  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Arcade RC1 · Multiplayer Alpha 0.16.7</div></div>
   <div id="fogTurnPill" class="fogTurnPill neutral"><span class="fogTurnDot"></span><span id="fogTurnText">Setup</span></div>
   <div class="topActions">
     <div id="matchDifficultyBadge" class="matchDifficultyBadge" title="Difficulty is chosen before the match"><span>AI</span><strong id="matchDifficultyLabel">Normal</strong></div>
@@ -1013,7 +1022,7 @@ body.reducedMotion #board.easyLearningBoardCue{animation:none!important;outline:
       <div class="homeTagline">Connect Four. Win the Clash.</div>
       <p class="homeLede">Build four in a row while Rock–Paper–Scissors combat, Decoys, and hidden enemy identities turn every column into a tactical gamble.</p>
       <div class="homeActions"><button id="homePlayButton" class="homePlay" type="button"><span>Play</span><small>Normal · Default colors · Random start</small></button><button id="homeDuelButton" class="homeDuel" type="button"><span>Multiplayer</span><small>Invite a player · Pass &amp; Play · Alpha test</small></button><button id="homeCustomizeButton" class="homeCustomize" type="button"><span>Customize Match</span><small>Difficulty · first move · colors · tips</small></button><button id="homeRulesButton" class="homeSecondary" type="button">How to Play</button></div>
-      <div class="homeMeta"><span>Duel Modes Alpha · 0.16.6</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
+      <div class="homeMeta"><span>Duel Modes Alpha · 0.16.7</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
     </div>
     <div class="homeHero" aria-hidden="true"><div class="homeHeroGlow"></div><div class="heroBoard"><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">🪨</span></div><div class="heroHole"><span class="heroPiece ai ">📄</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">✂️</span></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"><span class="heroPiece player ">📄</span></div><div class="heroHole"><span class="heroPiece ai ">🪨</span></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"><span class="heroPiece ai ">✂️</span></div></div><div class="heroFog"></div></div>
   </section>
@@ -3312,7 +3321,7 @@ document.addEventListener('click',event=>{
 duelPostMatchEnsureVisual();
 
 'use strict';
-const ALPHA_TESTER_VERSION='0.16.6';
+const ALPHA_TESTER_VERSION='0.16.7';
 function alphaTesterEl(id){return document.getElementById(id)}
 function alphaTesterMode(){
   if(typeof matchMode!=='undefined'&&matchMode==='arcade')return'Arcade / Solo';
@@ -3619,9 +3628,14 @@ globalThis.easyLearningReset=easyLearningReset;
 globalThis.easyLearningShowMe=easyLearningShowMe;
 globalThis.EASY_LEARNING_PACING=EASY_LEARNING_PACING;
 
-// Multiplayer Alpha 0.16.5: board-centered combat presentation and flow instrumentation.
+// Multiplayer Alpha 0.16.7: board-centered combat and deliberate Easy turn handoff.
 'use strict';
-const GAMEPLAY_FLOW_VERSION='0.16.5';
+const GAMEPLAY_FLOW_VERSION='0.16.7';
+const EASY_AI_POST_DROP_MS=850;
+const LEARNING_AI_POST_DROP_MS=1150;
+const EASY_AI_POST_COMBAT_MS=350;
+const LEARNING_AI_POST_COMBAT_MS=550;
+let gameplayFlowSettleToken=0;
 
 function gameplayFlowBoardCenter(){
   try{
@@ -3639,6 +3653,34 @@ function gameplayFlowBoardCenter(){
 function gameplayFlowMarkPhase(phase){
   try{document.body.dataset.gameplayFlow=phase||''}catch{}
 }
+
+function gameplayFlowAiSettleMs(){
+  try{
+    if(typeof easyLearningMode!=='function'||!easyLearningMode())return 0;
+    if(!s||s.lastMove?.owner!==A||s.turn!==H||s.winner||s.draw)return 0;
+    const learning=typeof easyLearningAutoActive==='function'&&easyLearningAutoActive();
+    if(s.lastMove?.hadCombat)return learning?LEARNING_AI_POST_COMBAT_MS:EASY_AI_POST_COMBAT_MS;
+    return learning?LEARNING_AI_POST_DROP_MS:EASY_AI_POST_DROP_MS
+  }catch{return 0}
+}
+
+// The base transaction changes the state to the player's turn as soon as the AI move
+// finishes presenting. Easy adds one deliberate board-reading beat before the controls
+// reactivate. Learning mode gets a little more time; other modes are unchanged.
+const continueTurnControllerBeforeGameplayFlow=continueTurnController;
+continueTurnController=function(){
+  const settleMs=gameplayFlowAiSettleMs();
+  if(!settleMs)return continueTurnControllerBeforeGameplayFlow();
+  const token=++gameplayFlowSettleToken;
+  busy=true;
+  gameplayFlowMarkPhase('ai-settle');
+  scheduleTimer('aiSettle',()=>{
+    if(token!==gameplayFlowSettleToken)return;
+    busy=false;
+    gameplayFlowMarkPhase('handoff');
+    continueTurnControllerBeforeGameplayFlow()
+  },settleMs)
+};
 
 const showEventBeforeGameplayFlow=showEvent;
 showEvent=function(e){
@@ -3671,6 +3713,7 @@ try{new ResizeObserver(()=>requestAnimationFrame(gameplayFlowBoardCenter)).obser
 requestAnimationFrame(gameplayFlowBoardCenter);
 
 globalThis.gameplayFlowBoardCenter=gameplayFlowBoardCenter;
+globalThis.gameplayFlowAiSettleMs=gameplayFlowAiSettleMs;
 globalThis.GAMEPLAY_FLOW_VERSION=GAMEPLAY_FLOW_VERSION;
 
 // Multiplayer Alpha 0.16.6: one-tap learner entry, compact coaching, and skippable reading time.
@@ -4752,7 +4795,7 @@ init();
 
 <script>
 (function(){
-  const BUILD='Multiplayer Alpha 0.16.6';
+  const BUILD='Multiplayer Alpha 0.16.7';
   const REPO_ISSUES='https://github.com/typeivciv/clash4-beta/issues/new';
   const $=id=>document.getElementById(id);
   const openBtn=$('betaFeedbackButton'), overlay=$('betaFeedbackOverlay'), closeBtn=$('betaFeedbackClose');
@@ -4788,7 +4831,7 @@ init();
   function issueTitle(){
     const type=$('betaIssueType').value;
     const detail=$('betaWhatHappened').value.trim().replace(/\s+/g,' ').slice(0,72);
-    return `[Multiplayer Alpha 0.16.6][${type}] ${detail||'Tester report'}`;
+    return `[Multiplayer Alpha 0.16.7][${type}] ${detail||'Tester report'}`;
   }
   function githubUrl(){
     const body=[
