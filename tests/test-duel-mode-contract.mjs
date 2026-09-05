@@ -32,7 +32,7 @@ for(const token of ["endText.textContent='YOU WIN'","endText.textContent='TRY AG
 assert.ok(!postmatch.includes("endText.textContent='YOU LOSE'"),'loss headline must remain TRY AGAIN');
 for(const token of ['text-align:center','@keyframes duel-win-title','@keyframes duel-loss-title','@keyframes duel-win-rays','@keyframes duel-loss-card'])assert.ok(postmatchCss.includes(token),`post-match visual contract missing ${token}`);
 
-assert.ok(tester.includes("const ALPHA_TESTER_VERSION='0.16.6'"),'tester diagnostics must report 0.16.6');
+assert.ok(tester.includes("const ALPHA_TESTER_VERSION='0.16.7'"),'tester diagnostics must report 0.16.7');
 for(const token of ['function alphaTesterInfo()','function alphaConnectionHelp()','function alphaReportProblem()'])assert.ok(tester.includes(token),`tester utility missing ${token}`);
 assert.ok(!tester.includes('location.hash'),'tester diagnostics must never copy the live invite hash');
 for(const token of ['.alphaTesterNotice','.alphaTesterBar','.alphaTesterModal'])assert.ok(testerCss.includes(token),`tester CSS missing ${token}`);
@@ -46,7 +46,11 @@ for(const token of [
 for(const forbidden of ['aiKnow','projectedScore','chooseAi','bestMove','strategistSearch','minimax'])assert.ok(!easy.includes(forbidden),`Easy coach must not inspect/score hidden strategy: ${forbidden}`);
 assert.ok(!easy.includes("easyLearningPulse('#board .cell[data-column][tabindex=\"0\"]"),'piece selection must not visually expose top-row accessibility targets');
 
-for(const token of ["const GAMEPLAY_FLOW_VERSION='0.16.5'",'function gameplayFlowBoardCenter()',"--c4-board-center-x",'--c4-board-center-y'])assert.ok(flow.includes(token),`gameplay flow module missing ${token}`);
+for(const token of [
+  "const GAMEPLAY_FLOW_VERSION='0.16.7'",'function gameplayFlowBoardCenter()',"--c4-board-center-x",'--c4-board-center-y',
+  'const EASY_AI_POST_DROP_MS=850','const LEARNING_AI_POST_DROP_MS=1150','function gameplayFlowAiSettleMs()',
+  'const continueTurnControllerBeforeGameplayFlow=continueTurnController',"gameplayFlowMarkPhase('ai-settle')","scheduleTimer('aiSettle'"
+])assert.ok(flow.includes(token),`gameplay flow module missing ${token}`);
 for(const token of ['left:var(--c4-board-center-x,50%)','top:var(--c4-board-center-y,50%)','transform:translate(-50%,-50%)','#board.easyLearningBoardCue'])assert.ok(flowCss.includes(token),`gameplay flow CSS missing ${token}`);
 
 // Learn as You Play is intentionally slower than normal Easy and exposes a Skip control
@@ -66,7 +70,9 @@ assert.ok(!learner.includes('>Got it</button>'),'learner explanation should auto
 for(const token of [
   '.homeActions .homeLearn.homeCustomize','.learning-awaiting-continue .overlay','.learnerContinueBar','.learnerContinueButton',
   '#easyLearningCoach .easyCoachCopy::before','.easy-learning-active .mobileContextTray{display:none!important}',
-  '.panel.ai .row>div:first-child','#aiColorLabel{display:inline-flex!important'
+  '.panel.ai .row>div:first-child','#aiColorLabel{display:inline-flex!important',
+  '.panel.ai .row{display:grid!important;grid-template-columns:minmax(0,1fr)!important',
+  '.panel.ai .aiStatusMeta{width:100%;min-width:0;display:grid!important;grid-template-columns:minmax(0,1fr) auto auto'
 ])assert.ok(learnerCss.includes(token),`learner UX CSS missing ${token}`);
 for(const [name,source] of [['direct',direct],['nearby',nearby],['turn',turn],['colors',colors],['postmatch',postmatch],['tester',tester],['easy',easy],['flow',flow],['learner',learner],['pass',pass],['router',router]]){
   try{new Function(source)}catch(error){throw new Error(`${name} module syntax failed: ${error.message}`)}
@@ -75,4 +81,4 @@ for(const token of ['passDuelOverlay','passShowHandoff','passDuelMove'])assert.o
 for(const token of ['if(passDuel.active)','if(directDuel.active)','return duelMove(owner,type,column)'])assert.ok(router.includes(token),`transport router missing ${token}`);
 for(const id of ['duelDirectMode','duelPassMode','duelOnlineMode','duelDirectNearby','duelDirectRefreshInvite','duelDirectRetryConnection','alphaTesterBar'])assert.ok(lobby.includes(`id="${id}"`),`Alpha lobby missing ${id}`);
 
-console.log('PASS Multiplayer Alpha 0.16.6: skippable slow learner explanations + compact combat-like tips + cohesive opponent HUD + Direct recovery/share');
+console.log('PASS Multiplayer Alpha 0.16.7: slower post-AI settle + separated opponent HUD + skippable learner explanations + Direct recovery/share');
