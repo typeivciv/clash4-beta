@@ -1,5 +1,5 @@
 'use strict';
-const ALPHA_TESTER_VERSION='0.16.2';
+const ALPHA_TESTER_VERSION='0.16.3';
 function alphaTesterEl(id){return document.getElementById(id)}
 function alphaTesterMode(){
   if(typeof matchMode!=='undefined'&&matchMode==='arcade')return'Arcade / Solo';
