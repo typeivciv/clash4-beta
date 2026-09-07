@@ -30,6 +30,7 @@ for(const token of ['function duelHasLiveNearbyInvite()',"copyBtn.textContent='C
 assert.ok(!colors.includes("title.includes('Scan once to join')"),'share controls must never depend on mutable heading copy');
 
 for(const token of ["endText.textContent='YOU WIN'","endText.textContent='TRY AGAIN'","'Invite New Player'","'KOs · P1–P2'","kind:'rematch-request'","kind:'rematch-start'",'globalThis.passRestartMatch'])assert.ok(postmatch.includes(token),`post-match contract missing ${token}`);
+assert.ok(postmatch.includes("parentElement?.parentElement?.querySelector?.(':scope > span')"),'KO mode label must target the label beside the score, not either score value');
 assert.ok(!postmatch.includes("endText.textContent='YOU LOSE'"),'loss headline must remain TRY AGAIN');
 assert.ok(!postmatch.toLowerCase().includes('matchmaking'),'post-match copy must describe invitation play without matchmaking language');
 for(const token of ['text-align:center','@keyframes duel-win-title','@keyframes duel-loss-title','@keyframes duel-win-rays','@keyframes duel-loss-card'])assert.ok(postmatchCss.includes(token),`post-match visual contract missing ${token}`);
