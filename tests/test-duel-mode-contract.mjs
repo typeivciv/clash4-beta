@@ -29,8 +29,9 @@ for(const token of ['DIRECT_ALPHA_TURN_SERVERS','turn:openrelay.metered.ca:443?t
 for(const token of ['function duelHasLiveNearbyInvite()',"copyBtn.textContent='Copy Link'","shareBtn.textContent='Share Link'",'duelApplySeatColors()'])assert.ok(colors.includes(token),`Direct share/color contract missing ${token}`);
 assert.ok(!colors.includes("title.includes('Scan once to join')"),'share controls must never depend on mutable heading copy');
 
-for(const token of ["endText.textContent='YOU WIN'","endText.textContent='TRY AGAIN'","b.textContent='Invite New Player'",'matchmaking is not available yet',"kind:'rematch-request'","kind:'rematch-start'"])assert.ok(postmatch.includes(token),`post-match contract missing ${token}`);
+for(const token of ["endText.textContent='YOU WIN'","endText.textContent='TRY AGAIN'","'Invite New Player'","'KOs · P1–P2'","kind:'rematch-request'","kind:'rematch-start'",'globalThis.passRestartMatch'])assert.ok(postmatch.includes(token),`post-match contract missing ${token}`);
 assert.ok(!postmatch.includes("endText.textContent='YOU LOSE'"),'loss headline must remain TRY AGAIN');
+assert.ok(!postmatch.toLowerCase().includes('matchmaking'),'post-match copy must describe invitation play without matchmaking language');
 for(const token of ['text-align:center','@keyframes duel-win-title','@keyframes duel-loss-title','@keyframes duel-win-rays','@keyframes duel-loss-card'])assert.ok(postmatchCss.includes(token),`post-match visual contract missing ${token}`);
 
 assert.ok(tester.includes("const ALPHA_TESTER_VERSION='0.16.9'"),'tester diagnostics must report 0.16.9');
@@ -93,7 +94,7 @@ for(const token of [
 for(const [name,source] of [['direct',direct],['nearby',nearby],['turn',turn],['colors',colors],['postmatch',postmatch],['tester',tester],['easy',easy],['flow',flow],['learner',learner],['pass',pass],['router',router]]){
   try{new Function(source)}catch(error){throw new Error(`${name} module syntax failed: ${error.message}`)}
 }
-for(const token of ['passDuelOverlay','passShowHandoff','passDuelMove'])assert.ok(pass.includes(token),`Pass & Play contract missing ${token}`);
+for(const token of ['passDuelOverlay','passShowHandoff','passDuelMove','replayHistory','passBuildFinishReplay','passRestartMatch'])assert.ok(pass.includes(token),`Pass & Play contract missing ${token}`);
 for(const token of ['if(passDuel.active)','if(directDuel.active)','return duelMove(owner,type,column)'])assert.ok(router.includes(token),`transport router missing ${token}`);
 for(const id of ['duelDirectMode','duelPassMode','duelOnlineMode','duelDirectNearby','duelDirectRefreshInvite','duelDirectRetryConnection','alphaTesterBar'])assert.ok(lobby.includes(`id="${id}"`),`Alpha lobby missing ${id}`);
 

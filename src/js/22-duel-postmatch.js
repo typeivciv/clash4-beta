@@ -60,21 +60,31 @@ function duelPostMatchReplayControls(){
 function directResetRematchVotes(){directRematchVotes={human:false,ai:false};directRematchStarting=false}
 function duelPostMatchActionControls(){
   const rematchButtons=[restartBottom,reviewRestart,sidebarRematch],newMatchButtons=[homeBottom,reviewHome,sidebarHome];
+  const labelAction=(b,text,aria,title)=>{b.textContent=text;b.setAttribute('aria-label',aria);b.title=title;b.disabled=false};
+  const labelRematch=b=>labelAction(b,'Rematch','Start a rematch','Start a rematch');
+  const labelHome=b=>labelAction(b,'Home','Return to the home screen','Return to the home screen');
+  const labelInviteNewPlayer=b=>labelAction(b,'Invite New Player','Invite a new player','Create a new invitation for another player');
   if(matchMode==='arcade'){
-    for(const b of rematchButtons){b.textContent='Rematch';b.disabled=false}
-    for(const b of newMatchButtons){b.textContent='Home';b.disabled=false}
+    for(const b of rematchButtons)labelRematch(b)
+    for(const b of newMatchButtons)labelHome(b)
     return
   }
   if(matchMode!=='duel')return;
-  const labelInviteNewPlayer=b=>{b.textContent='Invite New Player';b.setAttribute('aria-label','Invite a new player; matchmaking is not available yet');b.title='Create a new invite for another player — matchmaking is not available yet.';b.disabled=false};
-  if(directDuel?.active){
+  if(passDuel?.active){
+    for(const b of rematchButtons)labelRematch(b)
+    for(const b of newMatchButtons)labelInviteNewPlayer(b)
+  }else if(directDuel?.active){
     const local=directDuel.seat,remote=other(local),localVoted=!!directRematchVotes[local],remoteVoted=!!directRematchVotes[remote];
-    for(const b of rematchButtons){b.textContent=localVoted?'Waiting…':remoteVoted?'Accept Rematch':'Rematch';b.disabled=localVoted||directRematchStarting}
+    for(const b of rematchButtons){labelAction(b,localVoted?'Waiting…':remoteVoted?'Accept Rematch':'Rematch',localVoted?'Waiting for opponent to accept rematch':remoteVoted?'Accept opponent rematch request':'Request a rematch',localVoted?'Waiting for opponent':remoteVoted?'Accept rematch':'Request a rematch');b.disabled=localVoted||directRematchStarting}
     for(const b of newMatchButtons)labelInviteNewPlayer(b)
   }else{
     for(const b of rematchButtons)labelInviteNewPlayer(b)
     for(const b of newMatchButtons)labelInviteNewPlayer(b)
   }
+}
+function duelPostMatchStatLabels(){
+  const label=statHumanKos?.parentElement?.querySelector?.('span');if(!label)return;
+  label.textContent=matchMode!=='duel'?'KOs · You–AI':passDuel?.active?'KOs · P1–P2':'KOs · You–Opponent'
 }
 function duelBuildFinishReplay(){
   if(finishReplay?.steps?.length)return;
@@ -135,7 +145,7 @@ duelFinishNetworkPresentation=function(events,column){
 const renderPostMatchBeforeDuelResult=renderPostMatch;
 renderPostMatch=function(reviewMode){
   const result=renderPostMatchBeforeDuelResult(reviewMode);
-  duelPostMatchReplayControls();duelPostMatchActionControls();duelPostMatchAnimate();duelArmTerminalGuard();return result
+  duelPostMatchReplayControls();duelPostMatchActionControls();duelPostMatchStatLabels();duelPostMatchAnimate();duelArmTerminalGuard();return result
 };
 
 const directHandleMessageBeforePostMatch=directHandleMessage;
@@ -170,7 +180,7 @@ globalThis.directBindChannel=directBindChannel;
 document.addEventListener('click',event=>{
   if(matchMode!=='duel')return;
   const rematch=event.target?.closest?.('#restartBottom,#reviewRestart,#sidebarRematch');
-  if(rematch){event.preventDefault();event.stopImmediatePropagation();if(directDuel?.active)duelRequestDirectRematch();else globalThis.duelRouteNewDuel?.();return}
+  if(rematch){event.preventDefault();event.stopImmediatePropagation();if(passDuel?.active)globalThis.passRestartMatch?.();else if(directDuel?.active)duelRequestDirectRematch();else globalThis.duelRouteNewDuel?.();return}
   const newDuel=event.target?.closest?.('#homeBottom,#reviewHome,#sidebarHome');
   if(newDuel){event.preventDefault();event.stopImmediatePropagation();if(duelTerminalGuard){clearTimeout(duelTerminalGuard);duelTerminalGuard=null}globalThis.duelRouteNewDuel?.()}
 },true);

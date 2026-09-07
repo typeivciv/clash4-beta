@@ -12,7 +12,7 @@ assert.equal(testerAlpha,alpha,'clean multiplayer-alpha.html tester entry must e
 for(const required of [
   'Multiplayer Alpha 0.16.9','<span>Multiplayer</span><small>Invite a player · Pass &amp; Play · Alpha test</small>','Play With Someone','Create Duel','Hosted Room',
   'RTCPeerConnection',"DIRECT_PEER_JOIN_PARAM='c4peer'",'DIRECT_HOST_INVITE_TTL_MS=5*60_000','function directRetryNearbyConnection()',"copyBtn.textContent='Copy Link'","shareBtn.textContent='Share Link'",'DIRECT_ALPHA_TURN_SERVERS',
-  "endText.textContent='YOU WIN'","endText.textContent='TRY AGAIN'","b.textContent='Invite New Player'",
+  "endText.textContent='YOU WIN'","endText.textContent='TRY AGAIN'","'Invite New Player'","'KOs · P1–P2'",'function passBuildFinishReplay(viewer)','function passRestartMatch()',
   "const ALPHA_TESTER_VERSION='0.16.9'","const EASY_LEARNING_STORAGE_KEY='clash4.easyLearning.v1'","const GAMEPLAY_FLOW_VERSION='0.16.8'","const LEARNER_UX_VERSION='0.16.6'",
   'const EASY_AI_POST_DROP_MS=850','const LEARNING_AI_POST_DROP_MS=1150','function gameplayFlowAiSettleMs()',"scheduleTimer('aiSettle'",
   'const EASY_CAPTURE_HOLD_MS=950','const LEARNING_CAPTURE_HOLD_MS=1350','function gameplayFlowCaptureHoldMs(e)','function gameplayFlowStageCapture(e)',"card.classList.add('capture-staging')","card.classList.add('capture-resolved')",
@@ -30,7 +30,7 @@ for(const required of [
 for(const obsolete of [
   'Multiplayer Alpha 0.16.4','Multiplayer Alpha 0.16.6</title>','Multiplayer Alpha 0.16.7</title>','Multiplayer Alpha 0.16.8</title>','DIRECT_PEER_TIMEOUT_MS=90_000','DIRECT_RETURN_KEY','directShowReturnLinkLanding','/api/direct/signals','id="duelDirectServerInput"',
   "endText.textContent='YOU LOSE'","b.textContent='New Duel'","b.textContent='Play Someone Else'","title.includes('Scan once to join')",'directNearbyRetryPeerId=hostPeerId;directOpenPanel()',
-  "easyLearningPulse('#board .cell[data-column][tabindex=\"0\"]",'>Got it</button>'
+  "easyLearningPulse('#board .cell[data-column][tabindex=\"0\"]",'>Got it</button>','matchmaking'
 ])assert.ok(!alpha.includes(obsolete),`generated Alpha still contains obsolete/broken path: ${obsolete}`);
 
 const ids=[...alpha.matchAll(/\sid="([^"]+)"/g)].map(m=>m[1]);

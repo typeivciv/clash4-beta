@@ -1,7 +1,7 @@
 // Pass & Play: two players share one device with an opaque privacy handoff between turns.
 // The canonical state stays local; each player only receives their own Fog projection.
 'use strict';
-let passDuel={active:false,state:null,viewer:null,version:0};
+let passDuel={active:false,state:null,viewer:null,version:0,replayHistory:[]};
 function passEl(id){return document.getElementById(id)}
 function passPlayerLabel(owner){return owner===H?'Player 1':'Player 2'}
 function ensurePassOverlay(){
@@ -16,8 +16,19 @@ function passShowHandoff(nextOwner,{opening=false}={}){
   passEl('passDuelContinue').textContent=`I'm ${passPlayerLabel(nextOwner)}`;document.documentElement.classList.add('pass-privacy-active')
 }
 function passHideOverlay(){const el=passEl('passDuelOverlay');if(el)el.hidden=true;document.documentElement.classList.remove('pass-privacy-active')}
-function passReset(){passDuel={active:false,state:null,viewer:null,version:0};passHideOverlay()}
+function passReset(){passDuel={active:false,state:null,viewer:null,version:0,replayHistory:[]};passHideOverlay()}
 globalThis.passReset=passReset;
+function passBuildFinishReplay(viewer){
+  const steps=(passDuel.replayHistory||[]).slice(-2).map(interaction=>{
+    const projected=projectInteractionForViewer(interaction,viewer,{revealAll:true});
+    return cloneInteractionForReplay({
+      before:duelProjectedStateToUi(projected.before),after:duelProjectedStateToUi(projected.after),
+      events:projected.events.map(duelMapEvent),owner:duelMapOwner(projected.owner),type:projected.type,
+      column:projected.column,moveNumber:projected.moveNumber
+    })
+  });
+  finishReplay=steps.length?{steps}:null
+}
 function startPassPlay(){
   directClosePeer();duelStopPolling();duelClearActiveSession();passReset();passDuel.active=true;passDuel.state=makeLocalDuelState(randomDuelStarter());passDuel.viewer=passDuel.state.turn;passDuel.version=1;
   duelSession.seat=passDuel.viewer;duelSession.active=false;duelSession.version=-1;duelSession.handledVersion=-1;duelSession.pendingLocal=null;duelSession.deferredPayloads=[];
@@ -35,7 +46,7 @@ function passConfirmHandoff(){
 }
 function passFinishPresentation(events,column){
   const done=()=>{
-    busy=false;if(passDuel.state.winner||passDuel.state.draw){postMatchView='summary';finishReplay=null;const finalProjected=projectDuelState(passDuel.state,passDuel.viewer,{revealAll:true});s=duelProjectedStateToUi(finalProjected);render();return}
+    busy=false;if(passDuel.state.winner||passDuel.state.draw){postMatchView='summary';passBuildFinishReplay(passDuel.viewer);const finalProjected=projectDuelState(passDuel.state,passDuel.viewer,{revealAll:true});s=duelProjectedStateToUi(finalProjected);render();return}
     passShowHandoff(passDuel.state.turn);msg('Turn complete — pass the device.')
   };
   if(events.length)playEvents(events,done,column);else done()
@@ -43,8 +54,9 @@ function passFinishPresentation(events,column){
 function passDuelMove(owner,type,column){
   if(!passDuel.active||!ready||busy||!passDuel.state||passDuel.state.winner||passDuel.state.draw||s.turn!==H||owner!==H)return;
   const c=Number(column);if(!T.includes(type)||!Number.isInteger(c)||!legalCols(H).includes(c)||s.inv.human[type]<=0)return;
-  const viewer=passDuel.viewer,before=cloneState(s),q=applyLocalDuelMove(passDuel.state,viewer,type,c);if(q.error){msg(humanizeDuelError(q.error));return}
+  const viewer=passDuel.viewer,before=cloneState(s),canonicalBefore=cloneState(passDuel.state),q=applyLocalDuelMove(passDuel.state,viewer,type,c);if(q.error){msg(humanizeDuelError(q.error));return}
   passDuel.state=q.state;passDuel.version++;
+  passDuel.replayHistory.push({before:canonicalBefore,after:cloneState(q.state),events:q.events.map(e=>({...e})),owner:viewer,type,column:c,moveNumber:q.state.moveNumber});if(passDuel.replayHistory.length>2)passDuel.replayHistory.shift();
   duelSession.seat=viewer;const projected=projectDuelState(passDuel.state,viewer,{revealAll:!!(passDuel.state.winner||passDuel.state.draw)}),after=duelProjectedStateToUi(projected),events=projectEventsForViewer(q.events,viewer).map(duelMapEvent),lm=after.lastMove;
   s=after;addEventsToStats(events);if(lm){publicMoveHistory.push(publicMoveLog(lm.owner,events));if(publicMoveHistory.length>24)publicMoveHistory.shift()}
   recentInteractions.push({before,after:cloneState(after),events:events.map(e=>({...e})),owner:lm?.owner??H,type:lm?.type??type,column:lm?.column??c,moveNumber:after.moveNumber});if(recentInteractions.length>2)recentInteractions.shift();
@@ -52,5 +64,7 @@ function passDuelMove(owner,type,column){
   scheduleTimer('drop',()=>{dropPresentation=null;render();passFinishPresentation(events,c)},TIMING.drop)
 }
 globalThis.passDuelMove=passDuelMove;
+function passRestartMatch(){if(!passDuel.active)return;duelResetCompletedMatchUi();startPassPlay()}
+globalThis.passRestartMatch=passRestartMatch;
 function bindPassPlayUi(){passEl('duelPassMode')?.addEventListener('click',startPassPlay)}
 globalThis.bindPassPlayUi=bindPassPlayUi;
