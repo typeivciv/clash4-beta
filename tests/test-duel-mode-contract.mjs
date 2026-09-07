@@ -11,12 +11,14 @@ const tester=read('src/js/23-duel-alpha-tester.js');
 const easy=read('src/js/24-easy-learning.js');
 const flow=read('src/js/25-gameplay-flow.js');
 const learner=read('src/js/26-learner-ux.js');
+const themeMusic=read('src/js/27-theme-music.js');
 const postmatchCss=read('src/styles/53-duel-postmatch.css');
 const testerCss=read('src/styles/54-duel-alpha-tester.css');
 const easyCss=read('src/styles/55-easy-learning.css');
 const flowCss=read('src/styles/56-gameplay-flow.css');
 const learnerCss=read('src/styles/57-learner-ux.css');
 const homeMenuCss=read('src/styles/58-home-menu-interaction.css');
+const themeMusicCss=read('src/styles/59-theme-music.css');
 const pass=read('src/js/17-duel-pass-play.js');
 const router=read('src/js/18-duel-router.js');
 const lobby=read('src/ui/private-duel-lobby.html');
@@ -92,11 +94,24 @@ for(const token of [
   'Play is the first action, not an already-selected option.'
 ])assert.ok(homeMenuCss.includes(token),`home menu interaction CSS missing ${token}`);
 
-for(const [name,source] of [['direct',direct],['nearby',nearby],['turn',turn],['colors',colors],['postmatch',postmatch],['tester',tester],['easy',easy],['flow',flow],['learner',learner],['pass',pass],['router',router]]){
+for(const token of [
+  "const THEME_MUSIC_VERSION='0.17.0'","const THEME_STORAGE_KEY='clash4.theme.v1'","const MUSIC_STORAGE_KEY='clash4.music.v1'",
+  "'classic-fog'","'neon-mirage'",'Classic Fog','Neon Mirage','Electric Lime','Ultraviolet',
+  'const applyColorsBeforeThemeMusic=applyColors','colorMode===\'default\'','function themeSet(','function themeCreateUi()',
+  'function themeMusicCreateUi()','function themeMusicStart()','function themeMusicPulse()','function themeMusicStinger(cue)',
+  "document.addEventListener('visibilitychange'",'unlockGameAudio'
+])assert.ok(themeMusic.includes(token),`theme/music module missing ${token}`);
+for(const token of [
+  '.themeControl{','.themeCard.active{','.musicVolumeLabel{',':root[data-theme="neon-mirage"]{',
+  '.heroPiece.player{','.heroPiece.ai{','@keyframes mirageDrift','body.reducedMotion .gameHome::before'
+])assert.ok(themeMusicCss.includes(token),`theme/music CSS missing ${token}`);
+for(const forbidden of ['fetch(','Spotify','Apple Music','apiKey','access_token'])assert.ok(!themeMusic.includes(forbidden),`theme music must stay local and dependency-free: ${forbidden}`);
+
+for(const [name,source] of [['direct',direct],['nearby',nearby],['turn',turn],['colors',colors],['postmatch',postmatch],['tester',tester],['easy',easy],['flow',flow],['learner',learner],['themeMusic',themeMusic],['pass',pass],['router',router]]){
   try{new Function(source)}catch(error){throw new Error(`${name} module syntax failed: ${error.message}`)}
 }
 for(const token of ['passDuelOverlay','passShowHandoff','passDuelMove','replayHistory','passBuildFinishReplay','passRestartMatch'])assert.ok(pass.includes(token),`Pass & Play contract missing ${token}`);
 for(const token of ['if(passDuel.active)','if(directDuel.active)','return duelMove(owner,type,column)'])assert.ok(router.includes(token),`transport router missing ${token}`);
 for(const id of ['duelDirectMode','duelPassMode','duelOnlineMode','duelDirectNearby','duelDirectRefreshInvite','duelDirectRetryConnection','alphaTesterBar'])assert.ok(lobby.includes(`id="${id}"`),`Alpha lobby missing ${id}`);
 
-console.log('PASS Multiplayer Alpha 0.16.9: consistent home menu hover/focus/press + staged Easy captures + audited opponent HUD + learner/networking contracts');
+console.log('PASS Multiplayer Alpha 0.16.9: Classic Fog + Neon Mirage + local procedural music + learner/networking contracts');

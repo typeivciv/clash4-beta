@@ -1,0 +1,59 @@
+/* Multiplayer Alpha 0.17.0: reusable visual themes and a local procedural-music control. */
+.themeControl{display:grid;gap:8px;margin-top:8px;padding:9px;border:1px solid var(--fog-line);border-radius:12px;background:rgba(27,36,64,.74);text-align:left}
+.themeControlHead{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.themeControlHead>span{color:var(--fog-text);font-size:11px;font-weight:850}
+.themeControlHead>small{min-width:0;color:var(--fog-text-dim);font-size:9px;text-align:right}
+.themeCards{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.themeCard{min-width:0;min-height:58px;display:grid;grid-template-columns:45px minmax(0,1fr);align-items:center;gap:8px;padding:7px;border:1px solid rgba(69,84,116,.95);border-radius:10px;background:linear-gradient(145deg,rgba(31,42,72,.82),rgba(19,28,48,.86));color:var(--fog-text);text-align:left;cursor:pointer}
+.themeCard>span:last-child{min-width:0;display:grid;gap:3px}.themeCard strong{font-size:10px}.themeCard small{color:var(--fog-text-dim);font-size:8px;line-height:1.3}
+.themeCard.active{border-color:var(--fog-teal);box-shadow:0 0 0 1px color-mix(in srgb,var(--fog-teal) 30%,transparent),inset 0 0 22px color-mix(in srgb,var(--fog-teal) 5%,transparent)}
+.themeCard:focus-visible{outline:3px solid color-mix(in srgb,var(--fog-teal) 58%,white);outline-offset:2px}
+.themePreview{height:40px;display:grid;grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr);gap:3px;padding:5px;border-radius:8px;background:#10192b;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.themePreview i{border-radius:50%;background:#070b13;box-shadow:inset 0 1px 2px rgba(0,0,0,.7)}
+.themePreviewClassic i:nth-child(2){background:#2f70e8}.themePreviewClassic i:nth-child(3){background:#db7522}.themePreviewClassic i:nth-child(4){background:#2f70e8}
+.themePreviewMirage{background:linear-gradient(145deg,#32105c,#110622)}.themePreviewMirage i:nth-child(1){background:#a7ff3f}.themePreviewMirage i:nth-child(2){background:#9a5cff}.themePreviewMirage i:nth-child(4){background:#a7ff3f}
+.themeNote{margin:0;color:var(--fog-text-faint);font-size:8.5px;line-height:1.35}
+.colorModeDots .defaultBlue{background:var(--theme-human,#2f70e8)}.colorModeDots .defaultOrange{background:var(--theme-ai,#db7522)}
+
+.musicOption{grid-column:1/-1}.musicVolumeLabel{display:flex;align-items:center;gap:8px;margin-top:4px;color:var(--fog-text-dim);font-size:9px}
+.musicVolumeLabel input{width:min(190px,100%);height:20px;accent-color:var(--fog-teal)}
+
+/* Neon Mirage changes the atmosphere, not the game-state color contract. */
+:root[data-theme="neon-mirage"]{
+  --bg:#070310;--surface:#170927;--line:#49326d;--muted:#a9a0c4;
+  --fog-ink-900:#070310;--fog-ink-800:#0e061b;--fog-ink-700:#160a28;--fog-ink-600:#21103a;
+  --fog-slate-700:#2b164b;--fog-slate-600:#38205b;--fog-slate-500:#52317b;--fog-line:#55367a;
+  --fog-text:#f6f1ff;--fog-text-dim:#c6badd;--fog-text-faint:#8f82ab;
+  --fog-teal:#32ffd2;--fog-gold:#ffd166;--fog-amber:#ff9f43;--fog-danger:#ff4f86;
+}
+:root[data-theme="neon-mirage"] body{background:#070310}
+:root[data-theme="neon-mirage"] .app{background:radial-gradient(circle at 16% -10%,rgba(120,48,208,.34),transparent 40%),radial-gradient(circle at 90% 110%,rgba(93,255,83,.14),transparent 42%),linear-gradient(160deg,#120720,#070310 64%)}
+:root[data-theme="neon-mirage"] .coinCard.gameIntroCard{border-color:rgba(154,92,255,.6);background:linear-gradient(145deg,rgba(34,12,60,.98),rgba(9,4,19,.99));box-shadow:0 34px 110px rgba(0,0,0,.66),0 0 70px rgba(154,92,255,.11),inset 0 1px 0 rgba(255,255,255,.05)}
+:root[data-theme="neon-mirage"] .gameHome::before{inset:-55%;background:conic-gradient(from 40deg at 50% 50%,rgba(167,255,63,.18),rgba(154,92,255,.24),rgba(255,79,216,.16),rgba(50,255,210,.16),rgba(167,255,63,.18));filter:blur(34px);animation:mirageDrift 18s ease-in-out infinite alternate}
+:root[data-theme="neon-mirage"] .heroBoard{border-color:rgba(154,92,255,.85);background:linear-gradient(155deg,#3e1768 0%,#241044 47%,#0e071c 100%);box-shadow:0 26px 60px rgba(0,0,0,.56),0 0 46px rgba(154,92,255,.18),inset 0 1px 0 rgba(255,255,255,.12),inset 0 -14px 26px rgba(0,0,0,.25)}
+:root[data-theme="neon-mirage"] .heroHole{background:radial-gradient(circle at 45% 42%,#06020c 0 54%,#170827 56% 64%,rgba(167,255,63,.12) 66% 68%,#0c0416 70%)}
+:root[data-theme="neon-mirage"] .heroPiece.player{background:radial-gradient(circle at 35% 28%,#e1ffad,#a7ff3f 53%,#4f9b08 100%);color:#102000}
+:root[data-theme="neon-mirage"] .heroPiece.ai{background:radial-gradient(circle at 35% 28%,#d8c2ff,#9a5cff 53%,#4e1c9c 100%)}
+:root[data-theme="neon-mirage"] .heroPiece.hidden{background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.12) 0 2px,transparent 2px 8px),radial-gradient(circle at 35% 28%,#d8c2ff,#9a5cff 53%,#4e1c9c 100%)}
+:root[data-theme="neon-mirage"] .heroFog{background:radial-gradient(ellipse,rgba(50,255,210,.28),rgba(154,92,255,.14) 48%,transparent 72%);animation:mirageFog 8s ease-in-out infinite alternate}
+:root[data-theme="neon-mirage"] .board{border-color:#623c91;background:linear-gradient(165deg,#321654,#1b0c31 54%,#10071f);box-shadow:0 14px 44px -14px rgba(0,0,0,.82),0 0 38px rgba(154,92,255,.13),inset 0 1px 0 rgba(255,255,255,.06)}
+:root[data-theme="neon-mirage"] .cell{background:#090311}:root[data-theme="neon-mirage"] .empty{border-color:#3d245c;background:#0d0618}
+:root[data-theme="neon-mirage"] .panel,:root[data-theme="neon-mirage"] .fogSideCard{border-color:#4c3170;background:linear-gradient(180deg,rgba(36,17,61,.96),rgba(20,9,37,.97))}
+:root[data-theme="neon-mirage"] .message,:root[data-theme="neon-mirage"] .lastMoveBox,:root[data-theme="neon-mirage"] .moveStatus.currentOnly{border-color:#49316a;background:rgba(20,8,37,.86)}
+:root[data-theme="neon-mirage"] .card,:root[data-theme="neon-mirage"] .helpCard{border-color:#5b3886;background:linear-gradient(165deg,#25103f,#11071f)}
+:root[data-theme="neon-mirage"] .overlay,:root[data-theme="neon-mirage"] .coinOverlay,:root[data-theme="neon-mirage"] .helpOverlay{background-color:rgba(6,2,13,.86)}
+:root[data-theme="neon-mirage"] .themeCard,:root[data-theme="neon-mirage"] .difficultyCard,:root[data-theme="neon-mirage"] .startMethodOption{border-color:#523574;background:linear-gradient(145deg,rgba(53,25,86,.86),rgba(27,12,47,.9))}
+:root[data-theme="neon-mirage"] .themeCard.active,:root[data-theme="neon-mirage"] .difficultyCard.active,:root[data-theme="neon-mirage"] .startMethodOption.active{border-color:#32ffd2;box-shadow:0 0 0 1px rgba(50,255,210,.28),0 0 24px rgba(154,92,255,.14),inset 0 0 22px rgba(50,255,210,.04)}
+:root[data-theme="neon-mirage"] .setupContinue{border-color:rgba(167,255,63,.8);background:linear-gradient(135deg,#6ecb1e,#6740d8);color:#fff;box-shadow:0 8px 26px rgba(103,64,216,.24)}
+:root[data-theme="neon-mirage"] #homePanel .homeActions>button{border-color:#56387b!important;background:linear-gradient(180deg,#2b1648,#180c2c)!important}
+@media(hover:hover) and (pointer:fine){:root[data-theme="neon-mirage"] #homePanel .homeActions>button:hover{border-color:#a7ff3f!important;background:linear-gradient(180deg,#3a1d61,#24103f)!important;box-shadow:0 0 0 1px rgba(167,255,63,.18),0 12px 30px rgba(0,0,0,.3),0 0 28px rgba(154,92,255,.2)!important}}
+:root[data-theme="neon-mirage"] #homePanel .homeActions>button:focus-visible{outline-color:rgba(50,255,210,.76)!important;border-color:#32ffd2!important;background:linear-gradient(180deg,#3a1d61,#24103f)!important}
+:root[data-theme="neon-mirage"] #homePanel .homeActions>button:active{border-color:#d1ff98!important;background:linear-gradient(180deg,#4b286e,#291347)!important}
+
+@keyframes mirageDrift{0%{transform:translate3d(-3%,-1%,0) rotate(-5deg) scale(.98)}100%{transform:translate3d(4%,3%,0) rotate(8deg) scale(1.08)}}
+@keyframes mirageFog{0%{transform:translateX(-5%) scale(.94);opacity:.68}100%{transform:translateX(8%) scale(1.08);opacity:1}}
+body.reducedMotion .gameHome::before,body.reducedMotion .heroFog{animation:none!important;transform:none!important}
+
+@media(max-width:520px){.themeCards{grid-template-columns:1fr}.themeCard{min-height:52px}.themeNote{display:none}.musicOption{grid-column:auto}}
+@media(max-width:390px){.themeControl{padding:7px}.themeControlHead>small{font-size:8px}.themeCard{grid-template-columns:40px minmax(0,1fr);padding:6px}.themePreview{height:36px}}
+@media(pointer:coarse){.themeCard{min-height:58px}}

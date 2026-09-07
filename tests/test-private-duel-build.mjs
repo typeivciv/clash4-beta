@@ -15,6 +15,9 @@ for(const required of [
   "endText.textContent='YOU WIN'","endText.textContent='TRY AGAIN'","'Invite New Player'","'KOs · P1–P2'",'function passBuildFinishReplay(viewer)','function passRestartMatch()',
   "parentElement?.parentElement?.querySelector?.(':scope > span')",
   "const ALPHA_TESTER_VERSION='0.16.9'","const EASY_LEARNING_STORAGE_KEY='clash4.easyLearning.v1'","const GAMEPLAY_FLOW_VERSION='0.16.8'","const LEARNER_UX_VERSION='0.16.6'",
+  "const THEME_MUSIC_VERSION='0.17.0'","const THEME_STORAGE_KEY='clash4.theme.v1'","const MUSIC_STORAGE_KEY='clash4.music.v1'",'Classic Fog','Neon Mirage','Electric Lime','Ultraviolet',
+  "control.id='themeControl'",'id="musicToggle"','id="musicVolume"','function themeSet(','function themeMusicStart()','function themeMusicStinger(cue)',
+  ':root[data-theme="neon-mirage"]{','.themeCard.active{','@keyframes mirageDrift','body.reducedMotion .gameHome::before',
   'const EASY_AI_POST_DROP_MS=850','const LEARNING_AI_POST_DROP_MS=1150','function gameplayFlowAiSettleMs()',"scheduleTimer('aiSettle'",
   'const EASY_CAPTURE_HOLD_MS=950','const LEARNING_CAPTURE_HOLD_MS=1350','function gameplayFlowCaptureHoldMs(e)','function gameplayFlowStageCapture(e)',"card.classList.add('capture-staging')","card.classList.add('capture-resolved')",
   "const LEARNER_PRE_REVEAL_MS=700","const LEARNER_EXPLANATION_MS=10000",'const LEARNER_PACING={combat:4600,combatChain:3800,special:4000,lock:3000}',
@@ -40,4 +43,4 @@ assert.deepEqual(duplicates,[],`duplicate DOM ids: ${duplicates.join(', ')}`);
 const scripts=[...alpha.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]);
 assert.ok(scripts.length>=4,'expected dependencies plus generated application script');
 for(let i=0;i<scripts.length;i++){if(!scripts[i].trim())continue;try{new Function(scripts[i])}catch(error){throw new Error(`generated script ${i+1} failed syntax: ${error.message}`)}}
-console.log(`PASS generated Multiplayer Alpha 0.16.9 consistent home-menu interaction package (${ids.length} unique DOM ids, ${scripts.length} script blocks)`);
+console.log(`PASS generated Multiplayer Alpha 0.16.9 theme and music package (${ids.length} unique DOM ids, ${scripts.length} script blocks)`);

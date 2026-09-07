@@ -14,6 +14,7 @@ ALPHA_TESTER=ROOT/'src/js/23-duel-alpha-tester.js'
 EASY_LEARNING=ROOT/'src/js/24-easy-learning.js'
 GAMEPLAY_FLOW=ROOT/'src/js/25-gameplay-flow.js'
 LEARNER_UX=ROOT/'src/js/26-learner-ux.js'
+THEME_MUSIC=ROOT/'src/js/27-theme-music.js'
 TURN_CSS=ROOT/'src/styles/51-duel-turn-alpha.css'
 DUEL_COLORS_CSS=ROOT/'src/styles/52-duel-colors-share.css'
 DUEL_POSTMATCH_CSS=ROOT/'src/styles/53-duel-postmatch.css'
@@ -22,6 +23,7 @@ EASY_LEARNING_CSS=ROOT/'src/styles/55-easy-learning.css'
 GAMEPLAY_FLOW_CSS=ROOT/'src/styles/56-gameplay-flow.css'
 LEARNER_UX_CSS=ROOT/'src/styles/57-learner-ux.css'
 HOME_MENU_CSS=ROOT/'src/styles/58-home-menu-interaction.css'
+THEME_MUSIC_CSS=ROOT/'src/styles/59-theme-music.css'
 VERSION='0.16.9'
 
 runpy.run_path(str(BASE_BUILDER),run_name='__main__')
@@ -46,13 +48,16 @@ if html.count(unsafe_icon)!=1:
     raise SystemExit(f'terminal piece fallback: expected one renderer anchor, found {html.count(unsafe_icon)}')
 html=html.replace(unsafe_icon,safe_icon,1)
 
-# 0.16.9 preserves the staged-capture / learner / networking contracts while making
-# every home-screen action use the same resting, hover/focus, and press language.
+# The theme hint runs before paint so a saved palette does not flash Classic Fog.
+early_theme="""<script>
+(function(){try{var t=localStorage.getItem('clash4.theme.v1');document.documentElement.dataset.theme=t==='neon-mirage'?t:'classic-fog'}catch(e){document.documentElement.dataset.theme='classic-fog'}})();
+</script>
+"""
 peerjs='<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>\n'
-extra_style='<style>\n'+TURN_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DUEL_COLORS_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DUEL_POSTMATCH_CSS.read_text(encoding='utf-8').rstrip()+'\n'+ALPHA_TESTER_CSS.read_text(encoding='utf-8').rstrip()+'\n'+EASY_LEARNING_CSS.read_text(encoding='utf-8').rstrip()+'\n'+GAMEPLAY_FLOW_CSS.read_text(encoding='utf-8').rstrip()+'\n'+LEARNER_UX_CSS.read_text(encoding='utf-8').rstrip()+'\n'+HOME_MENU_CSS.read_text(encoding='utf-8').rstrip()+'\n</style>\n'
+extra_style='<style>\n'+TURN_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DUEL_COLORS_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DUEL_POSTMATCH_CSS.read_text(encoding='utf-8').rstrip()+'\n'+ALPHA_TESTER_CSS.read_text(encoding='utf-8').rstrip()+'\n'+EASY_LEARNING_CSS.read_text(encoding='utf-8').rstrip()+'\n'+GAMEPLAY_FLOW_CSS.read_text(encoding='utf-8').rstrip()+'\n'+LEARNER_UX_CSS.read_text(encoding='utf-8').rstrip()+'\n'+HOME_MENU_CSS.read_text(encoding='utf-8').rstrip()+'\n'+THEME_MUSIC_CSS.read_text(encoding='utf-8').rstrip()+'\n</style>\n'
 if peerjs not in html:
     if html.count('</head>')!=1:raise SystemExit('PeerJS injection: expected one </head>')
-    html=html.replace('</head>',extra_style+peerjs+'</head>',1)
+    html=html.replace('</head>',early_theme+extra_style+peerjs+'</head>',1)
 
 anchor='// AI evaluation and decision policy. Hidden-information rules remain bounded here.'
 if html.count(anchor)!=1:
@@ -65,6 +70,7 @@ tester=ALPHA_TESTER.read_text(encoding='utf-8').rstrip()+'\n\n'
 easy=EASY_LEARNING.read_text(encoding='utf-8').rstrip()+'\n\n'
 flow=GAMEPLAY_FLOW.read_text(encoding='utf-8').rstrip()+'\n\n'
 learner=LEARNER_UX.read_text(encoding='utf-8').rstrip()+'\n\n'
+theme_music=THEME_MUSIC.read_text(encoding='utf-8').rstrip()+'\n\n'
 if 'function directCreateNearby()' in html:raise SystemExit('Nearby PeerJS module already present; refusing duplicate injection')
 if 'DIRECT_ALPHA_TURN_SERVERS' in html:raise SystemExit('Alpha TURN module already present; refusing duplicate injection')
 if 'let duelSeatColors=' in html:raise SystemExit('Duel color/share module already present; refusing duplicate injection')
@@ -73,7 +79,8 @@ if 'ALPHA_TESTER_VERSION' in html:raise SystemExit('Alpha tester module already 
 if 'EASY_LEARNING_STORAGE_KEY' in html:raise SystemExit('Easy learning module already present; refusing duplicate injection')
 if 'GAMEPLAY_FLOW_VERSION' in html:raise SystemExit('Gameplay flow module already present; refusing duplicate injection')
 if 'LEARNER_UX_VERSION' in html:raise SystemExit('Learner UX module already present; refusing duplicate injection')
-html=html.replace(anchor,nearby+turn+colors+postmatch+tester+easy+flow+learner+anchor,1)
+if 'THEME_MUSIC_VERSION' in html:raise SystemExit('Theme/music module already present; refusing duplicate injection')
+html=html.replace(anchor,nearby+turn+colors+postmatch+tester+easy+flow+learner+theme_music+anchor,1)
 OUT.write_text(html,encoding='utf-8')
 TESTER_OUT.write_text(html,encoding='utf-8')
-print(f'Built Multiplayer Alpha {VERSION} with consistent home-menu interaction into {OUT.name} and {TESTER_OUT.name}')
+print(f'Built Multiplayer Alpha {VERSION} with Classic Fog, Neon Mirage, and procedural music into {OUT.name} and {TESTER_OUT.name}')
