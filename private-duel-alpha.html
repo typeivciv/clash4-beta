@@ -3354,7 +3354,7 @@ function duelPostMatchActionControls(){
   }
 }
 function duelPostMatchStatLabels(){
-  const label=statHumanKos?.parentElement?.querySelector?.('span');if(!label)return;
+  const label=statHumanKos?.parentElement?.parentElement?.querySelector?.(':scope > span');if(!label)return;
   label.textContent=matchMode!=='duel'?'KOs · You–AI':passDuel?.active?'KOs · P1–P2':'KOs · You–Opponent'
 }
 function duelBuildFinishReplay(){
