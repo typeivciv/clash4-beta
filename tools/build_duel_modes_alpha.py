@@ -24,7 +24,7 @@ GAMEPLAY_FLOW_CSS=ROOT/'src/styles/56-gameplay-flow.css'
 LEARNER_UX_CSS=ROOT/'src/styles/57-learner-ux.css'
 HOME_MENU_CSS=ROOT/'src/styles/58-home-menu-interaction.css'
 THEME_MUSIC_CSS=ROOT/'src/styles/59-theme-music.css'
-VERSION='0.16.9'
+VERSION='0.17.0'
 
 runpy.run_path(str(BASE_BUILDER),run_name='__main__')
 html=OUT.read_text(encoding='utf-8')
@@ -35,10 +35,22 @@ html=html.replace(f'Duel Modes Alpha {VERSION}',f'Multiplayer Alpha {VERSION}')
 html=html.replace(f'Duel Modes {VERSION}',f'Multiplayer Alpha {VERSION}')
 
 old_home='<button id="homeDuelButton" class="homeDuel" type="button"><span>Duel</span><small>Direct P2P · Pass &amp; Play · Online Room · Alpha</small></button>'
-new_home='<button id="homeDuelButton" class="homeDuel" type="button"><span>Multiplayer</span><small>Invite a player · Pass &amp; Play · Alpha test</small></button>'
+new_home='<button id="homeDuelButton" class="homeDuel" type="button"><span>Multiplayer</span><small>Online · invite a friend · Pass &amp; Play</small></button>'
 if html.count(old_home)!=1:
     raise SystemExit(f'Alpha home package: expected one Duel home button, found {html.count(old_home)}')
 html=html.replace(old_home,new_home,1)
+
+old_play='<button id="homePlayButton" class="homePlay" type="button"><span>Play</span><small>Normal · Default colors · Random start</small></button>'
+new_play='<button id="homePlayButton" class="homePlay" type="button"><span>Solo Play</span><small>Vs AI · quick match</small></button>'
+if html.count(old_play)!=1:
+    raise SystemExit(f'Alpha home package: expected one Play home button, found {html.count(old_play)}')
+html=html.replace(old_play,new_play,1)
+
+old_customize='<button id="homeCustomizeButton" class="homeCustomize" type="button"><span>Customize Match</span><small>Difficulty · first move · colors · tips</small></button>'
+new_customize='<button id="homeCustomizeButton" class="homeCustomize" type="button"><span>Customize</span><small>Difficulty · world theme · player colors · tips</small></button>'
+if html.count(old_customize)!=1:
+    raise SystemExit(f'Alpha home package: expected one Customize home button, found {html.count(old_customize)}')
+html=html.replace(old_customize,new_customize,1)
 
 # Terminal Duel payloads are expected to reveal every identity, but the renderer must
 # never crash if an old/stale projected snapshot still contains a null type.
@@ -48,9 +60,9 @@ if html.count(unsafe_icon)!=1:
     raise SystemExit(f'terminal piece fallback: expected one renderer anchor, found {html.count(unsafe_icon)}')
 html=html.replace(unsafe_icon,safe_icon,1)
 
-# The theme hint runs before paint so a saved palette does not flash Classic Fog.
+# Apply the saved world theme before paint. Legacy theme ids migrate without changing player colors.
 early_theme="""<script>
-(function(){try{var t=localStorage.getItem('clash4.theme.v1');document.documentElement.dataset.theme=t==='neon-mirage'?t:'classic-fog'}catch(e){document.documentElement.dataset.theme='classic-fog'}})();
+(function(){try{var t=localStorage.getItem('clash4.theme.v1')||'neon-forge';var map={'classic-fog':'neon-forge','neon-mirage':'arcane-prism'};t=map[t]||t;var valid=['neon-forge','arcane-prism','frost-command','ember-siege','verdant-cipher'];document.documentElement.dataset.theme=valid.includes(t)?t:'neon-forge'}catch(e){document.documentElement.dataset.theme='neon-forge'}})();
 </script>
 """
 peerjs='<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>\n'
@@ -83,4 +95,4 @@ if 'THEME_MUSIC_VERSION' in html:raise SystemExit('Theme/music module already pr
 html=html.replace(anchor,nearby+turn+colors+postmatch+tester+easy+flow+learner+theme_music+anchor,1)
 OUT.write_text(html,encoding='utf-8')
 TESTER_OUT.write_text(html,encoding='utf-8')
-print(f'Built Multiplayer Alpha {VERSION} with Classic Fog, Neon Mirage, and procedural music into {OUT.name} and {TESTER_OUT.name}')
+print(f'Built Multiplayer Alpha {VERSION} with five independent world themes and procedural music into {OUT.name} and {TESTER_OUT.name}')

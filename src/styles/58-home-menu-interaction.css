@@ -1,58 +1,54 @@
-/* Multiplayer Alpha 0.16.9: home actions behave like menu actions, not preselected settings. */
+/* Multiplayer Alpha 0.17.0: consolidated home menu with Solo Play first. */
+#homePanel .homeActions{display:grid!important;grid-template-columns:1fr!important;gap:9px!important;max-width:430px}
 #homePanel .homeActions>button{
   position:relative;
+  min-height:62px;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:8px;
+  padding:11px 15px!important;
   border:1px solid #394963!important;
+  border-radius:12px!important;
   background:linear-gradient(180deg,#141f31,#101927)!important;
   color:#eef4ff!important;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 6px 18px rgba(0,0,0,.12)!important;
+  text-align:left!important;
   transform:translateY(0) scale(1);
   transition:transform 140ms ease,border-color 140ms ease,background 140ms ease,box-shadow 140ms ease,filter 140ms ease;
   touch-action:manipulation;
   -webkit-tap-highlight-color:transparent;
 }
-#homePanel .homeActions>button span{color:#f1f5fc!important;transition:color 140ms ease}
-#homePanel .homeActions>button small{color:#9eacc0!important;transition:color 140ms ease}
+#homePanel .homeActions>button::after{content:'›';grid-column:2;grid-row:1/3;align-self:center;color:#7f91a9;font-size:24px;line-height:1;transition:color 140ms ease,transform 140ms ease}
+#homePanel .homeActions>button span{grid-column:1;color:#f1f5fc!important;font-size:17px!important;font-weight:900!important;line-height:1.1;transition:color 140ms ease}
+#homePanel .homeActions>button small{grid-column:1;color:#9eacc0!important;font-size:11px!important;line-height:1.2;transition:color 140ms ease}
 
-/* Play is the first action, not an already-selected option. */
-#homePanel .homeActions>.homePlay{
-  border-color:#43536d!important;
-  background:linear-gradient(180deg,#151f31,#101927)!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 6px 18px rgba(0,0,0,.12)!important;
-}
+/* Guided learning remains available inside Solo/Customize instead of taking a fifth main-menu slot. */
+#homePanel .homeActions>.homeLearn{display:none!important}
 
-/* Pointer devices get a clear game-menu hover state. Keyboard focus matches it. */
+/* Solo Play is the primary action because it is the normal first-use path. */
+#homePanel .homeActions>.homePlay{border-color:color-mix(in srgb,var(--world-accent,#74aeff) 64%,#43536d)!important;background:linear-gradient(180deg,color-mix(in srgb,var(--world-panel-2,#1b3150) 86%,var(--world-accent,#74aeff) 14%),var(--world-panel,#101927))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 8px 22px rgba(0,0,0,.16),0 0 20px color-mix(in srgb,var(--world-accent,#74aeff) 8%,transparent)!important}
+#homePanel .homeActions>.homePlay::before{content:'SOLO';position:absolute;right:14px;top:9px;padding:2px 6px;border:1px solid color-mix(in srgb,var(--world-accent,#74aeff) 42%,transparent);border-radius:999px;color:color-mix(in srgb,var(--world-accent,#74aeff) 72%,white 28%);font-size:8px;font-weight:900;letter-spacing:.13em}
+
+/* How to Play stays accessible but visually secondary to the actual play/customization routes. */
+#homePanel .homeActions>.homeSecondary{min-height:48px;grid-template-columns:minmax(0,1fr) auto;background:color-mix(in srgb,var(--world-panel,#101927) 88%,transparent)!important}
+#homePanel .homeActions>.homeSecondary::before{content:'Rules & controls';display:block;grid-column:1;grid-row:2;color:#8d9cb0;font-size:10px}
+
 @media(hover:hover) and (pointer:fine){
   #homePanel .homeActions>button:hover{
     z-index:1;
-    border-color:#76aaf6!important;
-    background:linear-gradient(180deg,#1c3152,#15243d)!important;
-    box-shadow:0 0 0 1px rgba(116,174,255,.18),0 12px 30px rgba(0,0,0,.24),0 0 26px rgba(70,126,213,.14)!important;
-    transform:translateY(-2px) scale(1.01);
+    border-color:var(--world-accent,#76aaf6)!important;
+    background:linear-gradient(180deg,color-mix(in srgb,var(--world-panel-2,#1c3152) 84%,var(--world-accent,#76aaf6) 16%),var(--world-panel,#15243d))!important;
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--world-accent,#74aeff) 18%,transparent),0 12px 30px rgba(0,0,0,.24),0 0 24px color-mix(in srgb,var(--world-accent,#74aeff) 10%,transparent)!important;
+    transform:translateY(-2px) scale(1.008);
   }
   #homePanel .homeActions>button:hover span{color:#fff!important}
-  #homePanel .homeActions>button:hover small{color:#c2d2e8!important}
+  #homePanel .homeActions>button:hover small{color:#c7d5e7!important}
+  #homePanel .homeActions>button:hover::after{color:#fff;transform:translateX(2px)}
 }
-#homePanel .homeActions>button:focus-visible{
-  z-index:2;
-  outline:3px solid rgba(151,195,255,.72)!important;
-  outline-offset:3px!important;
-  border-color:#89b8ff!important;
-  background:linear-gradient(180deg,#1c3152,#15243d)!important;
-  box-shadow:0 0 0 1px rgba(116,174,255,.2),0 12px 30px rgba(0,0,0,.24)!important;
-  transform:translateY(-1px) scale(1.008);
-}
-
-/* Touch/mouse press is the selected/committed feedback for action buttons. */
-#homePanel .homeActions>button:active{
-  border-color:#9ac4ff!important;
-  background:linear-gradient(180deg,#193862,#132c4e)!important;
-  box-shadow:inset 0 3px 9px rgba(0,0,0,.28),0 0 0 2px rgba(116,174,255,.22)!important;
-  transform:translateY(1px) scale(.985)!important;
-  filter:brightness(1.07);
-}
-
-/* Actual persistent choices elsewhere keep their existing selected/active styling. */
+#homePanel .homeActions>button:focus-visible{z-index:2;outline:3px solid color-mix(in srgb,var(--world-accent,#97c3ff) 64%,white 36%)!important;outline-offset:3px!important;border-color:var(--world-accent,#89b8ff)!important;transform:translateY(-1px) scale(1.006)}
+#homePanel .homeActions>button:active{border-color:color-mix(in srgb,var(--world-accent,#9ac4ff) 74%,white 26%)!important;box-shadow:inset 0 3px 9px rgba(0,0,0,.28),0 0 0 2px color-mix(in srgb,var(--world-accent,#74aeff) 22%,transparent)!important;transform:translateY(1px) scale(.988)!important;filter:brightness(1.05)}
 body.reducedMotion #homePanel .homeActions>button{transition:none!important}
-body.reducedMotion #homePanel .homeActions>button:hover,
-body.reducedMotion #homePanel .homeActions>button:focus-visible,
-body.reducedMotion #homePanel .homeActions>button:active{transform:none!important}
+body.reducedMotion #homePanel .homeActions>button:hover,body.reducedMotion #homePanel .homeActions>button:focus-visible,body.reducedMotion #homePanel .homeActions>button:active{transform:none!important}
+
+@media(max-width:720px){#homePanel .homeActions{max-width:none}#homePanel .homeActions>button{min-height:58px;padding:10px 13px!important}#homePanel .homeActions>button span{font-size:16px!important}}

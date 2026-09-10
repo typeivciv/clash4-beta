@@ -37,7 +37,7 @@ assert.ok(!postmatch.includes("endText.textContent='YOU LOSE'"),'loss headline m
 assert.ok(!postmatch.toLowerCase().includes('matchmaking'),'post-match copy must describe invitation play without matchmaking language');
 for(const token of ['text-align:center','@keyframes duel-win-title','@keyframes duel-loss-title','@keyframes duel-win-rays','@keyframes duel-loss-card'])assert.ok(postmatchCss.includes(token),`post-match visual contract missing ${token}`);
 
-assert.ok(tester.includes("const ALPHA_TESTER_VERSION='0.16.9'"),'tester diagnostics must report 0.16.9');
+assert.ok(tester.includes("const ALPHA_TESTER_VERSION='0.17.0'"),'tester diagnostics must report 0.17.0');
 for(const token of ['function alphaTesterInfo()','function alphaConnectionHelp()','function alphaReportProblem()'])assert.ok(tester.includes(token),`tester utility missing ${token}`);
 assert.ok(!tester.includes('location.hash'),'tester diagnostics must never copy the live invite hash');
 for(const token of ['.alphaTesterNotice','.alphaTesterBar','.alphaTesterModal'])assert.ok(testerCss.includes(token),`tester CSS missing ${token}`);
@@ -85,27 +85,32 @@ for(const token of [
 ])assert.ok(learnerCss.includes(token),`learner UX CSS missing ${token}`);
 
 for(const token of [
-  '#homePanel .homeActions>button{',
+  'consolidated home menu with Solo Play first.',
+  '#homePanel .homeActions{',
   '#homePanel .homeActions>.homePlay{',
+  '#homePanel .homeActions>.homeLearn{display:none!important',
   '@media(hover:hover) and (pointer:fine)',
   '#homePanel .homeActions>button:hover{',
   '#homePanel .homeActions>button:focus-visible{',
-  '#homePanel .homeActions>button:active{',
-  'Play is the first action, not an already-selected option.'
+  '#homePanel .homeActions>button:active{'
 ])assert.ok(homeMenuCss.includes(token),`home menu interaction CSS missing ${token}`);
 
 for(const token of [
-  "const THEME_MUSIC_VERSION='0.17.0'","const THEME_STORAGE_KEY='clash4.theme.v1'","const MUSIC_STORAGE_KEY='clash4.music.v1'",
-  "'classic-fog'","'neon-mirage'",'Classic Fog','Neon Mirage','Electric Lime','Ultraviolet',
-  'const applyColorsBeforeThemeMusic=applyColors','colorMode===\'default\'','function themeSet(','function themeCreateUi()',
+  "const THEME_MUSIC_VERSION='0.18.0'","const THEME_STORAGE_KEY='clash4.theme.v1'","const MUSIC_STORAGE_KEY='clash4.music.v1'","const DEFAULT_THEME_ID='neon-forge'",
+  "'neon-forge'","'arcane-prism'","'frost-command'","'ember-siege'","'verdant-cipher'",
+  'Neon Forge','Arcane Prism','Frost Command','Ember Siege','Verdant Cipher',
+  'const applyColorsBeforeThemeMusic=applyColors','function themePlayerColorSummary()','function themeSet(','function themeCreateUi()',
+  'Theme = world.','theme does not change player colors','Every preview uses the same blue/orange sample matchup',
   'function themeMusicCreateUi()','function themeMusicStart()','function themeMusicPulse()','function themeMusicStinger(cue)',
   "document.addEventListener('visibilitychange'",'unlockGameAudio'
 ])assert.ok(themeMusic.includes(token),`theme/music module missing ${token}`);
+for(const forbidden of ['theme.human.hex','theme.ai.hex','theme.human.label','theme.ai.label','Electric Lime','Ultraviolet','fetch(','Spotify','Apple Music','apiKey','access_token'])assert.ok(!themeMusic.includes(forbidden),`theme/player separation or local-music contract broken: ${forbidden}`);
 for(const token of [
-  '.themeControl{','.themeCard.active{','.musicVolumeLabel{',':root[data-theme="neon-mirage"]{',
-  '.heroPiece.player{','.heroPiece.ai{','@keyframes mirageDrift','body.reducedMotion .gameHome::before'
+  '.themeControl{','.themeCard.active{','.musicVolumeLabel{',
+  ':root[data-theme="neon-forge"]{',':root[data-theme="arcane-prism"]{',':root[data-theme="frost-command"]{',':root[data-theme="ember-siege"]{',':root[data-theme="verdant-cipher"]{',
+  '.themePreview i:nth-child(2){background:#2f70e8}', '.themePreview i:nth-child(3){background:#db7522}',
+  ':root[data-theme] .disc.human{',':root[data-theme] .disc.ai{','Keep player ownership visually dominant and consistent in every world.'
 ])assert.ok(themeMusicCss.includes(token),`theme/music CSS missing ${token}`);
-for(const forbidden of ['fetch(','Spotify','Apple Music','apiKey','access_token'])assert.ok(!themeMusic.includes(forbidden),`theme music must stay local and dependency-free: ${forbidden}`);
 
 for(const [name,source] of [['direct',direct],['nearby',nearby],['turn',turn],['colors',colors],['postmatch',postmatch],['tester',tester],['easy',easy],['flow',flow],['learner',learner],['themeMusic',themeMusic],['pass',pass],['router',router]]){
   try{new Function(source)}catch(error){throw new Error(`${name} module syntax failed: ${error.message}`)}
@@ -113,5 +118,6 @@ for(const [name,source] of [['direct',direct],['nearby',nearby],['turn',turn],['
 for(const token of ['passDuelOverlay','passShowHandoff','passDuelMove','replayHistory','passBuildFinishReplay','passRestartMatch'])assert.ok(pass.includes(token),`Pass & Play contract missing ${token}`);
 for(const token of ['if(passDuel.active)','if(directDuel.active)','return duelMove(owner,type,column)'])assert.ok(router.includes(token),`transport router missing ${token}`);
 for(const id of ['duelDirectMode','duelPassMode','duelOnlineMode','duelDirectNearby','duelDirectRefreshInvite','duelDirectRetryConnection','alphaTesterBar'])assert.ok(lobby.includes(`id="${id}"`),`Alpha lobby missing ${id}`);
+for(const token of ['Multiplayer Alpha · 0.17','Play With Someone','Pass &amp; Play','Hosted Room'])assert.ok(lobby.includes(token),`Alpha lobby copy missing ${token}`);
 
-console.log('PASS Multiplayer Alpha 0.16.9: Classic Fog + Neon Mirage + local procedural music + learner/networking contracts');
+console.log('PASS Multiplayer Alpha 0.17.0: five independent world themes + player colors + learner/networking contracts');

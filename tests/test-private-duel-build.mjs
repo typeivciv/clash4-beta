@@ -10,14 +10,22 @@ assert.ok(!publicIndex.includes('id="homeDuelButton"'),'public beta must not exp
 assert.equal(testerAlpha,alpha,'clean multiplayer-alpha.html tester entry must exactly match canonical Alpha build');
 
 for(const required of [
-  'Multiplayer Alpha 0.16.9','<span>Multiplayer</span><small>Invite a player · Pass &amp; Play · Alpha test</small>','Play With Someone','Create Duel','Hosted Room',
+  'Multiplayer Alpha 0.17.0',
+  '<span>Solo Play</span><small>Vs AI · quick match</small>',
+  '<span>Multiplayer</span><small>Online · invite a friend · Pass &amp; Play</small>',
+  '<span>Customize</span><small>Difficulty · world theme · player colors · tips</small>',
+  'Play With Someone','Create Duel','Hosted Room',
   'RTCPeerConnection',"DIRECT_PEER_JOIN_PARAM='c4peer'",'DIRECT_HOST_INVITE_TTL_MS=5*60_000','function directRetryNearbyConnection()',"copyBtn.textContent='Copy Link'","shareBtn.textContent='Share Link'",'DIRECT_ALPHA_TURN_SERVERS',
   "endText.textContent='YOU WIN'","endText.textContent='TRY AGAIN'","'Invite New Player'","'KOs · P1–P2'",'function passBuildFinishReplay(viewer)','function passRestartMatch()',
   "parentElement?.parentElement?.querySelector?.(':scope > span')",
-  "const ALPHA_TESTER_VERSION='0.16.9'","const EASY_LEARNING_STORAGE_KEY='clash4.easyLearning.v1'","const GAMEPLAY_FLOW_VERSION='0.16.8'","const LEARNER_UX_VERSION='0.16.6'",
-  "const THEME_MUSIC_VERSION='0.17.0'","const THEME_STORAGE_KEY='clash4.theme.v1'","const MUSIC_STORAGE_KEY='clash4.music.v1'",'Classic Fog','Neon Mirage','Electric Lime','Ultraviolet',
+  "const ALPHA_TESTER_VERSION='0.17.0'","const EASY_LEARNING_STORAGE_KEY='clash4.easyLearning.v1'","const GAMEPLAY_FLOW_VERSION='0.16.8'","const LEARNER_UX_VERSION='0.16.6'",
+  "const THEME_MUSIC_VERSION='0.18.0'","const THEME_STORAGE_KEY='clash4.theme.v1'","const MUSIC_STORAGE_KEY='clash4.music.v1'",
+  "DEFAULT_THEME_ID='neon-forge'",'Neon Forge','Arcane Prism','Frost Command','Ember Siege','Verdant Cipher',
   "control.id='themeControl'",'id="musicToggle"','id="musicVolume"','function themeSet(','function themeMusicStart()','function themeMusicStinger(cue)',
-  ':root[data-theme="neon-mirage"]{','.themeCard.active{','@keyframes mirageDrift','body.reducedMotion .gameHome::before',
+  'Theme = world.','theme does not change player colors','Every preview uses the same blue/orange sample matchup',
+  ':root[data-theme="neon-forge"]{',':root[data-theme="arcane-prism"]{',':root[data-theme="frost-command"]{',':root[data-theme="ember-siege"]{',':root[data-theme="verdant-cipher"]{',
+  '.themePreview i:nth-child(2){background:#2f70e8}', '.themePreview i:nth-child(3){background:#db7522}',
+  'Keep player ownership visually dominant and consistent in every world.',
   'const EASY_AI_POST_DROP_MS=850','const LEARNING_AI_POST_DROP_MS=1150','function gameplayFlowAiSettleMs()',"scheduleTimer('aiSettle'",
   'const EASY_CAPTURE_HOLD_MS=950','const LEARNING_CAPTURE_HOLD_MS=1350','function gameplayFlowCaptureHoldMs(e)','function gameplayFlowStageCapture(e)',"card.classList.add('capture-staging')","card.classList.add('capture-resolved')",
   "const LEARNER_PRE_REVEAL_MS=700","const LEARNER_EXPLANATION_MS=10000",'const LEARNER_PACING={combat:4600,combatChain:3800,special:4000,lock:3000}',
@@ -27,20 +35,25 @@ for(const required of [
   '.panel.ai .aiRemaining .remainingNumber{min-width:auto!important;font-size:18px!important','.panel.ai #aiTurn{display:none!important',
   '.teachingCombatCard.capture-staging .fighter.loser','.teachingCombatCard.capture-resolved .fighter.loser',"content:'CAPTURED'",
   '#aiColorLabel{display:inline-flex!important','function gameplayFlowBoardCenter()','--c4-board-center-x','#board.easyLearningBoardCue',
-  '#homePanel .homeActions>button{','@media(hover:hover) and (pointer:fine)','button:hover','button:focus-visible','button:active','Play is the first action, not an already-selected option.',
+  'consolidated home menu with Solo Play first.','#homePanel .homeActions>.homeLearn{display:none!important','#homePanel .homeActions>.homePlay{',
+  '@media(hover:hover) and (pointer:fine)','button:hover','button:focus-visible','button:active',
   'function startPassPlay()','function duelRouteMove(owner,type,column)','peerjs@1.5.5/dist/peerjs.min.js','bindPrivateDuelUi();'
 ])assert.ok(alpha.includes(required),`generated Multiplayer Alpha missing: ${required}`);
 
-for(const obsolete of [
-  'Multiplayer Alpha 0.16.4','Multiplayer Alpha 0.16.6</title>','Multiplayer Alpha 0.16.7</title>','Multiplayer Alpha 0.16.8</title>','DIRECT_PEER_TIMEOUT_MS=90_000','DIRECT_RETURN_KEY','directShowReturnLinkLanding','/api/direct/signals','id="duelDirectServerInput"',
+/* Theme audit: environment styling must never overwrite either player's selected ownership color. */
+for(const forbidden of [
+  'theme.human.hex','theme.ai.hex','theme.human.label','theme.ai.label','Electric Lime','Ultraviolet',
+  'Multiplayer Alpha 0.16.4','Multiplayer Alpha 0.16.6</title>','Multiplayer Alpha 0.16.7</title>','Multiplayer Alpha 0.16.8</title>','Multiplayer Alpha 0.16.9</title>',
+  'DIRECT_PEER_TIMEOUT_MS=90_000','DIRECT_RETURN_KEY','directShowReturnLinkLanding','/api/direct/signals','id="duelDirectServerInput"',
   "endText.textContent='YOU LOSE'","b.textContent='New Duel'","b.textContent='Play Someone Else'","title.includes('Scan once to join')",'directNearbyRetryPeerId=hostPeerId;directOpenPanel()',
   "easyLearningPulse('#board .cell[data-column][tabindex=\"0\"]",'>Got it</button>','matchmaking'
-])assert.ok(!alpha.includes(obsolete),`generated Alpha still contains obsolete/broken path: ${obsolete}`);
+])assert.ok(!alpha.includes(forbidden),`generated Alpha still contains obsolete/broken path: ${forbidden}`);
 
+/* The generated client still has one DOM owner per id and every inline script parses. */
 const ids=[...alpha.matchAll(/\sid="([^"]+)"/g)].map(m=>m[1]);
 const duplicates=[...new Set(ids.filter((id,i)=>ids.indexOf(id)!==i))];
 assert.deepEqual(duplicates,[],`duplicate DOM ids: ${duplicates.join(', ')}`);
 const scripts=[...alpha.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]);
 assert.ok(scripts.length>=4,'expected dependencies plus generated application script');
 for(let i=0;i<scripts.length;i++){if(!scripts[i].trim())continue;try{new Function(scripts[i])}catch(error){throw new Error(`generated script ${i+1} failed syntax: ${error.message}`)}}
-console.log(`PASS generated Multiplayer Alpha 0.16.9 theme and music package (${ids.length} unique DOM ids, ${scripts.length} script blocks)`);
+console.log(`PASS generated Multiplayer Alpha 0.17.0 five-theme package (${ids.length} unique DOM ids, ${scripts.length} script blocks)`);
