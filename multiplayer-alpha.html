@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="description" content="Clash 4 mobile beta test build">
-<title>Clash 4 — Fog of War · Multiplayer Alpha 0.16.9</title>
+<title>Clash 4 — Fog of War · Multiplayer Alpha 0.17.0</title>
 
 
 
@@ -596,7 +596,7 @@ html.pass-privacy-active{overflow:hidden}
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
-(function(){try{var t=localStorage.getItem('clash4.theme.v1');document.documentElement.dataset.theme=t==='neon-mirage'?t:'classic-fog'}catch(e){document.documentElement.dataset.theme='classic-fog'}})();
+(function(){try{var t=localStorage.getItem('clash4.theme.v1')||'neon-forge';var map={'classic-fog':'neon-forge','neon-mirage':'arcane-prism'};t=map[t]||t;var valid=['neon-forge','arcane-prism','frost-command','ember-siege','verdant-cipher'];document.documentElement.dataset.theme=valid.includes(t)?t:'neon-forge'}catch(e){document.documentElement.dataset.theme='neon-forge'}})();
 </script>
 <style>
 /* 0.15.4 Alpha relay + one-scan cleanup. */
@@ -941,121 +941,139 @@ body.reducedMotion #board.easyLearningBoardCue{animation:none!important;outline:
   #easyLearningCoach .easyCoachCopy span{-webkit-line-clamp:1}
   .learnerContinueBar span{max-width:150px;line-height:1.2}
 }
-/* Multiplayer Alpha 0.16.9: home actions behave like menu actions, not preselected settings. */
+/* Multiplayer Alpha 0.17.0: consolidated home menu with Solo Play first. */
+#homePanel .homeActions{display:grid!important;grid-template-columns:1fr!important;gap:9px!important;max-width:430px}
 #homePanel .homeActions>button{
   position:relative;
+  min-height:62px;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:8px;
+  padding:11px 15px!important;
   border:1px solid #394963!important;
+  border-radius:12px!important;
   background:linear-gradient(180deg,#141f31,#101927)!important;
   color:#eef4ff!important;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 6px 18px rgba(0,0,0,.12)!important;
+  text-align:left!important;
   transform:translateY(0) scale(1);
   transition:transform 140ms ease,border-color 140ms ease,background 140ms ease,box-shadow 140ms ease,filter 140ms ease;
   touch-action:manipulation;
   -webkit-tap-highlight-color:transparent;
 }
-#homePanel .homeActions>button span{color:#f1f5fc!important;transition:color 140ms ease}
-#homePanel .homeActions>button small{color:#9eacc0!important;transition:color 140ms ease}
+#homePanel .homeActions>button::after{content:'›';grid-column:2;grid-row:1/3;align-self:center;color:#7f91a9;font-size:24px;line-height:1;transition:color 140ms ease,transform 140ms ease}
+#homePanel .homeActions>button span{grid-column:1;color:#f1f5fc!important;font-size:17px!important;font-weight:900!important;line-height:1.1;transition:color 140ms ease}
+#homePanel .homeActions>button small{grid-column:1;color:#9eacc0!important;font-size:11px!important;line-height:1.2;transition:color 140ms ease}
 
-/* Play is the first action, not an already-selected option. */
-#homePanel .homeActions>.homePlay{
-  border-color:#43536d!important;
-  background:linear-gradient(180deg,#151f31,#101927)!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 6px 18px rgba(0,0,0,.12)!important;
-}
+/* Guided learning remains available inside Solo/Customize instead of taking a fifth main-menu slot. */
+#homePanel .homeActions>.homeLearn{display:none!important}
 
-/* Pointer devices get a clear game-menu hover state. Keyboard focus matches it. */
+/* Solo Play is the primary action because it is the normal first-use path. */
+#homePanel .homeActions>.homePlay{border-color:color-mix(in srgb,var(--world-accent,#74aeff) 64%,#43536d)!important;background:linear-gradient(180deg,color-mix(in srgb,var(--world-panel-2,#1b3150) 86%,var(--world-accent,#74aeff) 14%),var(--world-panel,#101927))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 8px 22px rgba(0,0,0,.16),0 0 20px color-mix(in srgb,var(--world-accent,#74aeff) 8%,transparent)!important}
+#homePanel .homeActions>.homePlay::before{content:'SOLO';position:absolute;right:14px;top:9px;padding:2px 6px;border:1px solid color-mix(in srgb,var(--world-accent,#74aeff) 42%,transparent);border-radius:999px;color:color-mix(in srgb,var(--world-accent,#74aeff) 72%,white 28%);font-size:8px;font-weight:900;letter-spacing:.13em}
+
+/* How to Play stays accessible but visually secondary to the actual play/customization routes. */
+#homePanel .homeActions>.homeSecondary{min-height:48px;grid-template-columns:minmax(0,1fr) auto;background:color-mix(in srgb,var(--world-panel,#101927) 88%,transparent)!important}
+#homePanel .homeActions>.homeSecondary::before{content:'Rules & controls';display:block;grid-column:1;grid-row:2;color:#8d9cb0;font-size:10px}
+
 @media(hover:hover) and (pointer:fine){
   #homePanel .homeActions>button:hover{
     z-index:1;
-    border-color:#76aaf6!important;
-    background:linear-gradient(180deg,#1c3152,#15243d)!important;
-    box-shadow:0 0 0 1px rgba(116,174,255,.18),0 12px 30px rgba(0,0,0,.24),0 0 26px rgba(70,126,213,.14)!important;
-    transform:translateY(-2px) scale(1.01);
+    border-color:var(--world-accent,#76aaf6)!important;
+    background:linear-gradient(180deg,color-mix(in srgb,var(--world-panel-2,#1c3152) 84%,var(--world-accent,#76aaf6) 16%),var(--world-panel,#15243d))!important;
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--world-accent,#74aeff) 18%,transparent),0 12px 30px rgba(0,0,0,.24),0 0 24px color-mix(in srgb,var(--world-accent,#74aeff) 10%,transparent)!important;
+    transform:translateY(-2px) scale(1.008);
   }
   #homePanel .homeActions>button:hover span{color:#fff!important}
-  #homePanel .homeActions>button:hover small{color:#c2d2e8!important}
+  #homePanel .homeActions>button:hover small{color:#c7d5e7!important}
+  #homePanel .homeActions>button:hover::after{color:#fff;transform:translateX(2px)}
 }
-#homePanel .homeActions>button:focus-visible{
-  z-index:2;
-  outline:3px solid rgba(151,195,255,.72)!important;
-  outline-offset:3px!important;
-  border-color:#89b8ff!important;
-  background:linear-gradient(180deg,#1c3152,#15243d)!important;
-  box-shadow:0 0 0 1px rgba(116,174,255,.2),0 12px 30px rgba(0,0,0,.24)!important;
-  transform:translateY(-1px) scale(1.008);
-}
-
-/* Touch/mouse press is the selected/committed feedback for action buttons. */
-#homePanel .homeActions>button:active{
-  border-color:#9ac4ff!important;
-  background:linear-gradient(180deg,#193862,#132c4e)!important;
-  box-shadow:inset 0 3px 9px rgba(0,0,0,.28),0 0 0 2px rgba(116,174,255,.22)!important;
-  transform:translateY(1px) scale(.985)!important;
-  filter:brightness(1.07);
-}
-
-/* Actual persistent choices elsewhere keep their existing selected/active styling. */
+#homePanel .homeActions>button:focus-visible{z-index:2;outline:3px solid color-mix(in srgb,var(--world-accent,#97c3ff) 64%,white 36%)!important;outline-offset:3px!important;border-color:var(--world-accent,#89b8ff)!important;transform:translateY(-1px) scale(1.006)}
+#homePanel .homeActions>button:active{border-color:color-mix(in srgb,var(--world-accent,#9ac4ff) 74%,white 26%)!important;box-shadow:inset 0 3px 9px rgba(0,0,0,.28),0 0 0 2px color-mix(in srgb,var(--world-accent,#74aeff) 22%,transparent)!important;transform:translateY(1px) scale(.988)!important;filter:brightness(1.05)}
 body.reducedMotion #homePanel .homeActions>button{transition:none!important}
-body.reducedMotion #homePanel .homeActions>button:hover,
-body.reducedMotion #homePanel .homeActions>button:focus-visible,
-body.reducedMotion #homePanel .homeActions>button:active{transform:none!important}
-/* Multiplayer Alpha 0.17.0: reusable visual themes and a local procedural-music control. */
-.themeControl{display:grid;gap:8px;margin-top:8px;padding:9px;border:1px solid var(--fog-line);border-radius:12px;background:rgba(27,36,64,.74);text-align:left}
+body.reducedMotion #homePanel .homeActions>button:hover,body.reducedMotion #homePanel .homeActions>button:focus-visible,body.reducedMotion #homePanel .homeActions>button:active{transform:none!important}
+
+@media(max-width:720px){#homePanel .homeActions{max-width:none}#homePanel .homeActions>button{min-height:58px;padding:10px 13px!important}#homePanel .homeActions>button span{font-size:16px!important}}
+/* Multiplayer Alpha 0.18.0: five world themes. Player colors are never owned by a theme. */
+.themeControl{display:grid;gap:9px;margin-top:8px;padding:10px;border:1px solid var(--fog-line);border-radius:13px;background:color-mix(in srgb,var(--fog-ink-700) 82%,transparent);text-align:left}
 .themeControlHead{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
-.themeControlHead>span{color:var(--fog-text);font-size:11px;font-weight:850}
+.themeControlHead>span{color:var(--fog-text);font-size:11px;font-weight:900;letter-spacing:.12em}
 .themeControlHead>small{min-width:0;color:var(--fog-text-dim);font-size:9px;text-align:right}
-.themeCards{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-.themeCard{min-width:0;min-height:58px;display:grid;grid-template-columns:45px minmax(0,1fr);align-items:center;gap:8px;padding:7px;border:1px solid rgba(69,84,116,.95);border-radius:10px;background:linear-gradient(145deg,rgba(31,42,72,.82),rgba(19,28,48,.86));color:var(--fog-text);text-align:left;cursor:pointer}
+.themeCards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.themeCard{min-width:0;min-height:60px;display:grid;grid-template-columns:48px minmax(0,1fr);align-items:center;gap:8px;padding:7px;border:1px solid color-mix(in srgb,var(--fog-line) 90%,#fff 10%);border-radius:10px;background:linear-gradient(145deg,color-mix(in srgb,var(--fog-ink-600) 86%,transparent),color-mix(in srgb,var(--fog-ink-800) 92%,transparent));color:var(--fog-text);text-align:left;cursor:pointer;transition:border-color .14s ease,box-shadow .14s ease,transform .14s ease}
 .themeCard>span:last-child{min-width:0;display:grid;gap:3px}.themeCard strong{font-size:10px}.themeCard small{color:var(--fog-text-dim);font-size:8px;line-height:1.3}
-.themeCard.active{border-color:var(--fog-teal);box-shadow:0 0 0 1px color-mix(in srgb,var(--fog-teal) 30%,transparent),inset 0 0 22px color-mix(in srgb,var(--fog-teal) 5%,transparent)}
-.themeCard:focus-visible{outline:3px solid color-mix(in srgb,var(--fog-teal) 58%,white);outline-offset:2px}
-.themePreview{height:40px;display:grid;grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr);gap:3px;padding:5px;border-radius:8px;background:#10192b;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
-.themePreview i{border-radius:50%;background:#070b13;box-shadow:inset 0 1px 2px rgba(0,0,0,.7)}
-.themePreviewClassic i:nth-child(2){background:#2f70e8}.themePreviewClassic i:nth-child(3){background:#db7522}.themePreviewClassic i:nth-child(4){background:#2f70e8}
-.themePreviewMirage{background:linear-gradient(145deg,#32105c,#110622)}.themePreviewMirage i:nth-child(1){background:#a7ff3f}.themePreviewMirage i:nth-child(2){background:#9a5cff}.themePreviewMirage i:nth-child(4){background:#a7ff3f}
-.themeNote{margin:0;color:var(--fog-text-faint);font-size:8.5px;line-height:1.35}
+.themeCard.active{border-color:var(--world-accent);box-shadow:0 0 0 1px color-mix(in srgb,var(--world-accent) 32%,transparent),inset 0 0 20px color-mix(in srgb,var(--world-accent) 5%,transparent)}
+.themeCard:focus-visible{outline:3px solid color-mix(in srgb,var(--world-accent) 58%,white);outline-offset:2px}
+@media(hover:hover) and (pointer:fine){.themeCard:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--world-accent) 70%,white 30%)}}
+.themePreview{height:42px;display:grid;grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr);gap:3px;padding:5px;border-radius:8px;background:#10192b;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.themePreview i{border-radius:50%;background:#080d15;box-shadow:inset 0 1px 2px rgba(0,0,0,.72)}
+/* Every card uses the same sample matchup. Theme changes the world, not ownership colors. */
+.themePreview i:nth-child(2){background:#2f70e8}.themePreview i:nth-child(3){background:#db7522}.themePreview i:nth-child(4){background:#2f70e8}
+.themePreview-neon-forge{background:linear-gradient(145deg,#0b2a43,#07121d);box-shadow:inset 0 0 0 1px #1d8bbb}
+.themePreview-arcane-prism{background:linear-gradient(145deg,#3a2575,#140b2b);box-shadow:inset 0 0 0 1px #7658d6}
+.themePreview-frost-command{background:linear-gradient(145deg,#d5effa,#3d6f8b);box-shadow:inset 0 0 0 1px #a6d8ee}
+.themePreview-ember-siege{background:linear-gradient(145deg,#6a1f10,#190c08);box-shadow:inset 0 0 0 1px #d94d1d}
+.themePreview-verdant-cipher{background:linear-gradient(145deg,#125f3b,#07170f);box-shadow:inset 0 0 0 1px #2e9b61}
+.themeNote{margin:0;color:var(--fog-text-faint);font-size:8.5px;line-height:1.45}.themeNote strong{color:var(--fog-text-dim)}
 .colorModeDots .defaultBlue{background:var(--theme-human,#2f70e8)}.colorModeDots .defaultOrange{background:var(--theme-ai,#db7522)}
+.musicOption{grid-column:1/-1}.musicVolumeLabel{display:flex;align-items:center;gap:8px;margin-top:4px;color:var(--fog-text-dim);font-size:9px}.musicVolumeLabel input{width:min(190px,100%);height:20px;accent-color:var(--world-accent)}
 
-.musicOption{grid-column:1/-1}.musicVolumeLabel{display:flex;align-items:center;gap:8px;margin-top:4px;color:var(--fog-text-dim);font-size:9px}
-.musicVolumeLabel input{width:min(190px,100%);height:20px;accent-color:var(--fog-teal)}
+/* Shared theme contract: the environment owns these variables. Player pieces keep --blue-piece/--orange-piece. */
+:root[data-theme]{--world-accent:#00aeef;--world-accent-soft:#68d5ff;--world-bg:#07131f;--world-panel:#0d1b2a;--world-panel-2:#102338;--world-board:#12304d;--world-hole:#07111d;--world-line:#31506a;--world-glow:rgba(0,174,239,.18)}
+:root[data-theme] body{background:var(--world-bg)}
+:root[data-theme] .app{background:radial-gradient(circle at 50% -12%,var(--world-glow),transparent 38%),linear-gradient(160deg,var(--world-panel-2),var(--world-bg) 68%)}
+:root[data-theme] .board{border-color:var(--world-line);background:linear-gradient(165deg,color-mix(in srgb,var(--world-board) 94%,white 6%),color-mix(in srgb,var(--world-board) 74%,black 26%));box-shadow:0 16px 42px -18px rgba(0,0,0,.78),0 0 24px color-mix(in srgb,var(--world-accent) 8%,transparent),inset 0 1px 0 rgba(255,255,255,.05)}
+:root[data-theme] .cell{background:color-mix(in srgb,var(--world-hole) 92%,black 8%)}
+:root[data-theme] .empty{border-color:color-mix(in srgb,var(--world-line) 72%,black 28%);background:radial-gradient(circle at 46% 42%,color-mix(in srgb,var(--world-hole) 82%,black 18%) 0 56%,color-mix(in srgb,var(--world-board) 44%,black 56%) 58% 67%,var(--world-hole) 69%)}
+:root[data-theme] .panel,:root[data-theme] .fogSideCard{border-color:var(--world-line);background:linear-gradient(180deg,color-mix(in srgb,var(--world-panel) 96%,white 4%),color-mix(in srgb,var(--world-panel) 92%,black 8%))}
+:root[data-theme] .message,:root[data-theme] .lastMoveBox,:root[data-theme] .moveStatus.currentOnly{border-color:color-mix(in srgb,var(--world-line) 78%,black 22%);background:color-mix(in srgb,var(--world-panel) 88%,transparent)}
+:root[data-theme] .card,:root[data-theme] .helpCard,:root[data-theme] .coinCard{border-color:var(--world-line);background:linear-gradient(165deg,color-mix(in srgb,var(--world-panel-2) 94%,white 6%),var(--world-panel))}
+:root[data-theme] .overlay,:root[data-theme] .coinOverlay,:root[data-theme] .helpOverlay{background-color:color-mix(in srgb,var(--world-bg) 86%,transparent)}
+:root[data-theme] .difficultyCard,:root[data-theme] .startMethodOption{border-color:var(--world-line);background:linear-gradient(145deg,color-mix(in srgb,var(--world-panel-2) 90%,transparent),color-mix(in srgb,var(--world-panel) 94%,transparent))}
+:root[data-theme] .difficultyCard.active,:root[data-theme] .startMethodOption.active{border-color:var(--world-accent);box-shadow:0 0 0 1px color-mix(in srgb,var(--world-accent) 25%,transparent),inset 0 0 18px color-mix(in srgb,var(--world-accent) 4%,transparent)}
+:root[data-theme] .setupContinue{border-color:color-mix(in srgb,var(--world-accent) 72%,white 28%);background:linear-gradient(135deg,color-mix(in srgb,var(--world-accent) 78%,black 22%),color-mix(in srgb,var(--world-accent-soft) 68%,black 32%));color:#fff;box-shadow:0 8px 24px color-mix(in srgb,var(--world-accent) 18%,transparent)}
+:root[data-theme] .heroBoard{border-color:var(--world-line);background:linear-gradient(155deg,color-mix(in srgb,var(--world-board) 94%,white 6%),color-mix(in srgb,var(--world-board) 72%,black 28%));box-shadow:0 26px 58px rgba(0,0,0,.52),0 0 30px color-mix(in srgb,var(--world-accent) 9%,transparent),inset 0 1px 0 rgba(255,255,255,.08),inset 0 -14px 26px rgba(0,0,0,.22)}
+:root[data-theme] .heroHole{background:radial-gradient(circle at 45% 42%,var(--world-hole) 0 54%,color-mix(in srgb,var(--world-board) 48%,black 52%) 56% 66%,var(--world-hole) 68%)}
+:root[data-theme] .heroPiece.player{background:radial-gradient(circle at 35% 28%,color-mix(in srgb,var(--blue-piece) 45%,white 55%),var(--blue-piece) 55%,color-mix(in srgb,var(--blue-piece) 62%,black 38%) 100%);color:var(--blue-piece-text,#fff)}
+:root[data-theme] .heroPiece.ai{background:radial-gradient(circle at 35% 28%,color-mix(in srgb,var(--orange-piece) 45%,white 55%),var(--orange-piece) 55%,color-mix(in srgb,var(--orange-piece) 62%,black 38%) 100%);color:var(--orange-piece-text,#fff)}
+:root[data-theme] .heroPiece.hidden{background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.09) 0 2px,transparent 2px 8px),radial-gradient(circle at 35% 28%,color-mix(in srgb,var(--orange-piece) 45%,white 55%),var(--orange-piece) 55%,color-mix(in srgb,var(--orange-piece) 62%,black 38%) 100%)}
+:root[data-theme] .heroFog{background:radial-gradient(ellipse,color-mix(in srgb,var(--world-accent) 16%,transparent),color-mix(in srgb,var(--world-accent-soft) 6%,transparent) 50%,transparent 74%)}
+:root[data-theme] #homePanel .homeActions>button{border-color:var(--world-line)!important;background:linear-gradient(180deg,color-mix(in srgb,var(--world-panel-2) 92%,black 8%),var(--world-panel))!important}
+@media(hover:hover) and (pointer:fine){:root[data-theme] #homePanel .homeActions>button:hover{border-color:var(--world-accent)!important;background:linear-gradient(180deg,color-mix(in srgb,var(--world-panel-2) 86%,var(--world-accent) 14%),var(--world-panel))!important;box-shadow:0 0 0 1px color-mix(in srgb,var(--world-accent) 18%,transparent),0 12px 28px rgba(0,0,0,.25),0 0 20px color-mix(in srgb,var(--world-accent) 10%,transparent)!important}}
+:root[data-theme] #homePanel .homeActions>button:focus-visible{outline-color:color-mix(in srgb,var(--world-accent) 68%,white 32%)!important;border-color:var(--world-accent)!important}
+:root[data-theme] #homePanel .homeActions>button:active{border-color:color-mix(in srgb,var(--world-accent) 72%,white 28%)!important;background:linear-gradient(180deg,color-mix(in srgb,var(--world-panel-2) 72%,var(--world-accent) 28%),var(--world-panel))!important}
 
-/* Neon Mirage changes the atmosphere, not the game-state color contract. */
-:root[data-theme="neon-mirage"]{
-  --bg:#070310;--surface:#170927;--line:#49326d;--muted:#a9a0c4;
-  --fog-ink-900:#070310;--fog-ink-800:#0e061b;--fog-ink-700:#160a28;--fog-ink-600:#21103a;
-  --fog-slate-700:#2b164b;--fog-slate-600:#38205b;--fog-slate-500:#52317b;--fog-line:#55367a;
-  --fog-text:#f6f1ff;--fog-text-dim:#c6badd;--fog-text-faint:#8f82ab;
-  --fog-teal:#32ffd2;--fog-gold:#ffd166;--fog-amber:#ff9f43;--fog-danger:#ff4f86;
-}
-:root[data-theme="neon-mirage"] body{background:#070310}
-:root[data-theme="neon-mirage"] .app{background:radial-gradient(circle at 16% -10%,rgba(120,48,208,.34),transparent 40%),radial-gradient(circle at 90% 110%,rgba(93,255,83,.14),transparent 42%),linear-gradient(160deg,#120720,#070310 64%)}
-:root[data-theme="neon-mirage"] .coinCard.gameIntroCard{border-color:rgba(154,92,255,.6);background:linear-gradient(145deg,rgba(34,12,60,.98),rgba(9,4,19,.99));box-shadow:0 34px 110px rgba(0,0,0,.66),0 0 70px rgba(154,92,255,.11),inset 0 1px 0 rgba(255,255,255,.05)}
-:root[data-theme="neon-mirage"] .gameHome::before{inset:-55%;background:conic-gradient(from 40deg at 50% 50%,rgba(167,255,63,.18),rgba(154,92,255,.24),rgba(255,79,216,.16),rgba(50,255,210,.16),rgba(167,255,63,.18));filter:blur(34px);animation:mirageDrift 18s ease-in-out infinite alternate}
-:root[data-theme="neon-mirage"] .heroBoard{border-color:rgba(154,92,255,.85);background:linear-gradient(155deg,#3e1768 0%,#241044 47%,#0e071c 100%);box-shadow:0 26px 60px rgba(0,0,0,.56),0 0 46px rgba(154,92,255,.18),inset 0 1px 0 rgba(255,255,255,.12),inset 0 -14px 26px rgba(0,0,0,.25)}
-:root[data-theme="neon-mirage"] .heroHole{background:radial-gradient(circle at 45% 42%,#06020c 0 54%,#170827 56% 64%,rgba(167,255,63,.12) 66% 68%,#0c0416 70%)}
-:root[data-theme="neon-mirage"] .heroPiece.player{background:radial-gradient(circle at 35% 28%,#e1ffad,#a7ff3f 53%,#4f9b08 100%);color:#102000}
-:root[data-theme="neon-mirage"] .heroPiece.ai{background:radial-gradient(circle at 35% 28%,#d8c2ff,#9a5cff 53%,#4e1c9c 100%)}
-:root[data-theme="neon-mirage"] .heroPiece.hidden{background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.12) 0 2px,transparent 2px 8px),radial-gradient(circle at 35% 28%,#d8c2ff,#9a5cff 53%,#4e1c9c 100%)}
-:root[data-theme="neon-mirage"] .heroFog{background:radial-gradient(ellipse,rgba(50,255,210,.28),rgba(154,92,255,.14) 48%,transparent 72%);animation:mirageFog 8s ease-in-out infinite alternate}
-:root[data-theme="neon-mirage"] .board{border-color:#623c91;background:linear-gradient(165deg,#321654,#1b0c31 54%,#10071f);box-shadow:0 14px 44px -14px rgba(0,0,0,.82),0 0 38px rgba(154,92,255,.13),inset 0 1px 0 rgba(255,255,255,.06)}
-:root[data-theme="neon-mirage"] .cell{background:#090311}:root[data-theme="neon-mirage"] .empty{border-color:#3d245c;background:#0d0618}
-:root[data-theme="neon-mirage"] .panel,:root[data-theme="neon-mirage"] .fogSideCard{border-color:#4c3170;background:linear-gradient(180deg,rgba(36,17,61,.96),rgba(20,9,37,.97))}
-:root[data-theme="neon-mirage"] .message,:root[data-theme="neon-mirage"] .lastMoveBox,:root[data-theme="neon-mirage"] .moveStatus.currentOnly{border-color:#49316a;background:rgba(20,8,37,.86)}
-:root[data-theme="neon-mirage"] .card,:root[data-theme="neon-mirage"] .helpCard{border-color:#5b3886;background:linear-gradient(165deg,#25103f,#11071f)}
-:root[data-theme="neon-mirage"] .overlay,:root[data-theme="neon-mirage"] .coinOverlay,:root[data-theme="neon-mirage"] .helpOverlay{background-color:rgba(6,2,13,.86)}
-:root[data-theme="neon-mirage"] .themeCard,:root[data-theme="neon-mirage"] .difficultyCard,:root[data-theme="neon-mirage"] .startMethodOption{border-color:#523574;background:linear-gradient(145deg,rgba(53,25,86,.86),rgba(27,12,47,.9))}
-:root[data-theme="neon-mirage"] .themeCard.active,:root[data-theme="neon-mirage"] .difficultyCard.active,:root[data-theme="neon-mirage"] .startMethodOption.active{border-color:#32ffd2;box-shadow:0 0 0 1px rgba(50,255,210,.28),0 0 24px rgba(154,92,255,.14),inset 0 0 22px rgba(50,255,210,.04)}
-:root[data-theme="neon-mirage"] .setupContinue{border-color:rgba(167,255,63,.8);background:linear-gradient(135deg,#6ecb1e,#6740d8);color:#fff;box-shadow:0 8px 26px rgba(103,64,216,.24)}
-:root[data-theme="neon-mirage"] #homePanel .homeActions>button{border-color:#56387b!important;background:linear-gradient(180deg,#2b1648,#180c2c)!important}
-@media(hover:hover) and (pointer:fine){:root[data-theme="neon-mirage"] #homePanel .homeActions>button:hover{border-color:#a7ff3f!important;background:linear-gradient(180deg,#3a1d61,#24103f)!important;box-shadow:0 0 0 1px rgba(167,255,63,.18),0 12px 30px rgba(0,0,0,.3),0 0 28px rgba(154,92,255,.2)!important}}
-:root[data-theme="neon-mirage"] #homePanel .homeActions>button:focus-visible{outline-color:rgba(50,255,210,.76)!important;border-color:#32ffd2!important;background:linear-gradient(180deg,#3a1d61,#24103f)!important}
-:root[data-theme="neon-mirage"] #homePanel .homeActions>button:active{border-color:#d1ff98!important;background:linear-gradient(180deg,#4b286e,#291347)!important}
+/* Neon Forge: cool industrial city. */
+:root[data-theme="neon-forge"]{--bg:#07131f;--surface:#0d1b2a;--line:#31506a;--muted:#9fb6c8;--fog-ink-900:#07131f;--fog-ink-800:#091927;--fog-ink-700:#0d2031;--fog-ink-600:#122a40;--fog-slate-700:#173650;--fog-slate-600:#1e4462;--fog-slate-500:#2d5f82;--fog-line:#315f7c;--fog-text:#eef8ff;--fog-text-dim:#bad0df;--fog-text-faint:#7f9bad;--fog-teal:#00aeef;--fog-gold:#f4c24f;--fog-amber:#e59a3e;--fog-danger:#f15d61;--world-accent:#00aeef;--world-accent-soft:#68d5ff;--world-bg:#07131f;--world-panel:#0d1b2a;--world-panel-2:#102a40;--world-board:#123b5d;--world-hole:#06101a;--world-line:#2f7398;--world-glow:rgba(0,174,239,.16)}
+:root[data-theme="neon-forge"] .app{background:radial-gradient(circle at 50% -18%,rgba(0,174,239,.15),transparent 38%),linear-gradient(160deg,#0d2639,#07131f 70%)}
 
-@keyframes mirageDrift{0%{transform:translate3d(-3%,-1%,0) rotate(-5deg) scale(.98)}100%{transform:translate3d(4%,3%,0) rotate(8deg) scale(1.08)}}
-@keyframes mirageFog{0%{transform:translateX(-5%) scale(.94);opacity:.68}100%{transform:translateX(8%) scale(1.08);opacity:1}}
-body.reducedMotion .gameHome::before,body.reducedMotion .heroFog{animation:none!important;transform:none!important}
+/* Arcane Prism: unmistakably violet/indigo crystal world, not warm red/orange. */
+:root[data-theme="arcane-prism"]{--bg:#0d0918;--surface:#171029;--line:#5b48a1;--muted:#b5aad0;--fog-ink-900:#0d0918;--fog-ink-800:#120c22;--fog-ink-700:#1a1130;--fog-ink-600:#261747;--fog-slate-700:#34215d;--fog-slate-600:#443077;--fog-slate-500:#6550a0;--fog-line:#5b48a1;--fog-text:#f7f3ff;--fog-text-dim:#d1c5e8;--fog-text-faint:#9587b4;--fog-teal:#35d9e6;--fog-gold:#e7d16c;--fog-amber:#bd8cff;--fog-danger:#f06fa4;--world-accent:#8c52ff;--world-accent-soft:#35d9e6;--world-bg:#0d0918;--world-panel:#171029;--world-panel-2:#21143d;--world-board:#2d1b69;--world-hole:#090611;--world-line:#6950b8;--world-glow:rgba(140,82,255,.18)}
+:root[data-theme="arcane-prism"] .app{background:radial-gradient(circle at 18% -10%,rgba(140,82,255,.22),transparent 39%),radial-gradient(circle at 90% 110%,rgba(53,217,230,.08),transparent 43%),linear-gradient(160deg,#1b1036,#0d0918 68%)}
+:root[data-theme="arcane-prism"] .heroFog{background:radial-gradient(ellipse,rgba(140,82,255,.18),rgba(53,217,230,.06) 52%,transparent 74%)}
 
-@media(max-width:520px){.themeCards{grid-template-columns:1fr}.themeCard{min-height:52px}.themeNote{display:none}.musicOption{grid-column:auto}}
+/* Frost Command: desaturated ice and steel, low drama, high clarity. */
+:root[data-theme="frost-command"]{--bg:#07131c;--surface:#102532;--line:#6f9db7;--muted:#bfd4df;--fog-ink-900:#07131c;--fog-ink-800:#0b1d28;--fog-ink-700:#102633;--fog-ink-600:#173545;--fog-slate-700:#21495d;--fog-slate-600:#2f6076;--fog-slate-500:#56829a;--fog-line:#6f9db7;--fog-text:#f4fbff;--fog-text-dim:#d1e3ec;--fog-text-faint:#95b2c1;--fog-teal:#b9e9ff;--fog-gold:#e6d999;--fog-amber:#8dc8e5;--fog-danger:#e37777;--world-accent:#b9e9ff;--world-accent-soft:#6baed6;--world-bg:#07131c;--world-panel:#102532;--world-panel-2:#173746;--world-board:#315f75;--world-hole:#07131b;--world-line:#7dafc8;--world-glow:rgba(185,233,255,.14)}
+:root[data-theme="frost-command"] .app{background:radial-gradient(circle at 50% -15%,rgba(185,233,255,.15),transparent 40%),linear-gradient(160deg,#173746,#07131c 72%)}
+
+/* Ember Siege: charcoal + molten orange, no purple/cyan environmental bleed. */
+:root[data-theme="ember-siege"]{--bg:#140907;--surface:#24100b;--line:#75331f;--muted:#c9a595;--fog-ink-900:#140907;--fog-ink-800:#1b0b08;--fog-ink-700:#25100b;--fog-ink-600:#34160e;--fog-slate-700:#472016;--fog-slate-600:#5a291d;--fog-slate-500:#7a3a26;--fog-line:#75331f;--fog-text:#fff4ed;--fog-text-dim:#e4c1af;--fog-text-faint:#a67764;--fog-teal:#ff8b32;--fog-gold:#ffc247;--fog-amber:#ff6a00;--fog-danger:#ff5d4f;--world-accent:#ff6a00;--world-accent-soft:#ffc247;--world-bg:#140907;--world-panel:#24100b;--world-panel-2:#35150d;--world-board:#4a1b10;--world-hole:#0d0605;--world-line:#8c3b22;--world-glow:rgba(255,106,0,.18)}
+:root[data-theme="ember-siege"] .app{background:radial-gradient(circle at 50% -18%,rgba(255,106,0,.17),transparent 37%),linear-gradient(160deg,#32130c,#140907 70%)}
+
+/* Verdant Cipher: dark botanical-tech green with restrained mint accents. */
+:root[data-theme="verdant-cipher"]{--bg:#06120c;--surface:#0c2117;--line:#2e6f50;--muted:#a5c9b6;--fog-ink-900:#06120c;--fog-ink-800:#091911;--fog-ink-700:#0d2218;--fog-ink-600:#123020;--fog-slate-700:#19442d;--fog-slate-600:#225a3c;--fog-slate-500:#347a55;--fog-line:#2e6f50;--fog-text:#effcf5;--fog-text-dim:#c2dfcf;--fog-text-faint:#82aa94;--fog-teal:#18b66a;--fog-gold:#d2ce6d;--fog-amber:#62cc8d;--fog-danger:#ef6b70;--world-accent:#18b66a;--world-accent-soft:#72d9a0;--world-bg:#06120c;--world-panel:#0c2117;--world-panel-2:#113322;--world-board:#145036;--world-hole:#05100a;--world-line:#347d58;--world-glow:rgba(24,182,106,.16)}
+:root[data-theme="verdant-cipher"] .app{background:radial-gradient(circle at 18% -8%,rgba(24,182,106,.17),transparent 40%),linear-gradient(160deg,#113322,#06120c 70%)}
+
+/* Keep player ownership visually dominant and consistent in every world. */
+:root[data-theme] .disc.human{background:radial-gradient(circle at 34% 26%,color-mix(in srgb,var(--blue-piece) 46%,white 54%),var(--blue-piece) 55%,color-mix(in srgb,var(--blue-piece) 66%,black 34%) 100%);color:var(--blue-piece-text,#fff);border-color:color-mix(in srgb,var(--blue) 62%,white 38%)}
+:root[data-theme] .disc.ai{background:radial-gradient(circle at 34% 26%,color-mix(in srgb,var(--orange-piece) 46%,white 54%),var(--orange-piece) 55%,color-mix(in srgb,var(--orange-piece) 66%,black 34%) 100%);color:var(--orange-piece-text,#fff);border-color:color-mix(in srgb,var(--orange) 62%,white 38%)}
+:root[data-theme] .cell.hover{background:color-mix(in srgb,var(--blue) 10%,var(--world-hole));box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--blue) 72%,transparent)}
+:root[data-theme] .cell.aiIntentColumn{background:color-mix(in srgb,var(--orange) 6%,var(--world-hole));box-shadow:inset 1px 0 0 color-mix(in srgb,var(--orange) 30%,transparent),inset -1px 0 0 color-mix(in srgb,var(--orange) 30%,transparent)}
+
+body.reducedMotion .themeCard{transition:none!important}
+@media(max-width:720px){.themeCards{grid-template-columns:1fr 1fr}.themeCard{min-height:56px}.themeNote{font-size:8px}}
+@media(max-width:520px){.themeCards{grid-template-columns:1fr}.themeCard{min-height:52px}.themeNote{display:block}.musicOption{grid-column:auto}}
 @media(max-width:390px){.themeControl{padding:7px}.themeControlHead>small{font-size:8px}.themeCard{grid-template-columns:40px minmax(0,1fr);padding:6px}.themePreview{height:36px}}
 @media(pointer:coarse){.themeCard{min-height:58px}}
 </style>
@@ -1064,7 +1082,7 @@ body.reducedMotion .gameHome::before,body.reducedMotion .heroFog{animation:none!
 <body>
 <div id="appRoot" class="app">
 <header>
-  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Arcade RC1 · Multiplayer Alpha 0.16.9</div></div>
+  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Arcade RC1 · Multiplayer Alpha 0.17.0</div></div>
   <div id="fogTurnPill" class="fogTurnPill neutral"><span class="fogTurnDot"></span><span id="fogTurnText">Setup</span></div>
   <div class="topActions">
     <div id="matchDifficultyBadge" class="matchDifficultyBadge" title="Difficulty is chosen before the match"><span>AI</span><strong id="matchDifficultyLabel">Normal</strong></div>
@@ -1197,14 +1215,14 @@ body.reducedMotion .gameHome::before,body.reducedMotion .heroFog{animation:none!
       <div><div class="gameWordmark">CLASH<span class="four">4</span></div><div class="gameSubtitle">Fog of War</div></div>
       <div class="homeTagline">Connect Four. Win the Clash.</div>
       <p class="homeLede">Build four in a row while Rock–Paper–Scissors combat, Decoys, and hidden enemy identities turn every column into a tactical gamble.</p>
-      <div class="homeActions"><button id="homePlayButton" class="homePlay" type="button"><span>Play</span><small>Normal · Default colors · Random start</small></button><button id="homeDuelButton" class="homeDuel" type="button"><span>Multiplayer</span><small>Invite a player · Pass &amp; Play · Alpha test</small></button><button id="homeCustomizeButton" class="homeCustomize" type="button"><span>Customize Match</span><small>Difficulty · first move · colors · tips</small></button><button id="homeRulesButton" class="homeSecondary" type="button">How to Play</button></div>
-      <div class="homeMeta"><span>Duel Modes Alpha · 0.16.9</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
+      <div class="homeActions"><button id="homePlayButton" class="homePlay" type="button"><span>Solo Play</span><small>Vs AI · quick match</small></button><button id="homeDuelButton" class="homeDuel" type="button"><span>Multiplayer</span><small>Online · invite a friend · Pass &amp; Play</small></button><button id="homeCustomizeButton" class="homeCustomize" type="button"><span>Customize</span><small>Difficulty · world theme · player colors · tips</small></button><button id="homeRulesButton" class="homeSecondary" type="button">How to Play</button></div>
+      <div class="homeMeta"><span>Duel Modes Alpha · 0.17.0</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
     </div>
     <div class="homeHero" aria-hidden="true"><div class="homeHeroGlow"></div><div class="heroBoard"><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">🪨</span></div><div class="heroHole"><span class="heroPiece ai ">📄</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">✂️</span></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"><span class="heroPiece player ">📄</span></div><div class="heroHole"><span class="heroPiece ai ">🪨</span></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"><span class="heroPiece ai ">✂️</span></div></div><div class="heroFog"></div></div>
   </section>
 
   <section id="duelLobbyPanel" class="introScreen duelLobbyScreen" aria-label="Multiplayer Alpha">
-  <div class="introTopline"><button id="duelBackButton" class="introBack" type="button">← Home</button><span class="introStepLabel">Multiplayer Alpha · 0.16</span></div>
+  <div class="introTopline"><button id="duelBackButton" class="introBack" type="button">← Home</button><span class="introStepLabel">Multiplayer Alpha · 0.17</span></div>
 
   <div class="alphaTesterNotice" role="note">
     <span class="alphaTesterPill">ALPHA TEST</span>
@@ -1303,7 +1321,7 @@ body.reducedMotion .gameHome::before,body.reducedMotion .heroFog{animation:none!
   </div>
 
   <div id="alphaTesterBar" class="alphaTesterBar" aria-label="Alpha tester tools">
-    <span>Multiplayer Alpha · 0.16</span>
+    <span>Multiplayer Alpha · 0.17</span>
     <div><button id="alphaConnectionHelp" type="button">Connection Help</button><button id="alphaCopyTestInfo" type="button">Copy Test Info</button><button id="alphaReportProblem" type="button">Report Problem</button></div>
   </div>
 
@@ -3521,7 +3539,7 @@ document.addEventListener('click',event=>{
 duelPostMatchEnsureVisual();
 
 'use strict';
-const ALPHA_TESTER_VERSION='0.16.9';
+const ALPHA_TESTER_VERSION='0.17.0';
 function alphaTesterEl(id){return document.getElementById(id)}
 function alphaTesterMode(){
   if(typeof matchMode!=='undefined'&&matchMode==='arcade')return'Arcade / Solo';
@@ -4077,105 +4095,114 @@ globalThis.LEARNER_UX_VERSION=LEARNER_UX_VERSION;
 globalThis.LEARNER_EXPLANATION_MS=LEARNER_EXPLANATION_MS;
 
 /* Multiplayer Alpha theme + procedural music layer. Presentation only: no rules or transport ownership. */
-const THEME_MUSIC_VERSION='0.17.0';
+'use strict';
+const THEME_MUSIC_VERSION='0.18.0';
 const THEME_STORAGE_KEY='clash4.theme.v1';
 const MUSIC_STORAGE_KEY='clash4.music.v1';
+const DEFAULT_THEME_ID='neon-forge';
+const LEGACY_THEME_IDS={'classic-fog':'neon-forge','neon-mirage':'arcane-prism'};
 const CLASH4_THEMES={
-  'classic-fog':{
-    id:'classic-fog',name:'Classic Fog',tagline:'Dark tactical',musicProfile:'tactical',
-    human:{id:'blue',label:'Blue',hex:'#2F70E8'},ai:{id:'orange',label:'Orange',hex:'#DB7522'}
-  },
-  'neon-mirage':{
-    id:'neon-mirage',name:'Neon Mirage',tagline:'Psychedelic',musicProfile:'psychedelic',
-    human:{id:'neon-lime',label:'Electric Lime',hex:'#A7FF3F'},ai:{id:'ultraviolet',label:'Ultraviolet',hex:'#9A5CFF'}
-  }
+  'neon-forge':{id:'neon-forge',name:'Neon Forge',tagline:'Clean · modern · competitive',musicProfile:'tactical'},
+  'arcane-prism':{id:'arcane-prism',name:'Arcane Prism',tagline:'Mystery · balance · magic',musicProfile:'arcane'},
+  'frost-command':{id:'frost-command',name:'Frost Command',tagline:'Calm · precise · focused',musicProfile:'frost'},
+  'ember-siege':{id:'ember-siege',name:'Ember Siege',tagline:'Bold · relentless · dominant',musicProfile:'ember'},
+  'verdant-cipher':{id:'verdant-cipher',name:'Verdant Cipher',tagline:'Natural · tactical · unique',musicProfile:'verdant'}
 };
-let activeThemeId='classic-fog';
+let activeThemeId=DEFAULT_THEME_ID;
 let musicEnabled=false;
 let musicVolume=.32;
 let musicTimer=null;
 let musicStep=0;
 let musicBus=null;
 
+function themeNormalizeId(id){
+  const migrated=LEGACY_THEME_IDS[id]||id;
+  return CLASH4_THEMES[migrated]?migrated:DEFAULT_THEME_ID
+}
 function themeStoredId(){
-  try{let id=localStorage.getItem(THEME_STORAGE_KEY);return CLASH4_THEMES[id]?id:'classic-fog'}catch{return'classic-fog'}
+  try{return themeNormalizeId(localStorage.getItem(THEME_STORAGE_KEY)||DEFAULT_THEME_ID)}catch{return DEFAULT_THEME_ID}
 }
 function themeStoredMusic(){
   try{
-    let saved=JSON.parse(localStorage.getItem(MUSIC_STORAGE_KEY)||'{}');
+    const saved=JSON.parse(localStorage.getItem(MUSIC_STORAGE_KEY)||'{}');
     return{enabled:saved.enabled===true,volume:Number.isFinite(Number(saved.volume))?Math.max(0,Math.min(1,Number(saved.volume))):.32}
   }catch{return{enabled:false,volume:.32}}
 }
 function themeSave(){try{localStorage.setItem(THEME_STORAGE_KEY,activeThemeId)}catch{}}
 function themeSaveMusic(){try{localStorage.setItem(MUSIC_STORAGE_KEY,JSON.stringify({enabled:musicEnabled,volume:musicVolume}))}catch{}}
-function themeCurrent(){return CLASH4_THEMES[activeThemeId]||CLASH4_THEMES['classic-fog']}
-function themeDefaultColors(){
-  let theme=themeCurrent();
-  return{human:makeColor(theme.human.hex,theme.human.label,theme.human.id),ai:makeColor(theme.ai.hex,theme.ai.label,theme.ai.id)}
+function themeCurrent(){return CLASH4_THEMES[activeThemeId]||CLASH4_THEMES[DEFAULT_THEME_ID]}
+function themePlayerColorSummary(){
+  const mine=humanColor?.label||'Blue',theirs=aiColor?.label||'Orange';
+  return `${mine} vs ${theirs}`
 }
 
 const syncMatchSetupControlsBeforeThemeMusic=syncMatchSetupControls;
 syncMatchSetupControls=function(){
-  syncMatchSetupControlsBeforeThemeMusic();
-  if(colorMode==='default'){
-    let theme=themeCurrent();
-    matchColorHint.textContent=startMethod==='random'?`${theme.human.label} vs ${theme.ai.label} · fastest start`:`${theme.human.label} vs ${theme.ai.label} · coin decides first move`
-  }
+  const result=syncMatchSetupControlsBeforeThemeMusic();
+  if(colorMode==='default'&&matchColorHint)matchColorHint.textContent=`${themePlayerColorSummary()} · theme does not change player colors`;
+  themeSyncUi();
+  return result
 };
 
+/* Player ownership colors are intentionally independent from the world theme. */
 const applyColorsBeforeThemeMusic=applyColors;
 applyColors=function(){
-  if(colorMode==='default'){
-    let colors=themeDefaultColors();humanColor=colors.human;aiColor=colors.ai
-  }
-  applyColorsBeforeThemeMusic()
+  const result=applyColorsBeforeThemeMusic();
+  themeSyncUi();
+  return result
 };
 
 function themeSyncUi(){
   document.documentElement.dataset.theme=activeThemeId;
   document.body.dataset.theme=activeThemeId;
   document.querySelectorAll('.themeCard[data-theme]').forEach(button=>{
-    let active=button.dataset.theme===activeThemeId;
-    button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active))
+    const active=button.dataset.theme===activeThemeId;
+    button.classList.toggle('active',active);
+    button.setAttribute('aria-pressed',String(active))
   });
-  let theme=themeCurrent(),status=document.getElementById('themeChoiceStatus');
+  const theme=themeCurrent(),status=document.getElementById('themeChoiceStatus');
   if(status)status.textContent=`${theme.name} · ${theme.tagline}`;
-  let homeMeta=document.getElementById('currentThemeMeta');if(homeMeta)homeMeta.textContent=theme.name;
-  let playCopy=homePlayButton?.querySelector('small');if(playCopy)playCopy.textContent=`Normal · ${theme.name} · Random start`;
-  let defaultDots=defaultColorsButton?.querySelector('.colorModeDots');
+  const homeMeta=document.getElementById('currentThemeMeta');if(homeMeta)homeMeta.textContent=theme.name;
+  const playCopy=homePlayButton?.querySelector('small');if(playCopy)playCopy.textContent=`Vs AI · ${theme.name} · ${themePlayerColorSummary()}`;
+  const defaultDots=defaultColorsButton?.querySelector('.colorModeDots');
   if(defaultDots){
-    defaultDots.style.setProperty('--theme-human',theme.human.hex);
-    defaultDots.style.setProperty('--theme-ai',theme.ai.hex)
+    defaultDots.style.setProperty('--theme-human',humanColor?.hex||'#2F70E8');
+    defaultDots.style.setProperty('--theme-ai',aiColor?.hex||'#DB7522')
   }
-  if(colorMode==='default'){
-    matchColorHint.textContent=startMethod==='random'?`${theme.human.label} vs ${theme.ai.label} · fastest start`:`${theme.human.label} vs ${theme.ai.label} · coin decides first move`
-  }
+  if(colorMode==='default'&&matchColorHint)matchColorHint.textContent=`${themePlayerColorSummary()} · theme does not change player colors`
 }
 function themeSet(id,{announce=true}={}){
-  if(!CLASH4_THEMES[id])id='classic-fog';
-  let changed=activeThemeId!==id;activeThemeId=id;themeSave();themeSyncUi();
-  if(colorMode==='default'){let colors=themeDefaultColors();humanColor=colors.human;aiColor=colors.ai;applyColorsBeforeThemeMusic()}
+  id=themeNormalizeId(id);
+  const changed=activeThemeId!==id;
+  activeThemeId=id;
+  themeSave();
+  themeSyncUi();
   if(typeof s!=='undefined'&&s)render();
   if(changed&&musicEnabled){themeMusicRestart();themeMusicStinger('theme')}
-  if(announce&&changed&&typeof msg==='function')msg(`${themeCurrent().name} theme selected. Rules and hidden information are unchanged.`)
+  if(announce&&changed&&typeof msg==='function')msg(`${themeCurrent().name} selected. Your player colors stay unchanged.`)
 }
 
+function themeCardMarkup(theme){
+  return `<button class="themeCard" data-theme="${theme.id}" type="button" aria-pressed="false"><span class="themePreview themePreview-${theme.id}" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span><strong>${theme.name}</strong><small>${theme.tagline}</small></span></button>`
+}
 function themeCreateUi(){
   if(document.getElementById('themeControl'))return;
-  let control=document.createElement('section');control.id='themeControl';control.className='themeControl';
-  control.innerHTML='<div class="themeControlHead"><span>Visual Theme</span><small id="themeChoiceStatus">Classic Fog · Dark tactical</small></div><div class="themeCards" role="group" aria-label="Choose a visual theme"><button class="themeCard" data-theme="classic-fog" type="button" aria-pressed="true"><span class="themePreview themePreviewClassic" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span><strong>Classic Fog</strong><small>Dark tactical · blue + orange</small></span></button><button class="themeCard" data-theme="neon-mirage" type="button" aria-pressed="false"><span class="themePreview themePreviewMirage" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span><strong>Neon Mirage</strong><small>Psychedelic · lime + ultraviolet</small></span></button></div><p class="themeNote">Appearance and music profile only. Every rule, piece, and hidden identity works exactly the same.</p>';
+  const control=document.createElement('section');
+  control.id='themeControl';
+  control.className='themeControl';
+  control.innerHTML=`<div class="themeControlHead"><span>WORLD THEME</span><small id="themeChoiceStatus"></small></div><div class="themeCards" role="group" aria-label="Choose a visual theme">${Object.values(CLASH4_THEMES).map(themeCardMarkup).join('')}</div><p class="themeNote"><strong>Theme = world.</strong> Player 1 and Player 2 colors stay independent. Every preview uses the same blue/orange sample matchup so you can compare worlds fairly.</p>`;
   matchColorControl.parentNode.insertBefore(control,matchColorControl);
   control.querySelectorAll('.themeCard').forEach(button=>button.addEventListener('click',()=>themeSet(button.dataset.theme)));
-  let meta=document.createElement('span');meta.id='currentThemeMeta';
-  document.querySelector('#homePanel .homeMeta')?.appendChild(meta);
+  const meta=document.createElement('span');meta.id='currentThemeMeta';
+  document.querySelector('#homePanel .homeMeta')?.appendChild(meta)
 }
 
 function themeMusicCreateUi(){
   if(document.getElementById('musicToggle'))return;
-  let option=document.createElement('div');option.className='accessibilityOption musicOption';
+  const option=document.createElement('div');option.className='accessibilityOption musicOption';
   option.innerHTML='<div><strong>Music</strong><small>Optional adaptive instrumental loop generated on your device. No download or account needed.</small><label class="musicVolumeLabel" for="musicVolume">Volume <input id="musicVolume" type="range" min="0" max="100" step="1" aria-label="Music volume"></label></div><button id="musicToggle" type="button" aria-pressed="false">Off</button>';
   accessibilityHelp.querySelector('.accessibilityOptions')?.appendChild(option);
-  let toggle=option.querySelector('#musicToggle'),volume=option.querySelector('#musicVolume');
+  const toggle=option.querySelector('#musicToggle'),volume=option.querySelector('#musicVolume');
   volume.value=String(Math.round(musicVolume*100));
   toggle.addEventListener('click',()=>{
     musicEnabled=!musicEnabled;themeSaveMusic();themeMusicSyncUi();
@@ -4186,7 +4213,7 @@ function themeMusicCreateUi(){
   })
 }
 function themeMusicSyncUi(){
-  let toggle=document.getElementById('musicToggle');if(!toggle)return;
+  const toggle=document.getElementById('musicToggle');if(!toggle)return;
   toggle.textContent=musicEnabled?'On':'Off';toggle.setAttribute('aria-pressed',String(musicEnabled));toggle.classList.toggle('active',musicEnabled)
 }
 function themeMusicSetGain(){
@@ -4206,45 +4233,48 @@ function themeMusicPhase(){
   return s?.turn===H?'player':'opponent'
 }
 function themeMusicProfile(){
-  return themeCurrent().musicProfile==='psychedelic'
-    ?{bpm:92,wave:'sine',notes:[164.81,207.65,246.94,311.13,329.63],bass:[82.41,103.83]}
-    :{bpm:76,wave:'triangle',notes:[146.83,174.61,220,261.63],bass:[73.42,87.31]}
+  const profiles={
+    tactical:{bpm:78,wave:'triangle',notes:[146.83,174.61,220,261.63],bass:[73.42,87.31]},
+    arcane:{bpm:92,wave:'sine',notes:[164.81,207.65,246.94,311.13,329.63],bass:[82.41,103.83]},
+    frost:{bpm:68,wave:'sine',notes:[130.81,164.81,196,261.63],bass:[65.41,82.41]},
+    ember:{bpm:104,wave:'sawtooth',notes:[146.83,196,220,293.66],bass:[73.42,98]},
+    verdant:{bpm:84,wave:'triangle',notes:[138.59,174.61,207.65,277.18],bass:[69.3,87.31]}
+  };
+  return profiles[themeCurrent().musicProfile]||profiles.tactical
 }
 function themeMusicVoice(context,frequency,duration,gain,wave='sine',delay=0){
-  let oscillator=context.createOscillator(),amp=context.createGain(),start=context.currentTime+delay;
+  const oscillator=context.createOscillator(),amp=context.createGain(),start=context.currentTime+delay;
   oscillator.type=wave;oscillator.frequency.setValueAtTime(frequency,start);
   amp.gain.setValueAtTime(.0001,start);amp.gain.exponentialRampToValueAtTime(Math.max(.0002,gain),start+.035);amp.gain.exponentialRampToValueAtTime(.0001,start+duration);
   oscillator.connect(amp);amp.connect(themeMusicEnsureBus(context));oscillator.start(start);oscillator.stop(start+duration+.03)
 }
 function themeMusicPulse(){
   if(!musicEnabled||document.hidden)return;
-  let context=unlockGameAudio();if(!context||context.state!=='running')return;
-  let profile=themeMusicProfile(),phase=themeMusicPhase(),beat=60/profile.bpm;
+  const context=unlockGameAudio();if(!context||context.state!=='running')return;
+  const profile=themeMusicProfile(),phase=themeMusicPhase(),beat=60/profile.bpm;
   if(phase==='silent')return;
-  let note=profile.notes[musicStep%profile.notes.length],soft=phase==='menu'?.011:phase==='opponent'?.014:phase==='combat'?.019:.016;
+  const note=profile.notes[musicStep%profile.notes.length],soft=phase==='menu'?.010:phase==='opponent'?.013:phase==='combat'?.018:.015;
   themeMusicVoice(context,note,Math.min(.55,beat*.75),soft,profile.wave);
   if(musicStep%4===0)themeMusicVoice(context,profile.bass[Math.floor(musicStep/4)%profile.bass.length],Math.min(.85,beat*1.4),soft*.72,'sine');
   musicStep++;
-  let multiplier=phase==='result'?1.5:phase==='combat'?.72:1;
+  const multiplier=phase==='result'?1.5:phase==='combat'?.72:1;
   musicTimer=setTimeout(themeMusicPulse,Math.round(beat*1000*multiplier))
 }
 function themeMusicStart(){
   if(!musicEnabled||document.hidden)return;
-  let context=unlockGameAudio();if(!context)return;
-  let begin=()=>{if(!musicEnabled||document.hidden)return;themeMusicEnsureBus(context);themeMusicSetGain();clearTimeout(musicTimer);musicTimer=setTimeout(themeMusicPulse,60)};
+  const context=unlockGameAudio();if(!context)return;
+  const begin=()=>{if(!musicEnabled||document.hidden)return;themeMusicEnsureBus(context);themeMusicSetGain();clearTimeout(musicTimer);musicTimer=setTimeout(themeMusicPulse,60)};
   if(context.state==='running')begin();else context.resume().then(begin).catch(()=>{})
 }
 function themeMusicStop(){clearTimeout(musicTimer);musicTimer=null;themeMusicSetGain()}
 function themeMusicRestart(){musicStep=0;themeMusicStop();if(musicEnabled)setTimeout(themeMusicStart,120)}
 function themeMusicStinger(cue){
   if(!musicEnabled)return;
-  let context=unlockGameAudio();if(!context||context.state!=='running')return;
-  let psychedelic=themeCurrent().musicProfile==='psychedelic';
-  let notes=cue==='win'||cue==='clashmate'?(psychedelic?[329.63,415.3,493.88]:[293.66,349.23,440])
-    :cue==='combat-win'?(psychedelic?[246.94,329.63]:[220,293.66])
-    :cue==='lock'||cue==='fortified'?(psychedelic?[207.65,311.13]:[174.61,261.63])
-    :cue==='theme'?(psychedelic?[164.81,246.94,329.63]:[146.83,220,293.66]):[220];
-  notes.forEach((note,index)=>themeMusicVoice(context,note,.18,.018,psychedelic?'sine':'triangle',index*.075))
+  const context=unlockGameAudio();if(!context||context.state!=='running')return;
+  const profile=themeMusicProfile();
+  const root=profile.notes[0],middle=profile.notes[Math.min(2,profile.notes.length-1)],high=profile.notes[profile.notes.length-1];
+  const notes=cue==='win'||cue==='clashmate'?[middle,high,high*1.25]:cue==='combat-win'?[middle,high]:cue==='lock'||cue==='fortified'?[root,middle]:cue==='theme'?[root,middle,high]:[middle];
+  notes.forEach((note,index)=>themeMusicVoice(context,note,.18,.017,profile.wave,index*.075))
 }
 
 const emitFeedbackBeforeThemeMusic=emitFeedback;
@@ -5210,7 +5240,7 @@ init();
 
 <script>
 (function(){
-  const BUILD='Multiplayer Alpha 0.16.9';
+  const BUILD='Multiplayer Alpha 0.17.0';
   const REPO_ISSUES='https://github.com/typeivciv/clash4-beta/issues/new';
   const $=id=>document.getElementById(id);
   const openBtn=$('betaFeedbackButton'), overlay=$('betaFeedbackOverlay'), closeBtn=$('betaFeedbackClose');
@@ -5246,7 +5276,7 @@ init();
   function issueTitle(){
     const type=$('betaIssueType').value;
     const detail=$('betaWhatHappened').value.trim().replace(/\s+/g,' ').slice(0,72);
-    return `[Multiplayer Alpha 0.16.9][${type}] ${detail||'Tester report'}`;
+    return `[Multiplayer Alpha 0.17.0][${type}] ${detail||'Tester report'}`;
   }
   function githubUrl(){
     const body=[
