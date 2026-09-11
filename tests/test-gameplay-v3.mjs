@@ -5,7 +5,7 @@ const js=fs.readFileSync('src/js/28-gameplay-v3.js','utf8');
 const css=fs.readFileSync('src/styles/61-gameplay-v3.css','utf8');
 
 for(const token of [
-  "const GAMEPLAY_V3_VERSION='0.18.0'",
+  "const GAMEPLAY_V3_VERSION='0.18.1'",
   'const GAMEPLAY_V3_ICONS={',
   "rock:'<svg", "paper:'<svg", "scissors:'<svg", "decoy:'<svg",
   'function gameplayV3EnsureDropRail()',
@@ -16,7 +16,8 @@ for(const token of [
   "button.classList.toggle('c4PrimaryPiece',kind!=='decoy')",
   "button.classList.toggle('c4UtilityPiece',kind==='decoy')",
   'function gameplayV3DecorateBoard()',
-  "document.querySelectorAll('#overlay .fighter b')",
+  'function gameplayV3DecorateEvents()',
+  "document.querySelectorAll('#overlay .specialIcon')",
   'function gameplayV3EnsureHistoryToggle()',
   "toggle.id='c4HistoryToggle'",
   "card.classList.add('c4HistoryCollapsed')",
@@ -35,9 +36,14 @@ for(const token of [
   'grid-template-columns:minmax(0,1fr) 248px',
   '.gameplayV3 #fogRulesCard{display:none}',
   '.c4HistoryCollapsed #fogCombatLog{display:none}',
-  '.gameplayV3 #overlay .fighter b .c4PieceIcon{',
+  '.gameplayV3 #overlay .specialIcon .c4UtilityIcon{',
   'body.reducedMotion .c4DropTarget'
 ])assert.ok(css.includes(token),`Gameplay v3 CSS missing ${token}`);
+
+// Regression guard: Gameplay v3 must never hijack the proven clash-fighter symbols.
+assert.ok(!js.includes("document.querySelectorAll('#overlay .fighter b')"),'Gameplay v3 must not replace clash fighter R/P/S symbols');
+assert.ok(!css.includes('.gameplayV3 #overlay .fighter b{'),'Gameplay v3 must not restyle or zero clash fighter symbols');
+assert.ok(!css.includes('.gameplayV3 #overlay .fighter b .c4PieceIcon{'),'Gameplay v3 must not inject SVG sizing into clash fighters');
 
 assert.ok(!/--blue-piece\s*:/.test(css),'Gameplay v3 must not assign Player 1 ownership color');
 assert.ok(!/--orange-piece\s*:/.test(css),'Gameplay v3 must not assign Player 2 ownership color');
@@ -46,4 +52,4 @@ assert.ok(!js.includes('RTCPeerConnection'),'Gameplay v3 presentation layer must
 assert.ok(!js.includes('ROWS=')&&!js.includes('COLS='),'Gameplay v3 must not redefine board geometry');
 
 try{new Function(js)}catch(error){throw new Error(`Gameplay v3 syntax failed: ${error.message}`)}
-console.log('PASS Gameplay UI v3: board-first hierarchy, 8-column drop rail, player-owned R/P/S icons, quiet Decoy/history');
+console.log('PASS Gameplay UI v3.0.18.1: board-first controls preserved; legacy clash fighter symbols protected');
