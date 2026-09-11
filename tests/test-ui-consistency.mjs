@@ -4,6 +4,7 @@ import fs from 'node:fs';
 const js=fs.readFileSync('src/js/29-ui-consistency.js','utf8');
 const css=fs.readFileSync('src/styles/62-ui-consistency.css','utf8');
 const router=fs.readFileSync('src/js/18-duel-router.js','utf8');
+const builder=fs.readFileSync('tools/build_duel_modes_alpha.py','utf8');
 
 for(const token of [
   "const UI_CONSISTENCY_VERSION='0.18.2'",
@@ -33,6 +34,13 @@ for(const token of [
   '.layout-compact.gameplayV3 .humanZone{padding-bottom:2px}'
 ])assert.ok(css.includes(token),`UI consistency CSS missing ${token}`);
 assert.ok(!css.includes('.choice.c4UtilityPiece{border-style:dashed'),'Decoy must not look like a broken/mismatched control');
+
+for(const token of [
+  "UI_CONSISTENCY=ROOT/'src/js/29-ui-consistency.js'",
+  "UI_CONSISTENCY_CSS=ROOT/'src/styles/62-ui-consistency.css'",
+  "ui_consistency=UI_CONSISTENCY.read_text",
+  "gameplay_v3+ui_consistency+anchor"
+])assert.ok(builder.includes(token),`Alpha builder missing UI consistency package token ${token}`);
 
 // Layout regression: Gameplay v3 added a drop rail, so 1366x768 must reserve more
 // vertical chrome than the old 258px compact calculation did.
