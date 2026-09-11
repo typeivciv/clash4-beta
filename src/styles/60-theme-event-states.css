@@ -1,0 +1,194 @@
+/* Clash 4 world-reactive event presentation.
+   Contract: world theme owns atmosphere; player ownership colors stay independent. */
+
+:root[data-theme]{
+  --event-accent:var(--world-accent,#00aeef);
+  --event-accent-soft:var(--world-accent-soft,#68d5ff);
+  --event-surface:var(--world-panel,#0d1b2a);
+  --event-surface-2:var(--world-panel-2,#102338);
+  --event-border:var(--world-line,#31506a);
+  --event-hole:var(--world-hole,#07111d);
+  --event-glow:var(--world-glow,rgba(0,174,239,.18));
+  --event-danger:#d96a62;
+  --event-shadow:0 26px 72px rgba(0,0,0,.52);
+}
+
+:root[data-theme="neon-forge"]{
+  --event-accent:#27c7e7;--event-accent-soft:#83e7f7;--event-surface:#0b1c2a;--event-surface-2:#102b3d;--event-border:#2d7894;--event-glow:rgba(39,199,231,.20);--event-danger:#df7069;
+}
+:root[data-theme="arcane-prism"]{
+  --event-accent:#865dff;--event-accent-soft:#b9a6ff;--event-surface:#151027;--event-surface-2:#251847;--event-border:#6c54b9;--event-glow:rgba(134,93,255,.22);--event-danger:#cb6f91;
+}
+:root[data-theme="frost-command"]{
+  --event-accent:#9edcff;--event-accent-soft:#e1f5ff;--event-surface:#10232e;--event-surface-2:#193644;--event-border:#73a8c0;--event-glow:rgba(158,220,255,.19);--event-danger:#cf7774;
+}
+:root[data-theme="ember-siege"]{
+  --event-accent:#ff7a24;--event-accent-soft:#ffb172;--event-surface:#21110c;--event-surface-2:#35170d;--event-border:#a64622;--event-glow:rgba(255,122,36,.20);--event-danger:#e45d43;
+}
+:root[data-theme="verdant-cipher"]{
+  --event-accent:#24c98a;--event-accent-soft:#7fe2b8;--event-surface:#0a2018;--event-surface-2:#103528;--event-border:#2c8462;--event-glow:rgba(36,201,138,.19);--event-danger:#d36961;
+}
+
+/* ---------- Clash / special-event shell ---------- */
+.overlay .card.teachingCombatCard,
+.overlay .card.teachingSpecialCard{
+  position:relative;
+  overflow:hidden;
+  isolation:isolate;
+  border-color:var(--event-border)!important;
+  background:
+    radial-gradient(circle at 50% -18%,color-mix(in srgb,var(--event-accent) 16%,transparent),transparent 42%),
+    linear-gradient(165deg,color-mix(in srgb,var(--event-surface-2) 96%,white 4%),var(--event-surface))!important;
+  box-shadow:var(--event-shadow),0 0 34px var(--event-glow),inset 0 1px 0 rgba(255,255,255,.055)!important;
+}
+.overlay .card.teachingCombatCard::before,
+.overlay .card.teachingSpecialCard::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  pointer-events:none;
+  left:8%;right:8%;top:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--event-accent),transparent);
+  opacity:.72;
+}
+.overlay .card.teachingCombatCard::after,
+.overlay .card.teachingSpecialCard::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  pointer-events:none;
+  inset:0;
+  opacity:.12;
+}
+
+/* The fighters always use ownership colors. Theme accents only frame them. */
+.overlay .teachingCombatCard .fighter.human{
+  background:linear-gradient(155deg,color-mix(in srgb,var(--blue-piece) 32%,white 10%),color-mix(in srgb,var(--blue-piece) 34%,transparent))!important;
+  border-color:color-mix(in srgb,var(--blue-piece) 68%,white 18%)!important;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--blue-piece) 24%,transparent),0 10px 24px rgba(0,0,0,.22)!important;
+}
+.overlay .teachingCombatCard .fighter.ai{
+  background:linear-gradient(155deg,color-mix(in srgb,var(--orange-piece) 32%,white 10%),color-mix(in srgb,var(--orange-piece) 34%,transparent))!important;
+  border-color:color-mix(in srgb,var(--orange-piece) 68%,white 18%)!important;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--orange-piece) 24%,transparent),0 10px 24px rgba(0,0,0,.22)!important;
+}
+.overlay .teachingCombatCard .fighter.human b{color:var(--blue-piece-text,#fff)}
+.overlay .teachingCombatCard .fighter.ai b{color:var(--orange-piece-text,#fff)}
+.overlay .teachingCombatCard .versus{color:color-mix(in srgb,var(--event-accent) 72%,white 28%)}
+.overlay .combatEquation,
+.overlay .ruleFormula{
+  border-color:color-mix(in srgb,var(--event-border) 76%,transparent)!important;
+  background:color-mix(in srgb,var(--event-surface) 82%,transparent)!important;
+  color:var(--fog-text)!important;
+}
+.overlay .combatOutcomeTitle{color:#fff;text-shadow:0 0 22px var(--event-glow)}
+.overlay .combatOutcomeDetail{color:var(--fog-text-dim)}
+.overlay .overlayTeachingHint{border-color:color-mix(in srgb,var(--event-border) 72%,transparent);background:color-mix(in srgb,var(--event-surface) 78%,transparent)}
+.overlay .teachingSpecialCard .specialIcon{filter:drop-shadow(0 0 14px var(--event-glow))}
+.overlay .lockEarnedCard .lockTeachingRing{border-color:var(--event-accent)!important;box-shadow:0 0 28px var(--event-glow)!important}
+.overlay .fortifiedCard .specialIcon,
+.overlay .criticalCard .specialIcon,
+.overlay .clashmateCard .specialIcon{color:color-mix(in srgb,var(--event-accent) 74%,white 26%)}
+
+/* One dominant atmospheric accent per world. */
+:root[data-theme="neon-forge"] .teachingCombatCard::after,
+:root[data-theme="neon-forge"] .teachingSpecialCard::after{
+  background:repeating-linear-gradient(90deg,transparent 0 44px,rgba(39,199,231,.22) 44px 45px),linear-gradient(180deg,rgba(39,199,231,.12),transparent 28%);
+}
+:root[data-theme="arcane-prism"] .teachingCombatCard::after,
+:root[data-theme="arcane-prism"] .teachingSpecialCard::after{
+  background:linear-gradient(118deg,transparent 0 30%,rgba(134,93,255,.30) 30.5% 31%,transparent 31.5% 68%,rgba(134,93,255,.18) 68.5% 69%,transparent 69.5%);
+}
+:root[data-theme="frost-command"] .teachingCombatCard::after,
+:root[data-theme="frost-command"] .teachingSpecialCard::after{
+  background:linear-gradient(155deg,rgba(225,245,255,.26),transparent 22%),repeating-linear-gradient(135deg,transparent 0 36px,rgba(158,220,255,.18) 36px 37px);
+}
+:root[data-theme="ember-siege"] .teachingCombatCard::after,
+:root[data-theme="ember-siege"] .teachingSpecialCard::after{
+  background:radial-gradient(circle at 50% 110%,rgba(255,122,36,.42),transparent 44%),linear-gradient(25deg,transparent 0 48%,rgba(255,122,36,.18) 48.5% 49%,transparent 49.5%);
+}
+:root[data-theme="verdant-cipher"] .teachingCombatCard::after,
+:root[data-theme="verdant-cipher"] .teachingSpecialCard::after{
+  background:repeating-linear-gradient(0deg,transparent 0 27px,rgba(36,201,138,.16) 27px 28px),repeating-linear-gradient(90deg,transparent 0 58px,rgba(36,201,138,.13) 58px 59px);
+}
+
+/* ---------- Post-match shell ---------- */
+.end.duel-result-win,
+.end.duel-result-loss,
+.end.duel-result-draw{
+  background:
+    radial-gradient(circle at 50% 31%,color-mix(in srgb,var(--event-accent) 20%,transparent),transparent 36%),
+    linear-gradient(color-mix(in srgb,var(--world-bg) 91%,transparent),color-mix(in srgb,var(--world-bg) 96%,black 4%))!important;
+}
+.end.duel-result-win .postMatchSummaryCard,
+.end.duel-result-loss .postMatchSummaryCard,
+.end.duel-result-draw .postMatchSummaryCard{
+  position:relative;
+  overflow:hidden;
+  border-color:color-mix(in srgb,var(--event-accent) 62%,var(--event-border) 38%)!important;
+  background:
+    radial-gradient(circle at 50% -15%,color-mix(in srgb,var(--event-accent) 14%,transparent),transparent 40%),
+    linear-gradient(165deg,color-mix(in srgb,var(--event-surface-2) 96%,white 4%),var(--event-surface))!important;
+  box-shadow:0 34px 110px rgba(0,0,0,.64),0 0 0 1px color-mix(in srgb,var(--event-accent) 20%,transparent),0 0 56px var(--event-glow),inset 0 1px 0 rgba(255,255,255,.06)!important;
+}
+.end.duel-result-win .postMatchSummaryCard::before,
+.end.duel-result-loss .postMatchSummaryCard::before,
+.end.duel-result-draw .postMatchSummaryCard::before{
+  content:"";position:absolute;left:8%;right:8%;top:0;height:1px;pointer-events:none;background:linear-gradient(90deg,transparent,var(--event-accent),transparent);opacity:.82;
+}
+.end.duel-result-win .postMatchDeckKicker,
+.end.duel-result-loss .postMatchDeckKicker,
+.end.duel-result-draw .postMatchDeckKicker{color:color-mix(in srgb,var(--event-accent) 70%,white 30%)!important}
+.end.duel-result-win .endResult strong,
+.end.duel-result-loss .endResult strong,
+.end.duel-result-draw .endResult strong{color:#fff!important;text-shadow:0 0 8px rgba(255,255,255,.28),0 0 28px var(--event-glow)!important}
+
+/* Result animation frame follows the world; the center token follows ownership. */
+.end .duelResultHalo{border-color:color-mix(in srgb,var(--event-accent) 76%,white 24%)!important;box-shadow:0 0 44px var(--event-glow),inset 0 0 28px color-mix(in srgb,var(--event-accent) 10%,transparent)!important}
+.end .duelResultAnimation::after{border-color:color-mix(in srgb,var(--event-accent) 55%,transparent)!important;box-shadow:0 0 30px var(--event-glow)!important}
+.end .duelResultSparks i{background:color-mix(in srgb,var(--event-accent) 72%,white 28%)!important;box-shadow:0 0 9px var(--event-glow)!important}
+.end.duel-result-win .duelResultAnimation::before{background:repeating-conic-gradient(from 0deg,color-mix(in srgb,var(--event-accent) 54%,transparent) 0 2deg,transparent 2deg 18deg)!important}
+.end.duel-result-win .duelResultCore{
+  background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.48),transparent 29%),var(--blue-piece)!important;
+  color:var(--blue-piece-text,#fff)!important;
+  border-color:color-mix(in srgb,var(--blue-piece) 62%,white 38%)!important;
+  box-shadow:0 0 0 6px rgba(255,255,255,.05),0 14px 38px rgba(0,0,0,.4),0 0 28px color-mix(in srgb,var(--blue-piece) 38%,transparent)!important;
+}
+.end.duel-result-loss .duelResultCore{
+  background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.26),transparent 30%),var(--orange-piece)!important;
+  color:var(--orange-piece-text,#fff)!important;
+  border-color:color-mix(in srgb,var(--orange-piece) 62%,white 38%)!important;
+  box-shadow:0 14px 38px rgba(0,0,0,.5),0 0 26px color-mix(in srgb,var(--orange-piece) 34%,transparent)!important;
+}
+.end.duel-result-draw .duelResultCore{
+  background:linear-gradient(135deg,var(--blue-piece) 0 48%,var(--event-border) 49% 51%,var(--orange-piece) 52% 100%)!important;
+  color:#fff!important;
+}
+
+/* Outcome semantics remain readable without stealing ownership colors. */
+.end.duel-result-loss .postMatchSummaryCard{box-shadow:0 34px 110px rgba(0,0,0,.7),0 0 0 1px color-mix(in srgb,var(--event-danger) 16%,transparent),0 0 46px var(--event-glow),inset 0 1px 0 rgba(255,255,255,.04)!important}
+.end.duel-result-loss .endResult span{color:color-mix(in srgb,var(--fog-text-dim) 84%,var(--event-danger) 16%)}
+
+/* Theme-specific end-card texture, kept deliberately subtle. */
+:root[data-theme="neon-forge"] .end .postMatchSummaryCard{background-image:linear-gradient(165deg,color-mix(in srgb,var(--event-surface-2) 96%,white 4%),var(--event-surface)),repeating-linear-gradient(90deg,transparent 0 62px,rgba(39,199,231,.04) 62px 63px)!important}
+:root[data-theme="arcane-prism"] .end .postMatchSummaryCard{background-image:linear-gradient(165deg,color-mix(in srgb,var(--event-surface-2) 96%,white 4%),var(--event-surface)),linear-gradient(118deg,transparent 0 42%,rgba(134,93,255,.06) 42.5% 43%,transparent 43.5%)!important}
+:root[data-theme="frost-command"] .end .postMatchSummaryCard{background-image:linear-gradient(165deg,color-mix(in srgb,var(--event-surface-2) 96%,white 4%),var(--event-surface)),linear-gradient(155deg,rgba(225,245,255,.06),transparent 26%)!important}
+:root[data-theme="ember-siege"] .end .postMatchSummaryCard{background-image:linear-gradient(165deg,color-mix(in srgb,var(--event-surface-2) 96%,white 4%),var(--event-surface)),radial-gradient(circle at 50% 110%,rgba(255,122,36,.09),transparent 44%)!important}
+:root[data-theme="verdant-cipher"] .end .postMatchSummaryCard{background-image:linear-gradient(165deg,color-mix(in srgb,var(--event-surface-2) 96%,white 4%),var(--event-surface)),repeating-linear-gradient(0deg,transparent 0 31px,rgba(36,201,138,.035) 31px 32px)!important}
+
+/* Buttons on the result screen belong to the world, not either player. */
+.end.duel-result-win button,
+.end.duel-result-loss button,
+.end.duel-result-draw button{border-color:color-mix(in srgb,var(--event-border) 80%,transparent)}
+.end.duel-result-win .deckPrimary,
+.end.duel-result-loss .deckPrimary,
+.end.duel-result-draw .deckPrimary{background:linear-gradient(135deg,color-mix(in srgb,var(--event-accent) 78%,black 22%),color-mix(in srgb,var(--event-accent) 56%,var(--event-surface-2) 44%));border-color:color-mix(in srgb,var(--event-accent) 68%,white 32%);color:#fff;box-shadow:0 8px 24px color-mix(in srgb,var(--event-accent) 16%,transparent)}
+
+body.reducedMotion .overlay .teachingCombatCard::after,
+body.reducedMotion .overlay .teachingSpecialCard::after,
+body.reducedMotion .end .postMatchSummaryCard::before{animation:none!important}
+
+@media(max-width:620px){
+  .overlay .card.teachingCombatCard,.overlay .card.teachingSpecialCard{box-shadow:0 18px 48px rgba(0,0,0,.5),0 0 22px var(--event-glow),inset 0 1px 0 rgba(255,255,255,.05)!important}
+  .end.duel-result-win .postMatchSummaryCard,.end.duel-result-loss .postMatchSummaryCard,.end.duel-result-draw .postMatchSummaryCard{box-shadow:0 24px 70px rgba(0,0,0,.65),0 0 30px var(--event-glow)!important}
+}
