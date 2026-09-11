@@ -110,9 +110,8 @@ function gameplayV3DecorateEvents(){
     const kind=gameplayV3PieceKind(mark.textContent||'');if(kind)mark.innerHTML=gameplayV3Icon(kind)
   }
   for(const mark of document.querySelectorAll('#overlay .specialIcon')){
-    if(mark.dataset.v3Icon==='1')continue;
     const kind=gameplayV3SpecialKind(mark.textContent||'');if(!kind)continue;
-    mark.dataset.v3Icon='1';mark.innerHTML=gameplayV3Icon(kind)
+    mark.innerHTML=gameplayV3Icon(kind)
   }
 }
 
