@@ -1367,6 +1367,54 @@ body.reducedMotion .end .postMatchSummaryCard::before{animation:none!important}
 @media(max-width:350px){.c4DropTarget .c4DropNumber{display:none}.c4DropTarget{grid-template-rows:1fr;min-height:27px}.gameplayV3 .panel.human{grid-template-columns:68px minmax(0,1fr)}}
 
 body.reducedMotion .c4DropTarget,body.reducedMotion .c4DropPiece,body.reducedMotion .gameplayV3 .choice{transition:none!important;transform:none!important}
+/* Multiplayer Alpha 0.18.2 — visual consistency / laptop viewport repair. */
+
+/* Coin toss: remove the harsh white controls/coin that fought the selected world theme. */
+:root[data-theme] .coinTossScreen .coinChoices button{
+  border:1px solid color-mix(in srgb,var(--world-line) 78%,white 22%);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--world-panel-2) 88%,var(--world-accent) 12%),var(--world-panel));
+  color:var(--fog-text);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 8px 18px rgba(0,0,0,.18)
+}
+@media(hover:hover) and (pointer:fine){
+  :root[data-theme] .coinTossScreen .coinChoices button:hover{
+    border-color:color-mix(in srgb,var(--world-accent) 72%,white 28%);
+    background:linear-gradient(180deg,color-mix(in srgb,var(--world-panel-2) 76%,var(--world-accent) 24%),var(--world-panel))
+  }
+}
+:root[data-theme] .coinTossScreen .coinChoices button:focus-visible{outline:3px solid color-mix(in srgb,var(--world-accent) 62%,white 38%);outline-offset:2px}
+:root[data-theme] .coinTossScreen .coin{
+  border-color:color-mix(in srgb,var(--world-accent) 56%,#aebfd1 44%);
+  background:radial-gradient(circle at 34% 28%,color-mix(in srgb,var(--world-accent-soft) 24%,#cbd6e2 76%),color-mix(in srgb,var(--world-panel-2) 44%,#8999aa 56%) 62%,color-mix(in srgb,var(--world-panel) 58%,#536273 42%) 100%);
+  color:var(--fog-text);
+  text-shadow:0 1px 1px rgba(0,0,0,.45)
+}
+
+/* All four piece buttons are equal-size controls. Decoy is secondary by tone, not geometry. */
+.gameplayV3 .panel.human .choices{grid-template-columns:repeat(4,minmax(0,1fr))}
+.gameplayV3 .panel.human .choice.c4UtilityPiece{
+  border-style:solid;
+  border-color:color-mix(in srgb,var(--world-line) 74%,var(--blue-piece) 26%);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--world-panel-2) 92%,var(--blue-piece) 8%),var(--world-panel));
+  color:var(--fog-text-dim)
+}
+.gameplayV3 .panel.human .choice.c4UtilityPiece b{color:color-mix(in srgb,var(--blue-piece-text,#fff) 72%,var(--fog-text-dim) 28%)}
+.gameplayV3 .panel.human .choice.c4UtilityPiece .name{color:var(--fog-text-dim)}
+.gameplayV3 .panel.human .choice.c4UtilityPiece.sel{
+  border-color:color-mix(in srgb,var(--blue-piece) 70%,white 30%);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--blue-piece) 34%,var(--world-panel-2) 66%),color-mix(in srgb,var(--blue-piece) 18%,var(--world-panel) 82%))
+}
+@media(max-width:979px){.gameplayV3 .panel.human .choices{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* Keep the lower command deck inside ordinary 720–900px laptop browser viewports. */
+.layout-compact.gameplayV3 .gameStage{padding-bottom:6px}
+.layout-compact.gameplayV3 .humanZone{padding-bottom:2px}
+.layout-compact.gameplayV3 .panel.human{margin-bottom:2px}
+
+/* Empty history is a quiet state instead of a large blank panel. */
+#fogCombatLogCard.c4HistoryCollapsed{min-height:0}
+
+body.reducedMotion .coinTossScreen .coinChoices button{transition:none!important}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
 </head>
@@ -4735,6 +4783,96 @@ requestAnimationFrame(gameplayV3Enhance);
 globalThis.GAMEPLAY_V3_VERSION=GAMEPLAY_V3_VERSION;
 globalThis.gameplayV3Enhance=gameplayV3Enhance;
 globalThis.gameplayV3Icon=gameplayV3Icon;
+
+// Multiplayer Alpha 0.18.2: state/navigation and viewport consistency fixes.
+const UI_CONSISTENCY_VERSION='0.18.2';
+
+function uiConsistencyResetCoinPrompt(){
+  try{clearTimer('coin')}catch{}
+  try{coin.classList.remove('flipping')}catch{}
+  coinStarter=null;
+  try{coinFace.textContent='?'}catch{}
+  try{coinText.textContent='Pick Heads or Tails'}catch{}
+  try{coinSubtext.textContent='The toss decides the first move.'}catch{}
+  try{setVisible(coinChoices,true)}catch{}
+  try{setVisible(preMatchSetup,true)}catch{}
+  try{setVisible(guideToggle,true)}catch{}
+  try{setVisible(matchColorControl,true)}catch{}
+  try{setVisible(colorChoicePanel,false)}catch{}
+  try{setVisible(coinMainPanel,true)}catch{}
+  try{setVisible(coinWaitingTopline,true)}catch{}
+  try{setVisible(introHelpBar,true)}catch{}
+}
+
+function uiConsistencyAbandonPendingCoin(){
+  try{clearTimer('coin')}catch{}
+  try{resetMatchRuntime(H,{isReady:false})}catch{}
+  uiConsistencyResetCoinPrompt()
+}
+
+const setIntroScreenBeforeUiConsistency=setIntroScreen;
+setIntroScreen=function(next){
+  const leavingCoin=introScreen==='coin'&&next!=='coin'&&!ready;
+  if(leavingCoin)uiConsistencyAbandonPendingCoin();
+  return setIntroScreenBeforeUiConsistency(next)
+};
+
+function uiConsistencyTransportCleanup(){
+  // Home means "abandon this match" in every active mode, not "hide the board".
+  try{if(directDuel?.active)directClosePeer({notify:true})}catch{}
+  try{if(passDuel?.active)passReset()}catch{}
+  try{if(duelSession?.active)duelClearActiveSession()}catch{}
+  try{duelStopPolling()}catch{}
+}
+
+function uiConsistencyResetTransientUi(){
+  try{clearPresentationTimers()}catch{}
+  try{clearAiPlan()}catch{}
+  try{clearTimer('coin')}catch{}
+  try{clearTimer('quickStarter')}catch{}
+  try{overlay.classList.remove('show')}catch{}
+  try{end.classList.remove('show','duel-result-win','duel-result-loss','duel-result-draw','duel-result-enter')}catch{}
+  try{document.getElementById('fogCombatLogCard')?.classList.add('c4HistoryCollapsed')}catch{}
+  try{const t=document.getElementById('c4HistoryToggle');if(t){t.setAttribute('aria-expanded','false');const s=t.querySelector('span');if(s)s.textContent='History'}}catch{}
+  try{hoverCol=null;selected='rock';busy=false;ready=false;dropPresentation=null;activePresentation=null}catch{}
+}
+
+const initBeforeUiConsistency=init;
+init=function(){
+  const leavingActiveMode=matchMode==='duel'||!!globalThis.directDuel?.active||!!globalThis.passDuel?.active||!!globalThis.duelSession?.active;
+  if(leavingActiveMode)uiConsistencyTransportCleanup();
+  const result=initBeforeUiConsistency();
+  uiConsistencyResetTransientUi();
+  try{resetMatchRuntime(H,{isReady:false})}catch{}
+  uiConsistencyResetCoinPrompt();
+  try{setMatchControllerMode('arcade',{owner:H})}catch{}
+  try{setIntroScreenBeforeUiConsistency('home')}catch{}
+  try{render()}catch{}
+  try{queueFit()}catch{}
+  return result
+};
+globalThis.returnHomeAndReset=init;
+
+function uiConsistencyComputeLayoutMetrics(width,height){
+  const w=Math.max(280,Math.round(width)),h=Math.max(320,Math.round(height));
+  const mode=w<620?'mobile':h<960?'compact':'desktop';
+  // Gameplay v3 added a column rail above the board. Reserve that height explicitly,
+  // plus a small bottom safety margin so the command deck cannot fall below the viewport.
+  if(mode==='mobile'){
+    const verticalRoom=Math.max(180,h-242);
+    return{mode,width:w,height:h,boardWidth:Math.max(240,Math.min(w-10,verticalRoom*4/3,560))}
+  }
+  const chrome=mode==='compact'?304:438;
+  const boardHeight=Math.max(170,h-chrome);
+  const horizontalRoom=Math.max(240,w-(mode==='compact'?20:36));
+  return{mode,width:w,height:h,boardWidth:Math.max(240,Math.min(horizontalRoom,boardHeight*4/3,mode==='compact'?760:1120))}
+}
+computeLayoutMetrics=uiConsistencyComputeLayoutMetrics;
+
+requestAnimationFrame(()=>{try{queueFit()}catch{}});
+globalThis.UI_CONSISTENCY_VERSION=UI_CONSISTENCY_VERSION;
+globalThis.uiConsistencyResetCoinPrompt=uiConsistencyResetCoinPrompt;
+globalThis.uiConsistencyComputeLayoutMetrics=uiConsistencyComputeLayoutMetrics;
 
 // AI evaluation and decision policy. Hidden-information rules remain bounded here.
 function projectedScore(board,owner,c){
