@@ -1,6 +1,6 @@
 // Gameplay UI v3: board-first interaction rail, player-owned piece icons, and quiet history.
 'use strict';
-const GAMEPLAY_V3_VERSION='0.18.0';
+const GAMEPLAY_V3_VERSION='0.18.1';
 
 const GAMEPLAY_V3_ICONS={
   rock:'<svg class="c4PieceIcon" viewBox="0 0 48 48" aria-hidden="true"><path d="M9 30 14 16l10-7 11 5 5 12-7 12H17Z"/><path d="m14 16 10 8 11-10M24 24l-7 14M24 24l16 2"/></svg>',
@@ -106,12 +106,15 @@ function gameplayV3DecorateBoard(){
 }
 
 function gameplayV3DecorateEvents(){
-  for(const mark of document.querySelectorAll('#overlay .fighter b')){
-    const kind=gameplayV3PieceKind(mark.textContent||'');if(kind)mark.innerHTML=gameplayV3Icon(kind)
-  }
+  // Clash fighters are deliberately left to the proven combat renderer.
+  // The previous patch's emoji/symbol presentation is part of the combat teaching UX;
+  // Gameplay v3 only decorates special-event glyphs so it cannot erase or restyle R/P/S clashes.
   for(const mark of document.querySelectorAll('#overlay .specialIcon')){
-    const kind=gameplayV3SpecialKind(mark.textContent||'');if(!kind)continue;
-    mark.innerHTML=gameplayV3Icon(kind)
+    const raw=mark.dataset.v3Raw||mark.textContent||'';
+    if(!mark.dataset.v3Raw&&raw)mark.dataset.v3Raw=raw;
+    const kind=gameplayV3SpecialKind(raw);if(!kind)continue;
+    if(mark.dataset.v3IconKind===kind)continue;
+    mark.dataset.v3IconKind=kind;mark.innerHTML=gameplayV3Icon(kind)
   }
 }
 
