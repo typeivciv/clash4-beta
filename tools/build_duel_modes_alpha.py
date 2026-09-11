@@ -24,6 +24,7 @@ GAMEPLAY_FLOW_CSS=ROOT/'src/styles/56-gameplay-flow.css'
 LEARNER_UX_CSS=ROOT/'src/styles/57-learner-ux.css'
 HOME_MENU_CSS=ROOT/'src/styles/58-home-menu-interaction.css'
 THEME_MUSIC_CSS=ROOT/'src/styles/59-theme-music.css'
+THEME_EVENT_CSS=ROOT/'src/styles/60-theme-event-states.css'
 VERSION='0.17.0'
 
 runpy.run_path(str(BASE_BUILDER),run_name='__main__')
@@ -66,7 +67,7 @@ early_theme="""<script>
 </script>
 """
 peerjs='<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>\n'
-extra_style='<style>\n'+TURN_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DUEL_COLORS_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DUEL_POSTMATCH_CSS.read_text(encoding='utf-8').rstrip()+'\n'+ALPHA_TESTER_CSS.read_text(encoding='utf-8').rstrip()+'\n'+EASY_LEARNING_CSS.read_text(encoding='utf-8').rstrip()+'\n'+GAMEPLAY_FLOW_CSS.read_text(encoding='utf-8').rstrip()+'\n'+LEARNER_UX_CSS.read_text(encoding='utf-8').rstrip()+'\n'+HOME_MENU_CSS.read_text(encoding='utf-8').rstrip()+'\n'+THEME_MUSIC_CSS.read_text(encoding='utf-8').rstrip()+'\n</style>\n'
+extra_style='<style>\n'+TURN_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DUEL_COLORS_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DUEL_POSTMATCH_CSS.read_text(encoding='utf-8').rstrip()+'\n'+ALPHA_TESTER_CSS.read_text(encoding='utf-8').rstrip()+'\n'+EASY_LEARNING_CSS.read_text(encoding='utf-8').rstrip()+'\n'+GAMEPLAY_FLOW_CSS.read_text(encoding='utf-8').rstrip()+'\n'+LEARNER_UX_CSS.read_text(encoding='utf-8').rstrip()+'\n'+HOME_MENU_CSS.read_text(encoding='utf-8').rstrip()+'\n'+THEME_MUSIC_CSS.read_text(encoding='utf-8').rstrip()+'\n'+THEME_EVENT_CSS.read_text(encoding='utf-8').rstrip()+'\n</style>\n'
 if peerjs not in html:
     if html.count('</head>')!=1:raise SystemExit('PeerJS injection: expected one </head>')
     html=html.replace('</head>',early_theme+extra_style+peerjs+'</head>',1)
@@ -95,4 +96,4 @@ if 'THEME_MUSIC_VERSION' in html:raise SystemExit('Theme/music module already pr
 html=html.replace(anchor,nearby+turn+colors+postmatch+tester+easy+flow+learner+theme_music+anchor,1)
 OUT.write_text(html,encoding='utf-8')
 TESTER_OUT.write_text(html,encoding='utf-8')
-print(f'Built Multiplayer Alpha {VERSION} with five independent world themes and procedural music into {OUT.name} and {TESTER_OUT.name}')
+print(f'Built Multiplayer Alpha {VERSION} with five independent world themes, world-reactive event states, and procedural music into {OUT.name} and {TESTER_OUT.name}')
