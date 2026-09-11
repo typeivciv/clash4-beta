@@ -70,8 +70,8 @@
 /* ---------- utility icon language ---------- */
 .gameplayV3 .fogNoteIcon{width:28px;height:28px;display:grid;place-items:center;color:var(--world-accent)}
 .gameplayV3 .fogNoteIcon .c4UtilityIcon{width:23px;height:23px}
-.gameplayV3 #overlay .fighter b{display:grid;place-items:center;min-height:62px;font-size:0}
-.gameplayV3 #overlay .fighter b .c4PieceIcon{width:58px;height:58px}
+/* Clash fighter symbols intentionally stay under the established combat renderer.
+   Do not zero their font-size or replace them with Gameplay v3 SVGs. */
 .gameplayV3 #overlay .specialIcon{display:grid;place-items:center}
 .gameplayV3 #overlay .specialIcon .c4UtilityIcon{width:56px;height:56px}
 

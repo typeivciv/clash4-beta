@@ -26,8 +26,11 @@ for(const required of [
   ':root[data-theme="neon-forge"]{',':root[data-theme="arcane-prism"]{',':root[data-theme="frost-command"]{',':root[data-theme="ember-siege"]{',':root[data-theme="verdant-cipher"]{',
   '.themePreview i:nth-child(2){background:#2f70e8}', '.themePreview i:nth-child(3){background:#db7522}',
   'Keep player ownership visually dominant and consistent in every world.',
-  "const GAMEPLAY_V3_VERSION='0.18.0'",'function gameplayV3EnsureDropRail()',"rail.id='c4DropRail'",'function gameplayV3EnhanceInventory()','function gameplayV3DecorateBoard()',"toggle.id='c4HistoryToggle'",
+  "const GAMEPLAY_V3_VERSION='0.18.1'",'function gameplayV3EnsureDropRail()',"rail.id='c4DropRail'",'function gameplayV3EnhanceInventory()','function gameplayV3DecorateBoard()',"toggle.id='c4HistoryToggle'",
   '.c4DropRail{','.gameplayV3 .panel.human .choice.c4PrimaryPiece{','.gameplayV3 .panel.human .choice.c4UtilityPiece{','grid-template-columns:minmax(0,1fr) 248px','.c4HistoryCollapsed #fogCombatLog{display:none}',
+  "const M={rock:['Rock','🪨'],paper:['Paper','📄'],scissors:['Scissors','✂️'],decoy:['Decoy','○']};",
+  'atk.innerHTML=`<span class="combatRole">ATTACKER</span><b>${am[1]}</b><small>${am[0]}</small>`',
+  'def.innerHTML=`<span class="combatRole">DEFENDER</span><b>${dm[1]}</b><small>${dm[0]}</small>`',
   'const EASY_AI_POST_DROP_MS=850','const LEARNING_AI_POST_DROP_MS=1150','function gameplayFlowAiSettleMs()',"scheduleTimer('aiSettle'",
   'const EASY_CAPTURE_HOLD_MS=950','const LEARNING_CAPTURE_HOLD_MS=1350','function gameplayFlowCaptureHoldMs(e)','function gameplayFlowStageCapture(e)',"card.classList.add('capture-staging')","card.classList.add('capture-resolved')",
   "const LEARNER_PRE_REVEAL_MS=700","const LEARNER_EXPLANATION_MS=10000",'const LEARNER_PACING={combat:4600,combatChain:3800,special:4000,lock:3000}',
@@ -48,7 +51,8 @@ for(const forbidden of [
   'Multiplayer Alpha 0.16.4','Multiplayer Alpha 0.16.6</title>','Multiplayer Alpha 0.16.7</title>','Multiplayer Alpha 0.16.8</title>','Multiplayer Alpha 0.16.9</title>',
   'DIRECT_PEER_TIMEOUT_MS=90_000','DIRECT_RETURN_KEY','directShowReturnLinkLanding','/api/direct/signals','id="duelDirectServerInput"',
   "endText.textContent='YOU LOSE'","b.textContent='New Duel'","b.textContent='Play Someone Else'","title.includes('Scan once to join')",'directNearbyRetryPeerId=hostPeerId;directOpenPanel()',
-  "easyLearningPulse('#board .cell[data-column][tabindex=\"0\"]",'>Got it</button>','matchmaking'
+  "easyLearningPulse('#board .cell[data-column][tabindex=\"0\"]",'>Got it</button>','matchmaking',
+  "document.querySelectorAll('#overlay .fighter b')",'.gameplayV3 #overlay .fighter b{','.gameplayV3 #overlay .fighter b .c4PieceIcon{'
 ])assert.ok(!alpha.includes(forbidden),`generated Alpha still contains obsolete/broken path: ${forbidden}`);
 
 /* Gameplay v3 must reference ownership variables but never redefine them. */
@@ -64,4 +68,4 @@ assert.deepEqual(duplicates,[],`duplicate DOM ids: ${duplicates.join(', ')}`);
 const scripts=[...alpha.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]);
 assert.ok(scripts.length>=4,'expected dependencies plus generated application script');
 for(let i=0;i<scripts.length;i++){if(!scripts[i].trim())continue;try{new Function(scripts[i])}catch(error){throw new Error(`generated script ${i+1} failed syntax: ${error.message}`)}}
-console.log(`PASS generated Multiplayer Alpha 0.17.0 Gameplay UI v3 package (${ids.length} unique DOM ids, ${scripts.length} script blocks)`);
+console.log(`PASS generated Multiplayer Alpha 0.17.0 Gameplay UI v3.0.18.1 package (${ids.length} unique DOM ids, ${scripts.length} script blocks; clash symbols preserved)`);
