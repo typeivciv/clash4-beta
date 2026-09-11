@@ -22,6 +22,7 @@ on:
       - 'src/js/25-gameplay-flow.js'
       - 'src/js/26-learner-ux.js'
       - 'src/js/27-theme-music.js'
+      - 'src/js/28-gameplay-v3.js'
       - 'src/styles/50-private-duel.css'
       - 'src/styles/51-duel-turn-alpha.css'
       - 'src/styles/52-duel-colors-share.css'
@@ -33,12 +34,14 @@ on:
       - 'src/styles/58-home-menu-interaction.css'
       - 'src/styles/59-theme-music.css'
       - 'src/styles/60-theme-event-states.css'
+      - 'src/styles/61-gameplay-v3.css'
       - 'src/ui/private-duel-lobby.html'
       - 'tools/build_private_duel_alpha.py'
       - 'tools/build_duel_modes_alpha.py'
       - 'tests/test-duel-*.mjs'
       - 'tests/test-direct-*.mjs'
       - 'tests/test-gameplay-flow.mjs'
+      - 'tests/test-gameplay-v3.mjs'
       - 'tests/test-private-duel-build.mjs'
       - '.github/workflows/duel-alpha-ci.yml'
   pull_request:
@@ -61,6 +64,7 @@ on:
       - 'src/js/25-gameplay-flow.js'
       - 'src/js/26-learner-ux.js'
       - 'src/js/27-theme-music.js'
+      - 'src/js/28-gameplay-v3.js'
       - 'src/styles/50-private-duel.css'
       - 'src/styles/51-duel-turn-alpha.css'
       - 'src/styles/52-duel-colors-share.css'
@@ -72,12 +76,14 @@ on:
       - 'src/styles/58-home-menu-interaction.css'
       - 'src/styles/59-theme-music.css'
       - 'src/styles/60-theme-event-states.css'
+      - 'src/styles/61-gameplay-v3.css'
       - 'src/ui/private-duel-lobby.html'
       - 'tools/build_private_duel_alpha.py'
       - 'tools/build_duel_modes_alpha.py'
       - 'tests/test-duel-*.mjs'
       - 'tests/test-direct-*.mjs'
       - 'tests/test-gameplay-flow.mjs'
+      - 'tests/test-gameplay-v3.mjs'
       - 'tests/test-private-duel-build.mjs'
       - '.github/workflows/duel-alpha-ci.yml'
 
@@ -114,8 +120,10 @@ jobs:
           node --check src/js/25-gameplay-flow.js
           node --check src/js/26-learner-ux.js
           node --check src/js/27-theme-music.js
+          node --check src/js/28-gameplay-v3.js
           node --check tests/test-direct-duel-soak.mjs
           node --check tests/test-gameplay-flow.mjs
+          node --check tests/test-gameplay-v3.mjs
           node --check tests/test-duel-theme-events.mjs
           python3 -m py_compile tools/build_private_duel_alpha.py tools/build_duel_modes_alpha.py
       - name: Client ordering contract
@@ -130,6 +138,8 @@ jobs:
         run: node tests/test-direct-duel-soak.mjs
       - name: Gameplay pacing and visual-flow contract
         run: node tests/test-gameplay-flow.mjs
+      - name: Gameplay UI v3 presentation contract
+        run: node tests/test-gameplay-v3.mjs
       - name: Multiplayer Alpha packaging and learner UX contracts
         run: node tests/test-duel-mode-contract.mjs
       - name: World-reactive clash and result contract
@@ -145,7 +155,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add private-duel-alpha.html multiplayer-alpha.html
-            git commit -m "Build Multiplayer Alpha 0.17.0 five-theme UI pass"
+            git commit -m "Build Multiplayer Alpha 0.17.0 Gameplay UI v3"
             git pull --rebase origin main
             git push
           else
