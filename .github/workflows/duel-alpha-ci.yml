@@ -32,6 +32,7 @@ on:
       - 'src/styles/57-learner-ux.css'
       - 'src/styles/58-home-menu-interaction.css'
       - 'src/styles/59-theme-music.css'
+      - 'src/styles/60-theme-event-states.css'
       - 'src/ui/private-duel-lobby.html'
       - 'tools/build_private_duel_alpha.py'
       - 'tools/build_duel_modes_alpha.py'
@@ -70,6 +71,7 @@ on:
       - 'src/styles/57-learner-ux.css'
       - 'src/styles/58-home-menu-interaction.css'
       - 'src/styles/59-theme-music.css'
+      - 'src/styles/60-theme-event-states.css'
       - 'src/ui/private-duel-lobby.html'
       - 'tools/build_private_duel_alpha.py'
       - 'tools/build_duel_modes_alpha.py'
@@ -114,6 +116,7 @@ jobs:
           node --check src/js/27-theme-music.js
           node --check tests/test-direct-duel-soak.mjs
           node --check tests/test-gameplay-flow.mjs
+          node --check tests/test-duel-theme-events.mjs
           python3 -m py_compile tools/build_private_duel_alpha.py tools/build_duel_modes_alpha.py
       - name: Client ordering contract
         run: node tests/test-duel-client-contract.mjs
@@ -129,6 +132,8 @@ jobs:
         run: node tests/test-gameplay-flow.mjs
       - name: Multiplayer Alpha packaging and learner UX contracts
         run: node tests/test-duel-mode-contract.mjs
+      - name: World-reactive clash and result contract
+        run: node tests/test-duel-theme-events.mjs
       - name: Build Multiplayer Alpha client
         run: python3 tools/build_duel_modes_alpha.py
       - name: Generated client contract
@@ -145,4 +150,3 @@ jobs:
             git push
           else
             echo "Staging clients already match canonical sources."
-          fi
