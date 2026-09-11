@@ -124,6 +124,7 @@ jobs:
           node --check tests/test-direct-duel-soak.mjs
           node --check tests/test-gameplay-flow.mjs
           node --check tests/test-gameplay-v3.mjs
+          node --check tests/test-duel-clash-presentation.mjs
           node --check tests/test-duel-theme-events.mjs
           python3 -m py_compile tools/build_private_duel_alpha.py tools/build_duel_modes_alpha.py
       - name: Client ordering contract
@@ -140,6 +141,8 @@ jobs:
         run: node tests/test-gameplay-flow.mjs
       - name: Gameplay UI v3 presentation contract
         run: node tests/test-gameplay-v3.mjs
+      - name: Clash symbol and combat presentation regression
+        run: node tests/test-duel-clash-presentation.mjs
       - name: Multiplayer Alpha packaging and learner UX contracts
         run: node tests/test-duel-mode-contract.mjs
       - name: World-reactive clash and result contract
