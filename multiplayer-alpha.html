@@ -1270,6 +1270,103 @@ body.reducedMotion .end .postMatchSummaryCard::before{animation:none!important}
   .overlay .card.teachingCombatCard,.overlay .card.teachingSpecialCard{box-shadow:0 18px 48px rgba(0,0,0,.5),0 0 22px var(--event-glow),inset 0 1px 0 rgba(255,255,255,.05)!important}
   .end.duel-result-win .postMatchSummaryCard,.end.duel-result-loss .postMatchSummaryCard,.end.duel-result-draw .postMatchSummaryCard{box-shadow:0 24px 70px rgba(0,0,0,.65),0 0 30px var(--event-glow)!important}
 }
+/* Gameplay UI v3 — board first, player-owned primary actions, quiet utilities. */
+.gameplayV3 .c4PieceIcon,.gameplayV3 .c4UtilityIcon{width:1em;height:1em;display:block;fill:none;stroke:currentColor;stroke-width:2.7;stroke-linecap:round;stroke-linejoin:round}
+.gameplayV3 .c4PieceIcon{stroke-width:2.45}
+
+/* ---------- drop rail / Connect-4 interaction cue ---------- */
+.gameplayV3 .boardSection{grid-template-rows:auto auto auto minmax(0,1fr) auto auto;gap:6px}
+.c4DropRail{width:min(100%,var(--board-width,920px));display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:clamp(2px,.45vmin,6px);padding:0 clamp(4px,.65vmin,8px);align-items:end;z-index:4}
+.c4DropTarget{position:relative;min-width:0;min-height:42px;border:1px solid transparent;border-radius:11px;background:transparent;color:var(--fog-text-faint,#8fa0b8);display:grid;grid-template-rows:13px 24px;place-items:center;padding:2px;cursor:pointer;transition:background .14s ease,border-color .14s ease,transform .14s ease,opacity .14s ease}
+.c4DropTarget .c4DropNumber{font-size:8px;line-height:1;font-weight:950;letter-spacing:.06em;font-variant-numeric:tabular-nums}
+.c4DropTarget .c4DropPiece{width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:color-mix(in srgb,var(--blue-piece) 12%,transparent);color:color-mix(in srgb,var(--blue-piece-text,#fff) 78%,var(--blue-piece) 22%);opacity:.28;transform:translateY(1px) scale(.88);transition:opacity .14s ease,transform .14s ease,background .14s ease,box-shadow .14s ease}
+.c4DropTarget .c4DropPiece .c4PieceIcon{width:16px;height:16px}
+.c4DropTarget.active,.c4DropTarget:focus-visible{border-color:color-mix(in srgb,var(--blue-piece) 50%,var(--world-line) 50%);background:color-mix(in srgb,var(--blue-piece) 7%,var(--world-panel) 93%);color:var(--fog-text)}
+.c4DropTarget.active .c4DropPiece,.c4DropTarget:focus-visible .c4DropPiece{opacity:1;transform:translateY(0) scale(1);background:var(--blue-piece);color:var(--blue-piece-text,#fff);box-shadow:0 5px 16px color-mix(in srgb,var(--blue-piece) 26%,transparent)}
+.c4DropTarget.critical{border-style:dashed}
+.c4DropTarget:disabled{cursor:default;opacity:.22}
+@media(hover:hover) and (pointer:fine){.c4DropTarget:not(:disabled):hover{border-color:color-mix(in srgb,var(--blue-piece) 38%,var(--world-line) 62%);background:color-mix(in srgb,var(--blue-piece) 5%,transparent);transform:translateY(-1px)}.c4DropTarget:not(:disabled):hover .c4DropPiece{opacity:.8;transform:scale(.96)}}
+
+/* ---------- physical board: stronger Connect-4 DNA, no new rules ---------- */
+.gameplayV3 .board{border-radius:18px;border-width:1px;padding:clamp(7px,.8vmin,11px);gap:clamp(4px,.55vmin,8px);box-shadow:0 20px 48px -24px rgba(0,0,0,.88),0 0 0 1px color-mix(in srgb,var(--world-line) 44%,transparent),inset 0 1px 0 rgba(255,255,255,.08),inset 0 -12px 28px rgba(0,0,0,.16)}
+.gameplayV3 .cell{border-radius:50%;background:color-mix(in srgb,var(--world-hole) 94%,black 6%)}
+.gameplayV3 .empty{width:88%;height:88%;border-color:color-mix(in srgb,var(--world-line) 46%,black 54%);background:radial-gradient(circle at 44% 40%,color-mix(in srgb,var(--world-hole) 84%,black 16%) 0 54%,color-mix(in srgb,var(--world-board) 34%,black 66%) 56% 67%,var(--world-hole) 69%);box-shadow:inset 0 6px 12px rgba(0,0,0,.62),0 1px 0 rgba(255,255,255,.025)}
+.gameplayV3 .disc{width:89%;height:89%;font-size:0;overflow:visible}
+.gameplayV3 .c4DiscIcon{width:58%;height:58%;display:grid;place-items:center;position:relative;z-index:2;color:inherit;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
+.gameplayV3 .c4DiscIcon .c4PieceIcon{width:100%;height:100%;stroke-width:2.65}
+.gameplayV3 .disc.revealedDisc .c4DiscIcon{filter:drop-shadow(0 0 5px rgba(255,255,255,.22))}
+.gameplayV3 .cell.humanIntentTop::before{content:''!important}
+
+/* ---------- command deck: R/P/S primary, Decoy secondary ---------- */
+.gameplayV3 .panel.human{grid-template-columns:118px minmax(0,1fr);gap:10px;padding:8px 10px!important;border-color:color-mix(in srgb,var(--blue-piece) 30%,var(--world-line) 70%);box-shadow:inset 0 2px 0 color-mix(in srgb,var(--blue-piece) 55%,transparent),0 10px 30px -22px rgba(0,0,0,.7)}
+.gameplayV3 .panel.human .choices{grid-template-columns:repeat(3,minmax(0,1fr)) minmax(64px,.65fr);gap:7px}
+.gameplayV3 .panel.human .choice{height:68px;grid-template-rows:31px 14px 14px;border-radius:12px;padding:5px 6px;transition:transform .13s ease,border-color .13s ease,background .13s ease,box-shadow .13s ease}
+.gameplayV3 .panel.human .choice b{width:31px;height:31px;display:grid;place-items:center;font-size:31px;line-height:31px;color:var(--blue-piece-text,#fff)}
+.gameplayV3 .panel.human .choice b .c4PieceIcon{width:27px;height:27px}
+.gameplayV3 .panel.human .choice .name{color:color-mix(in srgb,var(--blue-piece-text,#fff) 82%,var(--fog-text-dim) 18%);font-weight:900;letter-spacing:.035em}
+.gameplayV3 .panel.human .choice small:last-child{color:color-mix(in srgb,var(--blue-piece-text,#fff) 72%,var(--fog-text-dim) 28%)}
+.gameplayV3 .panel.human .choice.c4PrimaryPiece{border-color:color-mix(in srgb,var(--blue-piece) 48%,var(--world-line) 52%);background:linear-gradient(180deg,color-mix(in srgb,var(--blue-piece) 26%,var(--world-panel-2) 74%),color-mix(in srgb,var(--blue-piece) 12%,var(--world-panel) 88%))}
+.gameplayV3 .panel.human .choice.c4PrimaryPiece.sel{border-color:color-mix(in srgb,var(--blue-piece) 70%,white 30%);background:linear-gradient(180deg,color-mix(in srgb,var(--blue-piece) 48%,var(--world-panel-2) 52%),color-mix(in srgb,var(--blue-piece) 28%,var(--world-panel) 72%));box-shadow:0 0 0 1px color-mix(in srgb,var(--blue-piece) 42%,transparent),0 8px 22px -10px color-mix(in srgb,var(--blue-piece) 60%,transparent),inset 0 1px 0 rgba(255,255,255,.14);transform:translateY(-1px)}
+.gameplayV3 .panel.human .choice.c4UtilityPiece{border-style:dashed;border-color:color-mix(in srgb,var(--world-line) 82%,white 18%);background:linear-gradient(180deg,color-mix(in srgb,var(--world-panel-2) 92%,white 8%),var(--world-panel));color:var(--fog-text-dim)}
+.gameplayV3 .panel.human .choice.c4UtilityPiece b{color:var(--fog-text-dim)}
+.gameplayV3 .panel.human .choice.c4UtilityPiece .name{color:var(--fog-text-dim)}
+.gameplayV3 .panel.human .choice.c4UtilityPiece.sel{border-style:solid;border-color:color-mix(in srgb,var(--blue-piece) 62%,white 38%);background:color-mix(in srgb,var(--blue-piece) 14%,var(--world-panel));box-shadow:0 0 0 1px color-mix(in srgb,var(--blue-piece) 24%,transparent)}
+.gameplayV3 .panel.human .choice.c4UtilityPiece.sel b{color:var(--blue-piece-text,#fff)}
+.gameplayV3 .panel.human .choice:disabled{opacity:.42;filter:saturate(.62)}
+@media(hover:hover) and (pointer:fine){.gameplayV3 .panel.human .choice:not(:disabled):hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--blue-piece) 62%,white 18%)}}
+
+/* ---------- opponent/readout becomes a quiet compact sidebar ---------- */
+@media(min-width:980px){
+  .gameplayV3 .gameStage{grid-template-columns:minmax(0,1fr) 248px;column-gap:14px;row-gap:8px}
+  .gameplayV3 .boardSection,.gameplayV3 .humanZone{width:min(100%,var(--board-width,920px))}
+  .gameplayV3 .boardSection{justify-self:center}
+  .gameplayV3 #fogRulesCard{display:none}
+  .gameplayV3 .fogSidebarExtras{gap:7px;margin-top:7px}
+  .gameplayV3 .fogSideCard{padding:10px;border-radius:11px}
+  .gameplayV3 .fogMiniGrid{gap:5px}
+  .gameplayV3 .fogMini{padding:6px}
+  .gameplayV3 .boardInfoRow{height:44px;grid-template-columns:minmax(150px,.38fr) minmax(0,1fr);gap:5px}
+  .gameplayV3 .lastMoveBox,.gameplayV3 .moveStatus.currentOnly{height:44px;padding:4px 7px}
+  .gameplayV3 .message{height:28px;font-size:10.5px;border-color:color-mix(in srgb,var(--world-line) 60%,transparent);background:color-mix(in srgb,var(--world-panel) 76%,transparent)}
+  .gameplayV3 .message.routineMessage{display:none}
+}
+
+/* ---------- history is secondary and collapsed by default ---------- */
+.c4HistoryTitle{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:0!important}
+.c4HistoryToggle{min-height:30px;border:1px solid color-mix(in srgb,var(--world-line) 78%,transparent);border-radius:9px;background:color-mix(in srgb,var(--world-panel-2) 76%,transparent);color:var(--fog-text-dim);display:inline-flex;align-items:center;gap:5px;padding:4px 7px;font-size:8px;font-weight:900;letter-spacing:.04em;text-transform:none;cursor:pointer}
+.c4HistoryToggle .c4UtilityIcon{width:13px;height:13px}
+.c4HistoryCollapsed #fogCombatLog{display:none}
+#fogCombatLogCard.c4HistoryCollapsed{padding-bottom:8px}
+#fogCombatLogCard:not(.c4HistoryCollapsed) .c4HistoryTitle{margin-bottom:8px!important}
+
+/* ---------- utility icon language ---------- */
+.gameplayV3 .fogNoteIcon{width:28px;height:28px;display:grid;place-items:center;color:var(--world-accent)}
+.gameplayV3 .fogNoteIcon .c4UtilityIcon{width:23px;height:23px}
+.gameplayV3 #overlay .fighter b{display:grid;place-items:center;min-height:62px;font-size:0}
+.gameplayV3 #overlay .fighter b .c4PieceIcon{width:58px;height:58px}
+.gameplayV3 #overlay .specialIcon{display:grid;place-items:center}
+.gameplayV3 #overlay .specialIcon .c4UtilityIcon{width:56px;height:56px}
+
+/* ---------- compact/mobile: retain hierarchy without crowding ---------- */
+@media(max-width:979px){
+  .gameplayV3 .boardSection{gap:4px}
+  .c4DropRail{gap:3px;padding:0 5px}
+  .c4DropTarget{min-height:34px;grid-template-rows:10px 20px;border-radius:8px}
+  .c4DropTarget .c4DropNumber{font-size:7px}.c4DropTarget .c4DropPiece{width:20px;height:20px}.c4DropTarget .c4DropPiece .c4PieceIcon{width:14px;height:14px}
+  .gameplayV3 .panel.human{grid-template-columns:92px minmax(0,1fr);padding:5px 6px!important;gap:5px}
+  .gameplayV3 .panel.human .choices{grid-template-columns:repeat(3,minmax(0,1fr)) minmax(48px,.62fr);gap:4px}
+  .gameplayV3 .panel.human .choice{height:54px;grid-template-rows:28px 13px;padding:3px 2px}
+  .gameplayV3 .panel.human .choice b{width:28px;height:28px}.gameplayV3 .panel.human .choice b .c4PieceIcon{width:23px;height:23px}
+  .gameplayV3 .panel.human .choice .name{display:none}.gameplayV3 .panel.human .choice small:last-child{font-size:10px}
+}
+@media(max-width:420px){
+  .c4DropTarget .c4DropNumber{opacity:.7}.c4DropTarget{min-height:31px;grid-template-rows:8px 19px}
+  .gameplayV3 .panel.human{grid-template-columns:78px minmax(0,1fr)}
+  .gameplayV3 .panel.human .row .eyebrow{font-size:7px}.gameplayV3 .panel.human .row strong{font-size:10px}.gameplayV3 .panel.human .remainingLabel{font-size:8px}
+}
+@media(max-width:350px){.c4DropTarget .c4DropNumber{display:none}.c4DropTarget{grid-template-rows:1fr;min-height:27px}.gameplayV3 .panel.human{grid-template-columns:68px minmax(0,1fr)}}
+
+body.reducedMotion .c4DropTarget,body.reducedMotion .c4DropPiece,body.reducedMotion .gameplayV3 .choice{transition:none!important;transform:none!important}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
 </head>
@@ -4479,6 +4576,162 @@ activeThemeId=themeStoredId();
 themeCreateUi();themeMusicCreateUi();themeSyncUi();themeMusicSyncUi();
 document.addEventListener('visibilitychange',()=>{if(document.hidden)themeMusicStop();else if(musicEnabled)themeMusicStart()});
 for(const eventName of ['pointerdown','keydown'])document.addEventListener(eventName,()=>{if(musicEnabled)themeMusicStart()},{once:true,capture:true});
+
+// Gameplay UI v3: board-first interaction rail, player-owned piece icons, and quiet history.
+'use strict';
+const GAMEPLAY_V3_VERSION='0.18.0';
+
+const GAMEPLAY_V3_ICONS={
+  rock:'<svg class="c4PieceIcon" viewBox="0 0 48 48" aria-hidden="true"><path d="M9 30 14 16l10-7 11 5 5 12-7 12H17Z"/><path d="m14 16 10 8 11-10M24 24l-7 14M24 24l16 2"/></svg>',
+  paper:'<svg class="c4PieceIcon" viewBox="0 0 48 48" aria-hidden="true"><path d="M13 7h15l8 8v26H13Z"/><path d="M28 7v9h8M18 23h13M18 29h13M18 35h9"/></svg>',
+  scissors:'<svg class="c4PieceIcon" viewBox="0 0 48 48" aria-hidden="true"><circle cx="14" cy="34" r="6"/><circle cx="34" cy="34" r="6"/><path d="M18 30 37 8M30 30 11 8"/></svg>',
+  decoy:'<svg class="c4PieceIcon" viewBox="0 0 48 48" aria-hidden="true"><circle cx="20" cy="24" r="12"/><circle cx="29" cy="24" r="12"/><path d="M20 12v24M29 12v24"/></svg>',
+  fog:'<svg class="c4UtilityIcon" viewBox="0 0 48 48" aria-hidden="true"><path d="M7 18h21c6 0 6-8 0-8-4 0-5 3-5 5M5 25h34c6 0 6-8 0-8-4 0-5 3-5 5M11 32h22c6 0 6 8 0 8-4 0-5-3-5-5"/></svg>',
+  lock:'<svg class="c4UtilityIcon" viewBox="0 0 48 48" aria-hidden="true"><rect x="10" y="21" width="28" height="20" rx="5"/><path d="M16 21v-7a8 8 0 0 1 16 0v7M24 29v6"/></svg>',
+  shield:'<svg class="c4UtilityIcon" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 6 38 12v11c0 9-5 15-14 19-9-4-14-10-14-19V12Z"/><path d="m17 24 5 5 10-11"/></svg>',
+  reveal:'<svg class="c4UtilityIcon" viewBox="0 0 48 48" aria-hidden="true"><path d="M5 24s7-11 19-11 19 11 19 11-7 11-19 11S5 24 5 24Z"/><circle cx="24" cy="24" r="5"/></svg>',
+  swap:'<svg class="c4UtilityIcon" viewBox="0 0 48 48" aria-hidden="true"><path d="M9 16h27l-6-6M39 32H12l6 6"/></svg>'
+};
+
+function gameplayV3PieceKind(label=''){
+  const value=String(label).toLowerCase();
+  if(value.includes('rock')||value.includes('🪨'))return 'rock';
+  if(value.includes('paper')||value.includes('📄'))return 'paper';
+  if(value.includes('scissor')||value.includes('✂'))return 'scissors';
+  if(value.includes('decoy')||value.trim()==='○')return 'decoy';
+  return ''
+}
+function gameplayV3SpecialKind(label=''){
+  const value=String(label).toLowerCase();
+  if(value.includes('🔒')||value.includes('lock'))return 'lock';
+  if(value.includes('🛡')||value.includes('shield')||value.includes('fortif'))return 'shield';
+  if(value.includes('👁')||value.includes('reveal'))return 'reveal';
+  if(value.includes('swap')||value.includes('↔')||value.includes('⇄'))return 'swap';
+  if(value.includes('fog')||value.includes('🌫'))return 'fog';
+  return ''
+}
+function gameplayV3Icon(kind){return GAMEPLAY_V3_ICONS[kind]||''}
+
+function gameplayV3EnsureDropRail(){
+  const boardEl=document.getElementById('board');
+  if(!boardEl)return null;
+  let rail=document.getElementById('c4DropRail');
+  if(rail)return rail;
+  rail=document.createElement('div');
+  rail.id='c4DropRail';rail.className='c4DropRail';rail.setAttribute('aria-label','Choose a column');
+  rail.innerHTML=Array.from({length:8},(_,column)=>`<button type="button" class="c4DropTarget" data-column="${column}"><span class="c4DropNumber">${column+1}</span><span class="c4DropPiece"></span></button>`).join('');
+  boardEl.before(rail);
+  rail.addEventListener('pointerover',event=>{
+    const target=event.target?.closest?.('.c4DropTarget');if(!target||target.disabled)return;
+    const column=Number(target.dataset.column);if(Number.isNaN(column))return;
+    if(typeof hoverCol!=='undefined'&&hoverCol!==column){hoverCol=column;render()}
+  });
+  rail.addEventListener('pointerleave',()=>{
+    if(typeof hoverCol!=='undefined'&&hoverCol!==null){hoverCol=null;render()}
+  });
+  rail.addEventListener('click',event=>{
+    const target=event.target?.closest?.('.c4DropTarget');if(!target||target.disabled)return;
+    const column=Number(target.dataset.column);
+    const cell=boardEl.querySelector(`button.cell[data-column="${column}"][aria-hidden="false"]`);
+    if(cell&&!cell.disabled)cell.click()
+  });
+  rail.addEventListener('keydown',event=>{
+    if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+    const buttons=[...rail.querySelectorAll('.c4DropTarget:not(:disabled)')];if(!buttons.length)return;
+    const active=document.activeElement,current=Math.max(0,buttons.indexOf(active));
+    const next=event.key==='Home'?0:event.key==='End'?buttons.length-1:(current+(event.key==='ArrowRight'?1:-1)+buttons.length)%buttons.length;
+    event.preventDefault();buttons[next]?.focus()
+  });
+  return rail
+}
+
+function gameplayV3SyncDropRail(){
+  const rail=gameplayV3EnsureDropRail(),boardEl=document.getElementById('board');if(!rail||!boardEl)return;
+  let selectedKind='rock';
+  try{selectedKind=selected||'rock'}catch{}
+  for(const target of rail.querySelectorAll('.c4DropTarget')){
+    const column=Number(target.dataset.column);
+    const cell=boardEl.querySelector(`button.cell[data-column="${column}"][aria-hidden="false"]`);
+    target.disabled=!cell||cell.disabled;
+    target.classList.toggle('active',!!cell?.classList.contains('hover'));
+    target.classList.toggle('critical',!!cell?.classList.contains('criticalColumn'));
+    target.setAttribute('aria-label',cell?.getAttribute('aria-label')||`Column ${column+1}`);
+    const slot=target.querySelector('.c4DropPiece');if(slot)slot.innerHTML=gameplayV3Icon(selectedKind)
+  }
+}
+
+function gameplayV3EnhanceInventory(){
+  const inventory=document.getElementById('humanInventory');if(!inventory)return;
+  for(const button of inventory.querySelectorAll('.choice')){
+    const name=button.querySelector('.name')?.textContent||'';
+    const kind=gameplayV3PieceKind(name);if(!kind)continue;
+    button.dataset.pieceKind=kind;
+    button.classList.toggle('c4PrimaryPiece',kind!=='decoy');
+    button.classList.toggle('c4UtilityPiece',kind==='decoy');
+    const mark=button.querySelector('b');if(mark)mark.innerHTML=gameplayV3Icon(kind)
+  }
+}
+
+function gameplayV3DecorateBoard(){
+  const boardEl=document.getElementById('board');if(!boardEl)return;
+  for(const disc of boardEl.querySelectorAll('.disc')){
+    if(disc.querySelector(':scope > .c4DiscIcon'))continue;
+    const text=[...disc.childNodes].filter(node=>node.nodeType===Node.TEXT_NODE).map(node=>node.textContent||'').join('').trim();
+    const kind=gameplayV3PieceKind(text);if(!kind)continue;
+    for(const node of [...disc.childNodes])if(node.nodeType===Node.TEXT_NODE)node.remove();
+    const icon=document.createElement('span');icon.className='c4DiscIcon';icon.dataset.pieceKind=kind;icon.innerHTML=gameplayV3Icon(kind);
+    disc.insertBefore(icon,disc.firstChild)
+  }
+}
+
+function gameplayV3DecorateEvents(){
+  for(const mark of document.querySelectorAll('#overlay .fighter b')){
+    const kind=gameplayV3PieceKind(mark.textContent||'');if(kind)mark.innerHTML=gameplayV3Icon(kind)
+  }
+  for(const mark of document.querySelectorAll('#overlay .specialIcon')){
+    const kind=gameplayV3SpecialKind(mark.textContent||'');if(!kind)continue;
+    mark.innerHTML=gameplayV3Icon(kind)
+  }
+}
+
+function gameplayV3DecorateFog(){
+  const fog=document.querySelector('.fogNoteIcon');if(fog&&fog.dataset.v3Icon!=='1'){fog.dataset.v3Icon='1';fog.innerHTML=gameplayV3Icon('fog')}
+}
+
+function gameplayV3EnsureHistoryToggle(){
+  const card=document.getElementById('fogCombatLogCard'),title=document.getElementById('fogCombatLogTitle');if(!card||!title)return;
+  let toggle=document.getElementById('c4HistoryToggle');
+  if(!toggle){
+    title.classList.add('c4HistoryTitle');
+    toggle=document.createElement('button');toggle.id='c4HistoryToggle';toggle.className='c4HistoryToggle';toggle.type='button';toggle.innerHTML=`${gameplayV3Icon('reveal')}<span>History</span>`;toggle.setAttribute('aria-expanded','false');
+    title.appendChild(toggle);card.classList.add('c4HistoryCollapsed');
+    toggle.addEventListener('click',()=>{
+      const collapsed=card.classList.toggle('c4HistoryCollapsed');toggle.setAttribute('aria-expanded',String(!collapsed));toggle.querySelector('span').textContent=collapsed?'History':'Hide'
+    })
+  }
+}
+
+function gameplayV3Enhance(){
+  gameplayV3SyncDropRail();
+  gameplayV3EnhanceInventory();
+  gameplayV3DecorateBoard();
+  gameplayV3DecorateFog();
+  gameplayV3EnsureHistoryToggle();
+  gameplayV3DecorateEvents();
+  document.getElementById('appRoot')?.classList.add('gameplayV3')
+}
+
+const renderBeforeGameplayV3=render;
+render=function(){const result=renderBeforeGameplayV3();requestAnimationFrame(gameplayV3Enhance);return result};
+const showEventBeforeGameplayV3=showEvent;
+showEvent=function(event){const result=showEventBeforeGameplayV3(event);requestAnimationFrame(gameplayV3DecorateEvents);return result};
+
+try{new MutationObserver(()=>gameplayV3DecorateEvents()).observe(document.getElementById('overlay'),{subtree:true,childList:true,characterData:true})}catch{}
+requestAnimationFrame(gameplayV3Enhance);
+
+globalThis.GAMEPLAY_V3_VERSION=GAMEPLAY_V3_VERSION;
+globalThis.gameplayV3Enhance=gameplayV3Enhance;
+globalThis.gameplayV3Icon=gameplayV3Icon;
 
 // AI evaluation and decision policy. Hidden-information rules remain bounded here.
 function projectedScore(board,owner,c){
