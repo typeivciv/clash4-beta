@@ -9,8 +9,10 @@ const flowCss=fs.readFileSync('src/styles/56-gameplay-flow.css','utf8');
 const eventCss=fs.readFileSync('src/styles/60-theme-event-states.css','utf8');
 
 // Run the real rules outcome function through the complete R/P/S matrix.
-const outcomeSource=rules.match(/function outcome\(a,d\)\{[^\n]+\}/)?.[0];
-assert.ok(outcomeSource,'rules outcome() source missing');
+const outcomeStart=rules.indexOf('function outcome(a,d){');
+const outcomeEnd=rules.indexOf('\nfunction cloneState',outcomeStart);
+assert.ok(outcomeStart>=0&&outcomeEnd>outcomeStart,'rules outcome() source missing');
+const outcomeSource=rules.slice(outcomeStart,outcomeEnd);
 const outcome=new Function(`${outcomeSource}; return outcome;`)();
 const matrix=[
   ['rock','rock','tie'],['rock','paper','lose'],['rock','scissors','win'],
