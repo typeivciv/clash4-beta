@@ -1,0 +1,24 @@
+/* Multiplayer Alpha 0.18.3 — screen-to-screen visual and interaction consistency. */
+
+/* Alpha owns one reporting surface. The frozen public-beta feedback modal remains in
+   the base source but must never become a second modal in the Multiplayer build. */
+.betaFeedbackOverlay{display:none!important}
+
+/* Navigation controls should feel like one family and meet touch target guidance. */
+.introBack,.duelSectionBack{min-height:38px;border-radius:10px}
+@media(pointer:coarse){.introBack,.duelSectionBack{min-height:44px}}
+
+/* The Help footer has three actions. On phones, keep the return action obvious rather
+   than leaving it as an orphan half-width button on a second grid row. */
+@media(max-width:620px){
+  .helpFooterActions{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .helpFooterActions #helpBack{grid-column:1/-1;width:100%}
+}
+
+/* Tester modal is a real modal: contain wheel/touch scrolling and preserve a visible
+   keyboard focus treatment in every world theme. */
+.alphaTesterModal{overscroll-behavior:contain}
+.alphaTesterModal :focus-visible{outline:3px solid color-mix(in srgb,var(--world-accent,#9bc3ff) 62%,white 38%);outline-offset:2px}
+
+/* Avoid layout jumps when dynamic Help copy switches between AI/Opponent language. */
+#accessibilityHelp .accessibilityOption small,#helpOverlay .helpGrid p,#fogRulesCard .fogNote span:last-child{text-wrap:pretty}
