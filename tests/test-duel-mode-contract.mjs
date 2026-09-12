@@ -37,7 +37,7 @@ assert.ok(!postmatch.includes("endText.textContent='YOU LOSE'"),'loss headline m
 assert.ok(!postmatch.toLowerCase().includes('matchmaking'),'post-match copy must describe invitation play without matchmaking language');
 for(const token of ['text-align:center','@keyframes duel-win-title','@keyframes duel-loss-title','@keyframes duel-win-rays','@keyframes duel-loss-card'])assert.ok(postmatchCss.includes(token),`post-match visual contract missing ${token}`);
 
-assert.ok(tester.includes("const ALPHA_TESTER_VERSION='0.17.0'"),'tester diagnostics must report 0.17.0');
+assert.ok(tester.includes("const ALPHA_TESTER_VERSION='0.18.3'"),'tester diagnostics must report 0.18.3');
 for(const token of ['function alphaTesterInfo()','function alphaConnectionHelp()','function alphaReportProblem()'])assert.ok(tester.includes(token),`tester utility missing ${token}`);
 assert.ok(!tester.includes('location.hash'),'tester diagnostics must never copy the live invite hash');
 for(const token of ['.alphaTesterNotice','.alphaTesterBar','.alphaTesterModal'])assert.ok(testerCss.includes(token),`tester CSS missing ${token}`);
@@ -118,6 +118,6 @@ for(const [name,source] of [['direct',direct],['nearby',nearby],['turn',turn],['
 for(const token of ['passDuelOverlay','passShowHandoff','passDuelMove','replayHistory','passBuildFinishReplay','passRestartMatch'])assert.ok(pass.includes(token),`Pass & Play contract missing ${token}`);
 for(const token of ['if(passDuel.active)','if(directDuel.active)','return duelMove(owner,type,column)'])assert.ok(router.includes(token),`transport router missing ${token}`);
 for(const id of ['duelDirectMode','duelPassMode','duelOnlineMode','duelDirectNearby','duelDirectRefreshInvite','duelDirectRetryConnection','alphaTesterBar'])assert.ok(lobby.includes(`id="${id}"`),`Alpha lobby missing ${id}`);
-for(const token of ['Multiplayer Alpha · 0.17','Play With Someone','Pass &amp; Play','Hosted Room'])assert.ok(lobby.includes(token),`Alpha lobby copy missing ${token}`);
+for(const token of ['Multiplayer Alpha · 0.18.3','Play With Someone','Pass &amp; Play','Hosted Room'])assert.ok(lobby.includes(token),`Alpha lobby copy missing ${token}`);
 
-console.log('PASS Multiplayer Alpha 0.17.0: five independent world themes + player colors + learner/networking contracts');
+console.log('PASS Multiplayer Alpha 0.18.3: five independent world themes + player colors + learner/networking contracts');
