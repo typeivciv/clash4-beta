@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="description" content="Clash 4 mobile beta test build">
-<title>Clash 4 — Fog of War · Multiplayer Alpha 0.17.0</title>
+<title>Clash 4 — Fog of War · Multiplayer Alpha 0.18.3</title>
 
 
 
@@ -1415,13 +1415,37 @@ body.reducedMotion .c4DropTarget,body.reducedMotion .c4DropPiece,body.reducedMot
 #fogCombatLogCard.c4HistoryCollapsed{min-height:0}
 
 body.reducedMotion .coinTossScreen .coinChoices button{transition:none!important}
+/* Multiplayer Alpha 0.18.3 — screen-to-screen visual and interaction consistency. */
+
+/* Alpha owns one reporting surface. The frozen public-beta feedback modal remains in
+   the base source but must never become a second modal in the Multiplayer build. */
+.betaFeedbackOverlay{display:none!important}
+
+/* Navigation controls should feel like one family and meet touch target guidance. */
+.introBack,.duelSectionBack{min-height:38px;border-radius:10px}
+@media(pointer:coarse){.introBack,.duelSectionBack{min-height:44px}}
+
+/* The Help footer has three actions. On phones, keep the return action obvious rather
+   than leaving it as an orphan half-width button on a second grid row. */
+@media(max-width:620px){
+  .helpFooterActions{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .helpFooterActions #helpBack{grid-column:1/-1;width:100%}
+}
+
+/* Tester modal is a real modal: contain wheel/touch scrolling and preserve a visible
+   keyboard focus treatment in every world theme. */
+.alphaTesterModal{overscroll-behavior:contain}
+.alphaTesterModal :focus-visible{outline:3px solid color-mix(in srgb,var(--world-accent,#9bc3ff) 62%,white 38%);outline-offset:2px}
+
+/* Avoid layout jumps when dynamic Help copy switches between AI/Opponent language. */
+#accessibilityHelp .accessibilityOption small,#helpOverlay .helpGrid p,#fogRulesCard .fogNote span:last-child{text-wrap:pretty}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
 </head>
 <body>
 <div id="appRoot" class="app">
 <header>
-  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Arcade RC1 · Multiplayer Alpha 0.17.0</div></div>
+  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Arcade RC1 · Multiplayer Alpha 0.18.3</div></div>
   <div id="fogTurnPill" class="fogTurnPill neutral"><span class="fogTurnDot"></span><span id="fogTurnText">Setup</span></div>
   <div class="topActions">
     <div id="matchDifficultyBadge" class="matchDifficultyBadge" title="Difficulty is chosen before the match"><span>AI</span><strong id="matchDifficultyLabel">Normal</strong></div>
@@ -1555,13 +1579,13 @@ body.reducedMotion .coinTossScreen .coinChoices button{transition:none!important
       <div class="homeTagline">Connect Four. Win the Clash.</div>
       <p class="homeLede">Build four in a row while Rock–Paper–Scissors combat, Decoys, and hidden enemy identities turn every column into a tactical gamble.</p>
       <div class="homeActions"><button id="homePlayButton" class="homePlay" type="button"><span>Solo Play</span><small>Vs AI · quick match</small></button><button id="homeDuelButton" class="homeDuel" type="button"><span>Multiplayer</span><small>Online · invite a friend · Pass &amp; Play</small></button><button id="homeCustomizeButton" class="homeCustomize" type="button"><span>Customize</span><small>Difficulty · world theme · player colors · tips</small></button><button id="homeRulesButton" class="homeSecondary" type="button">How to Play</button></div>
-      <div class="homeMeta"><span>Duel Modes Alpha · 0.17.0</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
+      <div class="homeMeta"><span>Duel Modes Alpha · 0.18.3</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
     </div>
     <div class="homeHero" aria-hidden="true"><div class="homeHeroGlow"></div><div class="heroBoard"><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">🪨</span></div><div class="heroHole"><span class="heroPiece ai ">📄</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">✂️</span></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"><span class="heroPiece player ">📄</span></div><div class="heroHole"><span class="heroPiece ai ">🪨</span></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"><span class="heroPiece ai ">✂️</span></div></div><div class="heroFog"></div></div>
   </section>
 
   <section id="duelLobbyPanel" class="introScreen duelLobbyScreen" aria-label="Multiplayer Alpha">
-  <div class="introTopline"><button id="duelBackButton" class="introBack" type="button">← Home</button><span class="introStepLabel">Multiplayer Alpha · 0.17</span></div>
+  <div class="introTopline"><button id="duelBackButton" class="introBack" type="button">← Home</button><span class="introStepLabel">Multiplayer Alpha · 0.18.3</span></div>
 
   <div class="alphaTesterNotice" role="note">
     <span class="alphaTesterPill">ALPHA TEST</span>
@@ -1660,7 +1684,7 @@ body.reducedMotion .coinTossScreen .coinChoices button{transition:none!important
   </div>
 
   <div id="alphaTesterBar" class="alphaTesterBar" aria-label="Alpha tester tools">
-    <span>Multiplayer Alpha · 0.17</span>
+    <span>Multiplayer Alpha · 0.18.3</span>
     <div><button id="alphaConnectionHelp" type="button">Connection Help</button><button id="alphaCopyTestInfo" type="button">Copy Test Info</button><button id="alphaReportProblem" type="button">Report Problem</button></div>
   </div>
 
@@ -1676,7 +1700,7 @@ body.reducedMotion .coinTossScreen .coinChoices button{transition:none!important
 
   <section id="matchSetupPanel" class="introScreen matchSetupScreen" aria-label="Customize match">
     <div class="introTopline"><button id="setupBackButton" class="introBack" type="button">← Home</button><span class="introStepLabel">Customize Match</span></div>
-    <div class="eyebrow">ARCADE DUEL</div><h2 class="setupTitle">Customize Match</h2><p class="setupSub">Change only what you care about. Random Start + default colors remains the fastest setup.</p>
+    <div class="eyebrow">SOLO SETUP</div><h2 class="setupTitle">Customize Match</h2><p class="setupSub">Change only what you care about. Random Start + default colors remains the fastest setup.</p>
     <div class="setupSectionLabel">Difficulty</div>
     <div id="difficultyCards" class="difficultyCards" role="group" aria-label="AI difficulty">
       <button class="difficultyCard" data-difficulty="easy" type="button"><strong>Easy</strong><small>Forgiving · best for learning</small></button>
@@ -1749,9 +1773,9 @@ body.reducedMotion .coinTossScreen .coinChoices button{transition:none!important
       </div>
     </div>
 <div class="helpFooter">
-      <span>Mobile Beta 0.13.3 · The game remembers actions. You remember identities.</span>
+      <span>Multiplayer Alpha 0.18.3 · The game remembers actions. You remember identities.</span>
       <div class="helpFooterActions">
-        <button id="betaFeedbackButton" class="betaFeedbackButton" type="button">Send Feedback</button>
+        <button id="betaFeedbackButton" class="betaFeedbackButton" type="button">Report Problem</button>
         <button id="helpGuideToggle">Turn On Guided Tips</button>
         <button id="helpBack">Back to Match</button>
       </div>
@@ -1769,7 +1793,7 @@ body.reducedMotion .coinTossScreen .coinChoices button{transition:none!important
 <div id="betaFeedbackOverlay" class="betaFeedbackOverlay" aria-hidden="true">
   <div class="betaFeedbackCard" role="dialog" aria-modal="true" aria-labelledby="betaFeedbackTitle">
     <div class="betaFeedbackHead">
-      <div><div class="eyebrow">MOBILE BETA 0.13.3</div><h2 id="betaFeedbackTitle">Test Feedback</h2></div>
+      <div><div class="eyebrow">MULTIPLAYER ALPHA 0.18.3</div><h2 id="betaFeedbackTitle">Test Feedback</h2></div>
       <button id="betaFeedbackClose" class="betaFeedbackClose" type="button" aria-label="Close feedback">×</button>
     </div>
     <form id="betaFeedbackForm" class="betaFeedbackForm">
@@ -3878,7 +3902,7 @@ document.addEventListener('click',event=>{
 duelPostMatchEnsureVisual();
 
 'use strict';
-const ALPHA_TESTER_VERSION='0.17.0';
+const ALPHA_TESTER_VERSION='0.18.3';
 function alphaTesterEl(id){return document.getElementById(id)}
 function alphaTesterMode(){
   if(typeof matchMode!=='undefined'&&matchMode==='arcade')return'Arcade / Solo';
@@ -4874,6 +4898,175 @@ globalThis.UI_CONSISTENCY_VERSION=UI_CONSISTENCY_VERSION;
 globalThis.uiConsistencyResetCoinPrompt=uiConsistencyResetCoinPrompt;
 globalThis.uiConsistencyComputeLayoutMetrics=uiConsistencyComputeLayoutMetrics;
 
+'use strict';
+// Multiplayer Alpha 0.18.3: screen-to-screen navigation, copy, focus, and modal consistency.
+const SCREEN_CONSISTENCY_VERSION='0.18.3';
+let screenConsistencyResultVisible=false;
+let screenConsistencyAlphaReturnFocus=null;
+
+function screenConsistencyVisible(el){
+  return !!el&&el.offsetParent!==null&&getComputedStyle(el).visibility!=='hidden'
+}
+
+function screenConsistencyIntroFocusTarget(screen){
+  const map={home:'homePlayButton',setup:'setupBackButton',coin:'coinBackButton',duel:'duelBackButton'};
+  return document.getElementById(map[screen]||'')
+}
+
+function screenConsistencyFocusIntro(screen){
+  queueMicrotask(()=>{
+    if(helpOverlay?.classList.contains('show'))return;
+    const target=screenConsistencyIntroFocusTarget(screen);
+    if(screenConsistencyVisible(target))target.focus({preventScroll:true})
+  })
+}
+
+function screenConsistencyOwnershipPatternCopy(){
+  if(matchMode!=='duel')return'You = stripes · AI = dots, so color is never the only cue.';
+  if(globalThis.passDuel?.active)return'Player 1 = stripes · Player 2 = dots, so color is never the only cue.';
+  const youPattern=localOwner===A?'dots':'stripes';
+  const opponentPattern=localOwner===A?'stripes':'dots';
+  return`You = ${youPattern} · Opponent = ${opponentPattern}, so color is never the only cue.`
+}
+
+function screenConsistencySyncSharedCopy(){
+  const fogCopy=document.querySelector('#fogRulesCard .fogNote span:last-child');
+  if(fogCopy)fogCopy.textContent=matchMode==='duel'
+    ?'Opponent piece types stay hidden. Legitimately revealed survivors hide again after combat.'
+    :'AI piece types stay hidden. Legitimately revealed survivors hide again after combat.';
+
+  const ownership=[...document.querySelectorAll('#accessibilityHelp .accessibilityOption')]
+    .find(option=>option.querySelector('strong')?.textContent.trim()==='Ownership Patterns');
+  const ownershipCopy=ownership?.querySelector('small');
+  if(ownershipCopy)ownershipCopy.textContent=screenConsistencyOwnershipPatternCopy();
+
+  const boardSignals=[...document.querySelectorAll('#helpOverlay .helpGrid section')]
+    .find(section=>section.querySelector('strong')?.textContent.trim()==='Board Signals');
+  const boardSignalsCopy=boardSignals?.querySelector('p');
+  if(boardSignalsCopy)boardSignalsCopy.textContent=matchMode==='duel'
+    ?'CLASH marks active combat, turn markers show who is active, and a subtle marker preserves the last move.'
+    :'CLASH marks active combat, the AI preview marks its committed column, and a subtle marker preserves the last move.';
+
+  const feedbackButton=document.getElementById('betaFeedbackButton');
+  if(feedbackButton)feedbackButton.textContent='Report Problem'
+}
+
+function screenConsistencyHelpContext(){
+  if(coinOverlay?.classList.contains('show')){
+    if(document.getElementById('duelLobbyPanel')?.classList.contains('active'))return'Multiplayer';
+    if(coinTossPanel?.classList.contains('active'))return'Coin Toss';
+    if(matchSetupPanel?.classList.contains('active'))return'Setup';
+    if(homePanel?.classList.contains('active'))return'Home'
+  }
+  if(end?.classList.contains('show'))return'Results';
+  if(postMatchView==='review')return'Review';
+  return'Match'
+}
+
+function screenConsistencySetHelpBackLabel(){
+  const context=screenConsistencyHelpContext();
+  helpBack.textContent=`Back to ${context}`;
+  helpBack.setAttribute('aria-label',`Close help and return to ${context.toLowerCase()}`)
+}
+
+const setIntroScreenBeforeScreenConsistency=setIntroScreen;
+setIntroScreen=function(next){
+  const result=setIntroScreenBeforeScreenConsistency(next);
+  screenConsistencySyncSharedCopy();
+  screenConsistencyFocusIntro(introScreen);
+  return result
+};
+
+const openHelpBeforeScreenConsistency=openHelp;
+openHelp=function(){
+  screenConsistencySyncSharedCopy();
+  screenConsistencySetHelpBackLabel();
+  return openHelpBeforeScreenConsistency()
+};
+
+const renderPostMatchBeforeScreenConsistency=renderPostMatch;
+renderPostMatch=function(reviewMode){
+  const result=renderPostMatchBeforeScreenConsistency(reviewMode);
+  const visible=end.classList.contains('show');
+  if(visible&&!screenConsistencyResultVisible){
+    queueMicrotask(()=>{
+      if(end.classList.contains('show')&&!helpOverlay.classList.contains('show'))end.focus({preventScroll:true})
+    })
+  }
+  screenConsistencyResultVisible=visible;
+  return result
+};
+
+const renderBeforeScreenConsistency=render;
+render=function(){
+  const result=renderBeforeScreenConsistency();
+  screenConsistencySyncSharedCopy();
+  return result
+};
+
+function screenConsistencyAlphaModal(){return document.getElementById('alphaTesterModal')}
+function screenConsistencyAlphaCloseButton(){return document.getElementById('alphaTesterClose')}
+function screenConsistencyAlphaIsOpen(){const modal=screenConsistencyAlphaModal();return !!modal&&!modal.hidden}
+function screenConsistencyRestoreAlphaFocus(){
+  const target=screenConsistencyAlphaReturnFocus;screenConsistencyAlphaReturnFocus=null;
+  queueMicrotask(()=>{if(target?.isConnected&&screenConsistencyVisible(target))target.focus({preventScroll:true})})
+}
+
+if(typeof alphaTesterOpen==='function'){
+  const alphaTesterOpenBeforeScreenConsistency=alphaTesterOpen;
+  alphaTesterOpen=function(...args){
+    if(!screenConsistencyAlphaReturnFocus&&document.activeElement instanceof HTMLElement)screenConsistencyAlphaReturnFocus=document.activeElement;
+    const result=alphaTesterOpenBeforeScreenConsistency(...args);
+    queueMicrotask(()=>screenConsistencyAlphaCloseButton()?.focus({preventScroll:true}));
+    return result
+  }
+}
+if(typeof alphaTesterClose==='function'){
+  const alphaTesterCloseBeforeScreenConsistency=alphaTesterClose;
+  alphaTesterClose=function(...args){
+    const result=alphaTesterCloseBeforeScreenConsistency(...args);
+    screenConsistencyRestoreAlphaFocus();
+    return result
+  }
+}
+
+function screenConsistencyCloseAlphaModal(){
+  if(!screenConsistencyAlphaIsOpen())return;
+  if(typeof alphaTesterClose==='function')alphaTesterClose();
+  else{
+    const modal=screenConsistencyAlphaModal();if(modal)modal.hidden=true;
+    document.body.classList.remove('alpha-tester-modal-open');screenConsistencyRestoreAlphaFocus()
+  }
+}
+
+document.addEventListener('click',event=>{
+  const target=event.target instanceof Element?event.target:null;if(!target)return;
+  const feedback=target.closest('#betaFeedbackButton');
+  if(feedback&&typeof alphaReportProblem==='function'){
+    event.preventDefault();event.stopImmediatePropagation();screenConsistencyAlphaReturnFocus=feedback;alphaReportProblem();return
+  }
+  if(!screenConsistencyAlphaIsOpen())return;
+  const modal=screenConsistencyAlphaModal();
+  if(target.closest('#alphaTesterClose')||target===modal){
+    event.preventDefault();event.stopImmediatePropagation();screenConsistencyCloseAlphaModal()
+  }
+},true);
+
+document.addEventListener('keydown',event=>{
+  if(!screenConsistencyAlphaIsOpen())return;
+  const modal=screenConsistencyAlphaModal();if(!modal)return;
+  if(event.key==='Escape'){
+    event.preventDefault();event.stopImmediatePropagation();screenConsistencyCloseAlphaModal();return
+  }
+  if(event.key==='Tab')trapModalTab(event,modal)
+},true);
+
+screenConsistencySyncSharedCopy();
+requestAnimationFrame(()=>{screenConsistencySyncSharedCopy();try{queueFit()}catch{}});
+globalThis.SCREEN_CONSISTENCY_VERSION=SCREEN_CONSISTENCY_VERSION;
+globalThis.screenConsistencySyncSharedCopy=screenConsistencySyncSharedCopy;
+globalThis.screenConsistencyHelpContext=screenConsistencyHelpContext;
+
 // AI evaluation and decision policy. Hidden-information rules remain bounded here.
 function projectedScore(board,owner,c){
   if(board[c].length>=ROWS)return-Infinity;
@@ -5699,7 +5892,7 @@ ownershipPatternsToggle.addEventListener('click',toggleOwnershipPatterns);
 reducedMotionToggle.addEventListener('click',toggleReducedMotion);
 soundEffectsToggle.addEventListener('click',toggleSoundEffects);
 hapticsToggle.addEventListener('click',toggleHaptics);
-homePlayButton.addEventListener('click',()=>beginRandomMatch('Play',{useDefaults:true}));
+homePlayButton.addEventListener('click',()=>beginRandomMatch('Solo Play',{useDefaults:true}));
 duelSession.server=initialDuelServer();
 bindPrivateDuelUi();
 homeCustomizeButton.addEventListener('click',()=>setIntroScreen('setup'));
@@ -5828,7 +6021,7 @@ init();
 
 <script>
 (function(){
-  const BUILD='Multiplayer Alpha 0.17.0';
+  const BUILD='Multiplayer Alpha 0.18.3';
   const REPO_ISSUES='https://github.com/typeivciv/clash4-beta/issues/new';
   const $=id=>document.getElementById(id);
   const openBtn=$('betaFeedbackButton'), overlay=$('betaFeedbackOverlay'), closeBtn=$('betaFeedbackClose');
@@ -5846,7 +6039,7 @@ init();
   }
   function report(){
     return [
-      'CLASH 4 MOBILE BETA FEEDBACK',
+      'CLASH 4 MULTIPLAYER ALPHA FEEDBACK',
       '============================',
       environment(),
       `Issue type: ${$('betaIssueType').value}`,
@@ -5864,7 +6057,7 @@ init();
   function issueTitle(){
     const type=$('betaIssueType').value;
     const detail=$('betaWhatHappened').value.trim().replace(/\s+/g,' ').slice(0,72);
-    return `[Multiplayer Alpha 0.17.0][${type}] ${detail||'Tester report'}`;
+    return `[Multiplayer Alpha 0.18.3][${type}] ${detail||'Tester report'}`;
   }
   function githubUrl(){
     const body=[
@@ -5909,7 +6102,7 @@ init();
   $('betaShareReport').addEventListener('click',async()=>{
     const text=report();
     if(navigator.share){
-      try{await navigator.share({title:'Clash 4 Mobile Beta Feedback',text});$('betaFeedbackStatus').textContent='Share sheet opened.'}catch(err){if(err&&err.name!=='AbortError')$('betaFeedbackStatus').textContent='Could not open the share sheet.'}
+      try{await navigator.share({title:'Clash 4 Multiplayer Alpha 0.18.3 Feedback',text});$('betaFeedbackStatus').textContent='Share sheet opened.'}catch(err){if(err&&err.name!=='AbortError')$('betaFeedbackStatus').textContent='Could not open the share sheet.'}
     }else{
       try{await navigator.clipboard.writeText(text);$('betaFeedbackStatus').textContent='Sharing is unavailable here, so the report was copied instead.'}
       catch{$('betaFeedbackStatus').textContent='Sharing is unavailable in this browser.'}
