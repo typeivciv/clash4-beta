@@ -24,6 +24,7 @@ on:
       - 'src/js/27-theme-music.js'
       - 'src/js/28-gameplay-v3.js'
       - 'src/js/29-ui-consistency.js'
+      - 'src/js/30-screen-consistency.js'
       - 'src/styles/50-private-duel.css'
       - 'src/styles/51-duel-turn-alpha.css'
       - 'src/styles/52-duel-colors-share.css'
@@ -37,6 +38,7 @@ on:
       - 'src/styles/60-theme-event-states.css'
       - 'src/styles/61-gameplay-v3.css'
       - 'src/styles/62-ui-consistency.css'
+      - 'src/styles/63-screen-consistency.css'
       - 'src/ui/private-duel-lobby.html'
       - 'tools/build_private_duel_alpha.py'
       - 'tools/build_duel_modes_alpha.py'
@@ -45,6 +47,7 @@ on:
       - 'tests/test-gameplay-flow.mjs'
       - 'tests/test-gameplay-v3.mjs'
       - 'tests/test-ui-consistency.mjs'
+      - 'tests/test-screen-consistency.mjs'
       - 'tests/test-private-duel-build.mjs'
       - '.github/workflows/duel-alpha-ci.yml'
   pull_request:
@@ -69,6 +72,7 @@ on:
       - 'src/js/27-theme-music.js'
       - 'src/js/28-gameplay-v3.js'
       - 'src/js/29-ui-consistency.js'
+      - 'src/js/30-screen-consistency.js'
       - 'src/styles/50-private-duel.css'
       - 'src/styles/51-duel-turn-alpha.css'
       - 'src/styles/52-duel-colors-share.css'
@@ -82,6 +86,7 @@ on:
       - 'src/styles/60-theme-event-states.css'
       - 'src/styles/61-gameplay-v3.css'
       - 'src/styles/62-ui-consistency.css'
+      - 'src/styles/63-screen-consistency.css'
       - 'src/ui/private-duel-lobby.html'
       - 'tools/build_private_duel_alpha.py'
       - 'tools/build_duel_modes_alpha.py'
@@ -90,6 +95,7 @@ on:
       - 'tests/test-gameplay-flow.mjs'
       - 'tests/test-gameplay-v3.mjs'
       - 'tests/test-ui-consistency.mjs'
+      - 'tests/test-screen-consistency.mjs'
       - 'tests/test-private-duel-build.mjs'
       - '.github/workflows/duel-alpha-ci.yml'
 
@@ -128,10 +134,12 @@ jobs:
           node --check src/js/27-theme-music.js
           node --check src/js/28-gameplay-v3.js
           node --check src/js/29-ui-consistency.js
+          node --check src/js/30-screen-consistency.js
           node --check tests/test-direct-duel-soak.mjs
           node --check tests/test-gameplay-flow.mjs
           node --check tests/test-gameplay-v3.mjs
           node --check tests/test-ui-consistency.mjs
+          node --check tests/test-screen-consistency.mjs
           node --check tests/test-duel-clash-presentation.mjs
           node --check tests/test-duel-theme-events.mjs
           python3 -m py_compile tools/build_private_duel_alpha.py tools/build_duel_modes_alpha.py
@@ -151,6 +159,8 @@ jobs:
         run: node tests/test-gameplay-v3.mjs
       - name: UI consistency panel regression
         run: node tests/test-ui-consistency.mjs
+      - name: Screen-by-screen consistency regression
+        run: node tests/test-screen-consistency.mjs
       - name: Clash symbol and combat presentation regression
         run: node tests/test-duel-clash-presentation.mjs
       - name: Multiplayer Alpha packaging and learner UX contracts
@@ -168,7 +178,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add private-duel-alpha.html multiplayer-alpha.html
-            git commit -m "Build Multiplayer Alpha 0.17.0 UI consistency 0.18.2"
+            git commit -m "Build Multiplayer Alpha 0.18.3 screen consistency sweep"
             git pull --rebase origin main
             git push
           else

@@ -39,7 +39,7 @@ for(const token of [
   "UI_CONSISTENCY=ROOT/'src/js/29-ui-consistency.js'",
   "UI_CONSISTENCY_CSS=ROOT/'src/styles/62-ui-consistency.css'",
   "ui_consistency=UI_CONSISTENCY.read_text",
-  "gameplay_v3+ui_consistency+anchor"
+  "gameplay_v3+ui_consistency+screen_consistency+anchor"
 ])assert.ok(builder.includes(token),`Alpha builder missing UI consistency package token ${token}`);
 
 // Layout regression: Gameplay v3 added a drop rail, so 1366x768 must reserve more
