@@ -55,7 +55,7 @@ for(const required of [
 /* Theme audit: environment styling must never overwrite either player's selected ownership color. */
 for(const forbidden of [
   'theme.human.hex','theme.ai.hex','theme.human.label','theme.ai.label','Electric Lime','Ultraviolet',
-  'Multiplayer Alpha 0.16.4','Multiplayer Alpha 0.16.6</title>','Multiplayer Alpha 0.16.7</title>','Multiplayer Alpha 0.16.8</title>','Multiplayer Alpha 0.16.9</title>','Multiplayer Alpha 0.17.0',
+  'Multiplayer Alpha 0.16.4','Multiplayer Alpha 0.16.6</title>','Multiplayer Alpha 0.16.7</title>','Multiplayer Alpha 0.16.8</title>','Multiplayer Alpha 0.16.9</title>',
   'Multiplayer Alpha · 0.17','MOBILE BETA 0.13.3</div><h2 id="betaFeedbackTitle"','CLASH 4 MOBILE BETA FEEDBACK','Clash 4 Mobile Beta Feedback','>Send Feedback</button>',
   '<div class="eyebrow">ARCADE DUEL</div><h2 class="setupTitle">Customize Match</h2>',"beginRandomMatch('Play',{useDefaults:true})",
   'DIRECT_PEER_TIMEOUT_MS=90_000','DIRECT_RETURN_KEY','directShowReturnLinkLanding','/api/direct/signals','id="duelDirectServerInput"',
