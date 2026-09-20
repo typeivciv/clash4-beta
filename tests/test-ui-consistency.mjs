@@ -39,11 +39,9 @@ for(const token of [
   "UI_CONSISTENCY=ROOT/'src/js/29-ui-consistency.js'",
   "UI_CONSISTENCY_CSS=ROOT/'src/styles/62-ui-consistency.css'",
   "ui_consistency=UI_CONSISTENCY.read_text",
-  "gameplay_v3+ui_consistency+screen_consistency+direct_chat+ios_chat_keyboard+anchor"
+  "gameplay_v3+ui_consistency+screen_consistency+direct_chat+ios_chat_keyboard+direct_chat_v2+anchor"
 ])assert.ok(builder.includes(token),`Alpha builder missing UI consistency package token ${token}`);
 
-// Layout regression: Gameplay v3 added a drop rail, so 1366x768 must reserve more
-// vertical chrome than the old 258px compact calculation did.
 const metricSource=js.match(/function uiConsistencyComputeLayoutMetrics\(width,height\)\{[\s\S]*?\n\}/)?.[0];
 assert.ok(metricSource,'layout metric function missing');
 const metrics=new Function(`${metricSource};return uiConsistencyComputeLayoutMetrics;`)();
@@ -57,8 +55,6 @@ const phone=metrics(390,844);
 assert.equal(phone.mode,'mobile');
 assert.ok(phone.boardWidth<=380,'mobile board must remain inside viewport width');
 
-// Multiplayer already has a canonical leave-to-home route. The consistency layer must
-// match that behavior instead of merely hiding the current board.
 for(const token of ['directClosePeer({notify:true})','passReset()','duelClearActiveSession()','duelStopPolling()'])assert.ok(router.includes(token),`duel home cleanup missing ${token}`);
 
 try{new Function(js)}catch(error){throw new Error(`UI consistency syntax failed: ${error.message}`)}
