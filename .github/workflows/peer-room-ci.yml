@@ -9,14 +9,17 @@ on:
       - 'src/js/35-peer-room-hardening.js'
       - 'src/js/36-peer-room-match.js'
       - 'src/js/37-peer-room-runtime.js'
+      - 'src/js/38-peer-room-polish.js'
       - 'src/styles/67-peer-room-foundation.css'
       - 'src/styles/68-peer-room-match.css'
+      - 'src/styles/69-peer-room-polish.css'
       - 'tests/test-direct-chat-v2.mjs'
       - 'tests/test-direct-chat-v2-generated.mjs'
       - 'tests/test-peer-room-hardening.mjs'
       - 'tests/test-peer-room-match.mjs'
       - 'tests/test-peer-room-match-soak.mjs'
       - 'tests/test-peer-room-runtime.mjs'
+      - 'tests/test-peer-room-polish.mjs'
       - '.github/workflows/peer-room-ci.yml'
   pull_request:
     paths:
@@ -25,14 +28,17 @@ on:
       - 'src/js/35-peer-room-hardening.js'
       - 'src/js/36-peer-room-match.js'
       - 'src/js/37-peer-room-runtime.js'
+      - 'src/js/38-peer-room-polish.js'
       - 'src/styles/67-peer-room-foundation.css'
       - 'src/styles/68-peer-room-match.css'
+      - 'src/styles/69-peer-room-polish.css'
       - 'tests/test-direct-chat-v2.mjs'
       - 'tests/test-direct-chat-v2-generated.mjs'
       - 'tests/test-peer-room-hardening.mjs'
       - 'tests/test-peer-room-match.mjs'
       - 'tests/test-peer-room-match-soak.mjs'
       - 'tests/test-peer-room-runtime.mjs'
+      - 'tests/test-peer-room-polish.mjs'
       - '.github/workflows/peer-room-ci.yml'
 
 jobs:
@@ -51,12 +57,14 @@ jobs:
           node --check src/js/35-peer-room-hardening.js
           node --check src/js/36-peer-room-match.js
           node --check src/js/37-peer-room-runtime.js
+          node --check src/js/38-peer-room-polish.js
           node --check tests/test-direct-chat-v2.mjs
           node --check tests/test-direct-chat-v2-generated.mjs
           node --check tests/test-peer-room-hardening.mjs
           node --check tests/test-peer-room-match.mjs
           node --check tests/test-peer-room-match-soak.mjs
           node --check tests/test-peer-room-runtime.mjs
+          node --check tests/test-peer-room-polish.mjs
       - name: Peer Room source contract
         run: node tests/test-direct-chat-v2.mjs
       - name: Remove Player cleanup contract
@@ -67,6 +75,8 @@ jobs:
         run: node tests/test-peer-room-match-soak.mjs
       - name: Runtime route + live room chat contract
         run: node tests/test-peer-room-runtime.mjs
+      - name: Colors + P2 responsiveness + lobby navigation
+        run: node tests/test-peer-room-polish.mjs
       - name: Build Alpha shell
         run: python3 tools/build_duel_modes_alpha.py
       - name: Generated loader contract
