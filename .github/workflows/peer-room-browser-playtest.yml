@@ -38,10 +38,10 @@ jobs:
           for i in {1..20}; do curl -fsS http://127.0.0.1:8080/multiplayer-alpha.html >/dev/null && exit 0; sleep 0.5; done
           cat /tmp/clash4-http.log
           exit 1
-      - name: Chromium host + WebKit guest presentation sync
-        run: node tests/playtest-peer-room-presentation-sync.mjs
       - name: WebKit guest reconnect + Back navigation
         run: node tests/playtest-peer-room-recovery-nav.mjs
+      - name: Chromium host + WebKit guest presentation sync
+        run: node tests/playtest-peer-room-presentation-sync.mjs
       - name: Upload visual evidence
         if: always()
         uses: actions/upload-artifact@v4
