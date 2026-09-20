@@ -1,9 +1,5 @@
-/* Multiplayer Alpha 0.18.6: iPhone/WebKit Direct Chat keyboard and bottom-sheet stability. */
+/* Multiplayer Alpha 0.18.7: cross-platform software-keyboard input safeguards. */
 .directChatForm input{font-size:16px;line-height:1.25;-webkit-user-select:text;user-select:text;touch-action:manipulation;pointer-events:auto;position:relative;z-index:1;-webkit-appearance:none;appearance:none}
-.directChatForm{padding-bottom:max(10px,env(safe-area-inset-bottom))}
 .directChatDrawer{-webkit-overflow-scrolling:touch}
-@media(max-width:700px),(pointer:coarse) and (max-width:900px){
-  .directChatDrawer{max-height:calc(var(--direct-chat-visible-height,100dvh) - 8px)}
-  body.direct-chat-keyboard-active .directChatDrawer{height:min(62dvh,calc(var(--direct-chat-visible-height,100dvh) - 8px))}
-  .directChatForm input{min-height:44px;font-size:16px}
-}
+.directChatForm{padding-bottom:max(8px,env(safe-area-inset-bottom))}
+@media(max-width:900px),(pointer:coarse){.directChatForm input{min-height:44px;font-size:16px}}
