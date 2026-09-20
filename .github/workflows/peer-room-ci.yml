@@ -7,26 +7,34 @@ on:
       - 'src/js/33-direct-chat-v2.js'
       - 'src/js/34-peer-room-foundation.js'
       - 'src/js/35-peer-room-hardening.js'
+      - 'src/js/36-peer-room-match.js'
       - 'src/styles/67-peer-room-foundation.css'
+      - 'src/styles/68-peer-room-match.css'
       - 'tests/test-direct-chat-v2.mjs'
       - 'tests/test-direct-chat-v2-generated.mjs'
       - 'tests/test-peer-room-hardening.mjs'
+      - 'tests/test-peer-room-match.mjs'
+      - 'tests/test-peer-room-match-soak.mjs'
       - '.github/workflows/peer-room-ci.yml'
   pull_request:
     paths:
       - 'src/js/33-direct-chat-v2.js'
       - 'src/js/34-peer-room-foundation.js'
       - 'src/js/35-peer-room-hardening.js'
+      - 'src/js/36-peer-room-match.js'
       - 'src/styles/67-peer-room-foundation.css'
+      - 'src/styles/68-peer-room-match.css'
       - 'tests/test-direct-chat-v2.mjs'
       - 'tests/test-direct-chat-v2-generated.mjs'
       - 'tests/test-peer-room-hardening.mjs'
+      - 'tests/test-peer-room-match.mjs'
+      - 'tests/test-peer-room-match-soak.mjs'
       - '.github/workflows/peer-room-ci.yml'
 
 jobs:
   peer-room-foundation:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 4
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -37,13 +45,20 @@ jobs:
           node --check src/js/33-direct-chat-v2.js
           node --check src/js/34-peer-room-foundation.js
           node --check src/js/35-peer-room-hardening.js
+          node --check src/js/36-peer-room-match.js
           node --check tests/test-direct-chat-v2.mjs
           node --check tests/test-direct-chat-v2-generated.mjs
           node --check tests/test-peer-room-hardening.mjs
+          node --check tests/test-peer-room-match.mjs
+          node --check tests/test-peer-room-match-soak.mjs
       - name: Peer Room source contract
         run: node tests/test-direct-chat-v2.mjs
       - name: Remove Player cleanup contract
         run: node tests/test-peer-room-hardening.mjs
+      - name: Shared match + persistent lobby contract
+        run: node tests/test-peer-room-match.mjs
+      - name: Shared match 160-game host-authority soak
+        run: node tests/test-peer-room-match-soak.mjs
       - name: Build Alpha shell
         run: python3 tools/build_duel_modes_alpha.py
       - name: Generated loader contract

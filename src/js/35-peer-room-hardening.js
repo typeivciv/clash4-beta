@@ -16,3 +16,16 @@ if(typeof peerRoomKickSeat==='function'&&typeof peerRoomHostReleaseSeat==='funct
   globalThis.peerRoomKickSeat=peerRoomKickSeat;
   globalThis.peerRoomHardening={version:PEER_ROOM_HARDENING_VERSION,previousKick:peerRoomKickSeatBeforeHardening}
 }
+
+// 0.20 is deliberately layered after the proven 0.19 room transport so the existing
+// Direct Duel and room-connection code remain the reference implementation.
+function peerRoomLoadPlayableMatch(){
+  if(typeof document==='undefined')return;
+  if(!document.querySelector('link[data-peer-room-match]')){
+    const link=document.createElement('link');link.rel='stylesheet';link.href='src/styles/68-peer-room-match.css';link.dataset.peerRoomMatch='style';document.head.append(link)
+  }
+  if(document.querySelector('script[data-peer-room-match]'))return;
+  const script=document.createElement('script');script.src='src/js/36-peer-room-match.js';script.async=false;script.dataset.peerRoomMatch='script';document.head.append(script)
+}
+if(typeof document!=='undefined')peerRoomLoadPlayableMatch();
+globalThis.peerRoomLoadPlayableMatch=peerRoomLoadPlayableMatch;
