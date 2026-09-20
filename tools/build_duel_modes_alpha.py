@@ -20,6 +20,7 @@ UI_CONSISTENCY=ROOT/'src/js/29-ui-consistency.js'
 SCREEN_CONSISTENCY=ROOT/'src/js/30-screen-consistency.js'
 DIRECT_CHAT=ROOT/'src/js/31-direct-chat.js'
 IOS_CHAT_KEYBOARD=ROOT/'src/js/32-ios-chat-keyboard.js'
+DIRECT_CHAT_V2=ROOT/'src/js/33-direct-chat-v2.js'
 TURN_CSS=ROOT/'src/styles/51-duel-turn-alpha.css'
 DUEL_COLORS_CSS=ROOT/'src/styles/52-duel-colors-share.css'
 DUEL_POSTMATCH_CSS=ROOT/'src/styles/53-duel-postmatch.css'
@@ -35,6 +36,7 @@ UI_CONSISTENCY_CSS=ROOT/'src/styles/62-ui-consistency.css'
 SCREEN_CONSISTENCY_CSS=ROOT/'src/styles/63-screen-consistency.css'
 DIRECT_CHAT_CSS=ROOT/'src/styles/64-direct-chat.css'
 IOS_CHAT_KEYBOARD_CSS=ROOT/'src/styles/65-ios-chat-keyboard.css'
+DIRECT_CHAT_V2_CSS=ROOT/'src/styles/66-direct-chat-v2.css'
 VERSION='0.18.3'
 
 runpy.run_path(str(BASE_BUILDER),run_name='__main__')
@@ -52,6 +54,9 @@ def replace_once(old,new,label):
 html=html.replace('0.15.0',VERSION)
 html=html.replace(f'Duel Modes Alpha {VERSION}',f'Multiplayer Alpha {VERSION}')
 html=html.replace(f'Duel Modes {VERSION}',f'Multiplayer Alpha {VERSION}')
+replace_once('<meta name="viewport" content="width=device-width,initial-scale=1">',
+             '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">',
+             'Alpha mobile viewport')
 
 old_home='<button id="homeDuelButton" class="homeDuel" type="button"><span>Duel</span><small>Direct P2P · Pass &amp; Play · Online Room · Alpha</small></button>'
 new_home='<button id="homeDuelButton" class="homeDuel" type="button"><span>Multiplayer</span><small>Online · invite a friend · Pass &amp; Play</small></button>'
@@ -97,7 +102,7 @@ early_theme="""<script>
 </script>
 """
 peerjs='<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>\n'
-extra_style='<style>\n'+TURN_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DUEL_COLORS_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DUEL_POSTMATCH_CSS.read_text(encoding='utf-8').rstrip()+'\n'+ALPHA_TESTER_CSS.read_text(encoding='utf-8').rstrip()+'\n'+EASY_LEARNING_CSS.read_text(encoding='utf-8').rstrip()+'\n'+GAMEPLAY_FLOW_CSS.read_text(encoding='utf-8').rstrip()+'\n'+LEARNER_UX_CSS.read_text(encoding='utf-8').rstrip()+'\n'+HOME_MENU_CSS.read_text(encoding='utf-8').rstrip()+'\n'+THEME_MUSIC_CSS.read_text(encoding='utf-8').rstrip()+'\n'+THEME_EVENT_CSS.read_text(encoding='utf-8').rstrip()+'\n'+GAMEPLAY_V3_CSS.read_text(encoding='utf-8').rstrip()+'\n'+UI_CONSISTENCY_CSS.read_text(encoding='utf-8').rstrip()+'\n'+SCREEN_CONSISTENCY_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DIRECT_CHAT_CSS.read_text(encoding='utf-8').rstrip()+'\n'+IOS_CHAT_KEYBOARD_CSS.read_text(encoding='utf-8').rstrip()+'\n</style>\n'
+extra_style='<style>\n'+TURN_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DUEL_COLORS_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DUEL_POSTMATCH_CSS.read_text(encoding='utf-8').rstrip()+'\n'+ALPHA_TESTER_CSS.read_text(encoding='utf-8').rstrip()+'\n'+EASY_LEARNING_CSS.read_text(encoding='utf-8').rstrip()+'\n'+GAMEPLAY_FLOW_CSS.read_text(encoding='utf-8').rstrip()+'\n'+LEARNER_UX_CSS.read_text(encoding='utf-8').rstrip()+'\n'+HOME_MENU_CSS.read_text(encoding='utf-8').rstrip()+'\n'+THEME_MUSIC_CSS.read_text(encoding='utf-8').rstrip()+'\n'+THEME_EVENT_CSS.read_text(encoding='utf-8').rstrip()+'\n'+GAMEPLAY_V3_CSS.read_text(encoding='utf-8').rstrip()+'\n'+UI_CONSISTENCY_CSS.read_text(encoding='utf-8').rstrip()+'\n'+SCREEN_CONSISTENCY_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DIRECT_CHAT_CSS.read_text(encoding='utf-8').rstrip()+'\n'+IOS_CHAT_KEYBOARD_CSS.read_text(encoding='utf-8').rstrip()+'\n'+DIRECT_CHAT_V2_CSS.read_text(encoding='utf-8').rstrip()+'\n</style>\n'
 if peerjs not in html:
     if html.count('</head>')!=1:raise SystemExit('PeerJS injection: expected one </head>')
     html=html.replace('</head>',early_theme+extra_style+peerjs+'</head>',1)
@@ -119,6 +124,7 @@ ui_consistency=UI_CONSISTENCY.read_text(encoding='utf-8').rstrip()+'\n\n'
 screen_consistency=SCREEN_CONSISTENCY.read_text(encoding='utf-8').rstrip()+'\n\n'
 direct_chat=DIRECT_CHAT.read_text(encoding='utf-8').rstrip()+'\n\n'
 ios_chat_keyboard=IOS_CHAT_KEYBOARD.read_text(encoding='utf-8').rstrip()+'\n\n'
+direct_chat_v2=DIRECT_CHAT_V2.read_text(encoding='utf-8').rstrip()+'\n\n'
 if 'function directCreateNearby()' in html:raise SystemExit('Nearby PeerJS module already present; refusing duplicate injection')
 if 'DIRECT_ALPHA_TURN_SERVERS' in html:raise SystemExit('Alpha TURN module already present; refusing duplicate injection')
 if 'let duelSeatColors=' in html:raise SystemExit('Duel color/share module already present; refusing duplicate injection')
@@ -132,8 +138,9 @@ if 'GAMEPLAY_V3_VERSION' in html:raise SystemExit('Gameplay v3 module already pr
 if 'UI_CONSISTENCY_VERSION' in html:raise SystemExit('UI consistency module already present; refusing duplicate injection')
 if 'SCREEN_CONSISTENCY_VERSION' in html:raise SystemExit('screen consistency module already present; refusing duplicate injection')
 if 'DIRECT_CHAT_VERSION' in html:raise SystemExit('Direct chat module already present; refusing duplicate injection')
-if 'IOS_CHAT_KEYBOARD_VERSION' in html:raise SystemExit('iOS chat keyboard module already present; refusing duplicate injection')
-html=html.replace(anchor,nearby+turn+colors+postmatch+tester+easy+flow+learner+theme_music+gameplay_v3+ui_consistency+screen_consistency+direct_chat+ios_chat_keyboard+anchor,1)
+if 'IOS_CHAT_KEYBOARD_VERSION' in html:raise SystemExit('mobile chat keyboard module already present; refusing duplicate injection')
+if 'DIRECT_CHAT_V2_VERSION' in html:raise SystemExit('Direct chat v2 module already present; refusing duplicate injection')
+html=html.replace(anchor,nearby+turn+colors+postmatch+tester+easy+flow+learner+theme_music+gameplay_v3+ui_consistency+screen_consistency+direct_chat+ios_chat_keyboard+direct_chat_v2+anchor,1)
 OUT.write_text(html,encoding='utf-8')
 TESTER_OUT.write_text(html,encoding='utf-8')
-print(f'Built Multiplayer Alpha {VERSION} with Direct Duel P2P chat, iPhone keyboard repair, five world themes, world-reactive events, Gameplay UI v3, consistency repairs, and procedural music into {OUT.name} and {TESTER_OUT.name}')
+print(f'Built Multiplayer Alpha {VERSION} with Direct Duel P2P chat, Universal Chat v2, mobile keyboard handling, five world themes, world-reactive events, Gameplay UI v3, consistency repairs, and procedural music into {OUT.name} and {TESTER_OUT.name}')
