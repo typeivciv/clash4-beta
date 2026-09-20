@@ -26,6 +26,7 @@ on:
       - 'src/js/29-ui-consistency.js'
       - 'src/js/30-screen-consistency.js'
       - 'src/js/31-direct-chat.js'
+      - 'src/js/32-ios-chat-keyboard.js'
       - 'src/styles/50-private-duel.css'
       - 'src/styles/51-duel-turn-alpha.css'
       - 'src/styles/52-duel-colors-share.css'
@@ -41,11 +42,13 @@ on:
       - 'src/styles/62-ui-consistency.css'
       - 'src/styles/63-screen-consistency.css'
       - 'src/styles/64-direct-chat.css'
+      - 'src/styles/65-ios-chat-keyboard.css'
       - 'src/ui/private-duel-lobby.html'
       - 'tools/build_private_duel_alpha.py'
       - 'tools/build_duel_modes_alpha.py'
       - 'tests/test-duel-*.mjs'
       - 'tests/test-direct-*.mjs'
+      - 'tests/test-ios-chat-keyboard*.mjs'
       - 'tests/test-gameplay-flow.mjs'
       - 'tests/test-gameplay-v3.mjs'
       - 'tests/test-ui-consistency.mjs'
@@ -76,6 +79,7 @@ on:
       - 'src/js/29-ui-consistency.js'
       - 'src/js/30-screen-consistency.js'
       - 'src/js/31-direct-chat.js'
+      - 'src/js/32-ios-chat-keyboard.js'
       - 'src/styles/50-private-duel.css'
       - 'src/styles/51-duel-turn-alpha.css'
       - 'src/styles/52-duel-colors-share.css'
@@ -91,11 +95,13 @@ on:
       - 'src/styles/62-ui-consistency.css'
       - 'src/styles/63-screen-consistency.css'
       - 'src/styles/64-direct-chat.css'
+      - 'src/styles/65-ios-chat-keyboard.css'
       - 'src/ui/private-duel-lobby.html'
       - 'tools/build_private_duel_alpha.py'
       - 'tools/build_duel_modes_alpha.py'
       - 'tests/test-duel-*.mjs'
       - 'tests/test-direct-*.mjs'
+      - 'tests/test-ios-chat-keyboard*.mjs'
       - 'tests/test-gameplay-flow.mjs'
       - 'tests/test-gameplay-v3.mjs'
       - 'tests/test-ui-consistency.mjs'
@@ -140,9 +146,12 @@ jobs:
           node --check src/js/29-ui-consistency.js
           node --check src/js/30-screen-consistency.js
           node --check src/js/31-direct-chat.js
+          node --check src/js/32-ios-chat-keyboard.js
           node --check tests/test-direct-duel-soak.mjs
           node --check tests/test-direct-chat.mjs
           node --check tests/test-direct-chat-generated.mjs
+          node --check tests/test-ios-chat-keyboard.mjs
+          node --check tests/test-ios-chat-keyboard-generated.mjs
           node --check tests/test-gameplay-flow.mjs
           node --check tests/test-gameplay-v3.mjs
           node --check tests/test-ui-consistency.mjs
@@ -162,6 +171,8 @@ jobs:
         run: node tests/test-direct-duel-soak.mjs
       - name: Direct Duel chat isolation contract
         run: node tests/test-direct-chat.mjs
+      - name: iPhone Direct Chat keyboard contract
+        run: node tests/test-ios-chat-keyboard.mjs
       - name: Gameplay pacing and visual-flow contract
         run: node tests/test-gameplay-flow.mjs
       - name: Gameplay UI v3 presentation contract
@@ -180,6 +191,8 @@ jobs:
         run: python3 tools/build_duel_modes_alpha.py
       - name: Generated Direct Chat package contract
         run: node tests/test-direct-chat-generated.mjs
+      - name: Generated iPhone chat keyboard contract
+        run: node tests/test-ios-chat-keyboard-generated.mjs
       - name: Generated client contract
         run: node tests/test-private-duel-build.mjs
       - name: Publish Pages staging client
@@ -189,7 +202,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add private-duel-alpha.html multiplayer-alpha.html
-            git commit -m "Build Multiplayer Alpha 0.18.3 Direct Chat v1"
+            git commit -m "Build Multiplayer Alpha 0.18.3 iPhone chat keyboard repair"
             git pull --rebase origin main
             git push
           else
