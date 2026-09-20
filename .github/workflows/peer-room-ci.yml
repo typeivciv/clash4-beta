@@ -7,20 +7,26 @@ on:
       - 'src/js/33-direct-chat-v2.js'
       - 'src/js/34-peer-room-foundation.js'
       - 'src/js/35-peer-room-hardening.js'
+      - 'src/js/36-peer-room-match.js'
       - 'src/styles/67-peer-room-foundation.css'
+      - 'src/styles/68-peer-room-match.css'
       - 'tests/test-direct-chat-v2.mjs'
       - 'tests/test-direct-chat-v2-generated.mjs'
       - 'tests/test-peer-room-hardening.mjs'
+      - 'tests/test-peer-room-match.mjs'
       - '.github/workflows/peer-room-ci.yml'
   pull_request:
     paths:
       - 'src/js/33-direct-chat-v2.js'
       - 'src/js/34-peer-room-foundation.js'
       - 'src/js/35-peer-room-hardening.js'
+      - 'src/js/36-peer-room-match.js'
       - 'src/styles/67-peer-room-foundation.css'
+      - 'src/styles/68-peer-room-match.css'
       - 'tests/test-direct-chat-v2.mjs'
       - 'tests/test-direct-chat-v2-generated.mjs'
       - 'tests/test-peer-room-hardening.mjs'
+      - 'tests/test-peer-room-match.mjs'
       - '.github/workflows/peer-room-ci.yml'
 
 jobs:
@@ -37,13 +43,17 @@ jobs:
           node --check src/js/33-direct-chat-v2.js
           node --check src/js/34-peer-room-foundation.js
           node --check src/js/35-peer-room-hardening.js
+          node --check src/js/36-peer-room-match.js
           node --check tests/test-direct-chat-v2.mjs
           node --check tests/test-direct-chat-v2-generated.mjs
           node --check tests/test-peer-room-hardening.mjs
+          node --check tests/test-peer-room-match.mjs
       - name: Peer Room source contract
         run: node tests/test-direct-chat-v2.mjs
       - name: Remove Player cleanup contract
         run: node tests/test-peer-room-hardening.mjs
+      - name: Shared match + persistent lobby contract
+        run: node tests/test-peer-room-match.mjs
       - name: Build Alpha shell
         run: python3 tools/build_duel_modes_alpha.py
       - name: Generated loader contract
