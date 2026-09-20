@@ -74,7 +74,7 @@ directChatSetOpen=function(open,{restoreFocus=true}={}){
   document.body.classList.toggle('direct-chat-open',next);
   if(next){
     directChatState.returnFocus=document.activeElement;directChatState.unread=0;drawer.hidden=false;directChatV2SetBackdrop(directChatV2IsMobile());directChatRender();
-    requestAnimationFrame(()=>{drawer.classList.add('is-open');directChatKeyboard?.syncViewport?.();if(directChatV2IsMobile()){try{drawer.focus({preventScroll:true})}catch{drawer.focus()}}else{try{directChatEl('directChatInput')?.focus({preventScroll:true})}catch{directChatEl('directChatInput')?.focus()}}});
+    requestAnimationFrame(()=>{drawer.classList.add('is-open');globalThis.directChatKeyboard?.syncViewport?.();if(directChatV2IsMobile()){try{drawer.focus({preventScroll:true})}catch{drawer.focus()}}else{try{directChatEl('directChatInput')?.focus({preventScroll:true})}catch{directChatEl('directChatInput')?.focus()}}});
   }else{
     try{directChatEl('directChatInput')?.blur()}catch{}
     drawer.classList.remove('is-open');directChatV2SetBackdrop(false);document.body.classList.remove('direct-chat-input-focused','direct-chat-keyboard-shown');directChatRender();
@@ -91,7 +91,7 @@ function directChatV2Install(){
   directChatV2Installed=true;
   const input=directChatEl('directChatInput');
   input?.addEventListener('input',directChatRender);
-  window.addEventListener('resize',()=>{if(directChatState?.open)directChatKeyboard?.syncViewport?.()},{passive:true});
+  window.addEventListener('resize',()=>{if(directChatState?.open)globalThis.directChatKeyboard?.syncViewport?.()},{passive:true});
   directChatRender()
 }
 
