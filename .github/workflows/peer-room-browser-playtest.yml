@@ -1,0 +1,49 @@
+name: Peer Room Browser Playtest
+
+on:
+  pull_request:
+    paths:
+      - 'src/js/35-peer-room-hardening.js'
+      - 'src/js/36-peer-room-match.js'
+      - 'src/js/37-peer-room-runtime.js'
+      - 'src/js/38-peer-room-polish.js'
+      - 'src/js/39-peer-room-presentation.js'
+      - 'src/js/40-peer-room-transaction.js'
+      - 'src/js/41-peer-room-presentation-sync.js'
+      - 'tests/playtest-peer-room-presentation-sync.mjs'
+      - '.github/workflows/peer-room-browser-playtest.yml'
+  workflow_dispatch:
+
+jobs:
+  real-browser-peer-room:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install browser playtest runtime
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium webkit
+      - name: Build and serve current Alpha
+        run: |
+          python3 tools/build_duel_modes_alpha.py
+          mkdir -p artifacts
+          python3 -m http.server 8080 --bind 127.0.0.1 > /tmp/clash4-http.log 2>&1 &
+          echo $! > /tmp/clash4-http.pid
+          for i in {1..20}; do curl -fsS http://127.0.0.1:8080/multiplayer-alpha.html >/dev/null && exit 0; sleep 0.5; done
+          cat /tmp/clash4-http.log
+          exit 1
+      - name: Chromium host + WebKit guest with asymmetric transport jitter
+        run: node tests/playtest-peer-room-presentation-sync.mjs
+      - name: Upload visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: peer-room-presentation-sync-playtest
+          path: |
+            artifacts/
+            /tmp/clash4-http.log
+          if-no-files-found: ignore
