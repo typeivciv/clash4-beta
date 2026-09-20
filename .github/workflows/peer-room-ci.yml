@@ -14,6 +14,7 @@ on:
       - 'tests/test-direct-chat-v2-generated.mjs'
       - 'tests/test-peer-room-hardening.mjs'
       - 'tests/test-peer-room-match.mjs'
+      - 'tests/test-peer-room-match-soak.mjs'
       - '.github/workflows/peer-room-ci.yml'
   pull_request:
     paths:
@@ -27,12 +28,13 @@ on:
       - 'tests/test-direct-chat-v2-generated.mjs'
       - 'tests/test-peer-room-hardening.mjs'
       - 'tests/test-peer-room-match.mjs'
+      - 'tests/test-peer-room-match-soak.mjs'
       - '.github/workflows/peer-room-ci.yml'
 
 jobs:
   peer-room-foundation:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 4
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -48,12 +50,15 @@ jobs:
           node --check tests/test-direct-chat-v2-generated.mjs
           node --check tests/test-peer-room-hardening.mjs
           node --check tests/test-peer-room-match.mjs
+          node --check tests/test-peer-room-match-soak.mjs
       - name: Peer Room source contract
         run: node tests/test-direct-chat-v2.mjs
       - name: Remove Player cleanup contract
         run: node tests/test-peer-room-hardening.mjs
       - name: Shared match + persistent lobby contract
         run: node tests/test-peer-room-match.mjs
+      - name: Shared match 160-game host-authority soak
+        run: node tests/test-peer-room-match-soak.mjs
       - name: Build Alpha shell
         run: python3 tools/build_duel_modes_alpha.py
       - name: Generated loader contract
