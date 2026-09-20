@@ -85,6 +85,14 @@ directChatSetOpen=function(open,{restoreFocus=true}={}){
 };
 globalThis.directChatSetOpen=directChatSetOpen;
 
+function directChatV2LoadPeerRoomFoundation(){
+  if(document.querySelector('script[data-peer-room-foundation]'))return;
+  if(!document.querySelector('link[data-peer-room-foundation]')){
+    const link=document.createElement('link');link.rel='stylesheet';link.href='src/styles/67-peer-room-foundation.css';link.dataset.peerRoomFoundation='style';document.head.append(link)
+  }
+  const script=document.createElement('script');script.src='src/js/34-peer-room-foundation.js';script.async=false;script.dataset.peerRoomFoundation='script';document.head.append(script)
+}
+
 function directChatV2Install(){
   if(directChatV2Installed)return;
   if(!directChatV2DecorateUi()){setTimeout(directChatV2Install,0);return}
@@ -92,8 +100,9 @@ function directChatV2Install(){
   const input=directChatEl('directChatInput');
   input?.addEventListener('input',directChatRender);
   window.addEventListener('resize',()=>{if(directChatState?.open)globalThis.directChatKeyboard?.syncViewport?.()},{passive:true});
+  directChatV2LoadPeerRoomFoundation();
   directChatRender()
 }
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',directChatV2Install,{once:true});else directChatV2Install();
-globalThis.directChatV2={version:DIRECT_CHAT_V2_VERSION,install:directChatV2Install,isMobile:directChatV2IsMobile};
+globalThis.directChatV2={version:DIRECT_CHAT_V2_VERSION,install:directChatV2Install,isMobile:directChatV2IsMobile,loadPeerRoom:directChatV2LoadPeerRoomFoundation};
