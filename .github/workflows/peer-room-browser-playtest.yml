@@ -1,0 +1,52 @@
+name: Peer Room Browser Playtest
+
+on:
+  pull_request:
+    paths:
+      - 'tests/playtest-peer-room-browser.mjs'
+      - 'tests/playtest-peer-room-ui.mjs'
+      - '.github/workflows/peer-room-browser-playtest.yml'
+      - 'src/js/34-peer-room-foundation.js'
+      - 'src/js/35-peer-room-hardening.js'
+      - 'src/js/36-peer-room-match.js'
+      - 'src/js/37-peer-room-runtime.js'
+      - 'src/js/38-peer-room-polish.js'
+      - 'src/js/39-peer-room-presentation.js'
+      - 'src/js/40-peer-room-transaction.js'
+      - 'multiplayer-alpha.html'
+  workflow_dispatch:
+
+jobs:
+  real-browser-peer-room:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install browser playtest runtime
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium webkit
+      - name: Serve current generated Alpha
+        run: |
+          mkdir -p artifacts
+          python3 -m http.server 8080 --bind 127.0.0.1 > /tmp/clash4-http.log 2>&1 &
+          echo $! > /tmp/clash4-http.pid
+          for i in {1..20}; do curl -fsS http://127.0.0.1:8080/multiplayer-alpha.html >/dev/null && exit 0; sleep 0.5; done
+          cat /tmp/clash4-http.log
+          exit 1
+      - name: Chromium host + WebKit guest controller playtest
+        run: node tests/playtest-peer-room-browser.mjs
+      - name: Touch-level visible UI playtest
+        run: node tests/playtest-peer-room-ui.mjs
+      - name: Upload visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: peer-room-browser-playtest
+          path: |
+            artifacts/
+            /tmp/clash4-http.log
+          if-no-files-found: ignore
