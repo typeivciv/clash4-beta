@@ -9,7 +9,7 @@ function after(owner,column,type='rock'){
   const st=emptyState();st.board[column].push({owner,type,id:1});st.lastMove={owner,column,type,survived:true,eliminations:0,hadCombat:false};st.moveNumber=1;st.turn=owner==='human'?'ai':'human';return st
 }
 function client({seat,role}){
-  const clock={now:0},timers=[];
+  const clock={now:1000},timers=[];
   const c={console,Date,Math,Number,Object,Array,Set,Map,structuredClone,
     performance:{now:()=>clock.now},H:'human',A:'ai',T:['rock','paper','scissors','decoy'],TIMING:{drop:220},PEER_ROOM_PROTOCOL:1,
     peerRoom:{seat,role,conn:{open:true}},peerRoomMatch:{phase:'active',spectator:false,matchId:'m1',authority:{state:emptyState(),version:1}},peerRoomPolishState:{previewPending:null},
@@ -27,24 +27,24 @@ function client({seat,role}){
 }
 function due(client){return client.timers.find(t=>t.name==='peerRoomMoveTransaction')?.due}
 
-const LATENCY=80;
+const BASE=1000,LATENCY=80;
 
-// P1 moves: host starts immediately at t=0. P2 cannot begin until packet arrival at t=80.
+// P1 moves: host starts immediately. P2 cannot begin until the authoritative packet arrives.
 {
   const p1=client({seat:1,role:'host'}),p2=client({seat:2,role:'guest'});
-  p1.clock.now=0;p1.c.peerRoomMatchMove('human','rock',2);p1.c.duelApplyActiveUpdate({version:2,state:after('human',2),events:[]});
-  p2.clock.now=LATENCY;p2.c.duelApplyActiveUpdate({version:2,state:after('ai',2),events:[]});
-  assert.equal(due(p1),220);assert.equal(due(p2),300);
+  p1.clock.now=BASE;p1.c.peerRoomMatchMove('human','rock',2);p1.c.duelApplyActiveUpdate({version:2,state:after('human',2),events:[]});
+  p2.clock.now=BASE+LATENCY;p2.c.duelApplyActiveUpdate({version:2,state:after('ai',2),events:[]});
+  assert.equal(due(p1),BASE+220);assert.equal(due(p2),BASE+LATENCY+220);
   assert.equal(due(p2)-due(p1),LATENCY,'P2 visual commit is one network leg behind P1');
 }
 
-// P2 moves: P2 starts optimistically at t=0. Host receives at t=80; confirmation returns at t=160.
+// P2 moves: P2 starts optimistically. Host starts only when the move reaches it; confirmation returns later.
 {
   const p1=client({seat:1,role:'host'}),p2=client({seat:2,role:'guest'});
-  p2.clock.now=0;p2.c.peerRoomMatchMove('human','paper',4);
-  p1.clock.now=LATENCY;p1.c.duelApplyActiveUpdate({version:2,state:after('ai',4,'paper'),events:[]});
-  p2.clock.now=LATENCY*2;p2.c.duelApplyActiveUpdate({version:2,state:after('human',4,'paper'),events:[]});
-  assert.equal(due(p2),220);assert.equal(due(p1),300);
+  p2.clock.now=BASE;p2.c.peerRoomMatchMove('human','paper',4);
+  p1.clock.now=BASE+LATENCY;p1.c.duelApplyActiveUpdate({version:2,state:after('ai',4,'paper'),events:[]});
+  p2.clock.now=BASE+LATENCY*2;p2.c.duelApplyActiveUpdate({version:2,state:after('human',4,'paper'),events:[]});
+  assert.equal(due(p2),BASE+220);assert.equal(due(p1),BASE+LATENCY+220);
   assert.equal(due(p1)-due(p2),LATENCY,'host visual commit is one network leg behind P2');
 }
 
