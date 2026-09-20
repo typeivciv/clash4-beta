@@ -19,13 +19,13 @@ async function installProbe(page,name){
     globalThis.__peerPlaytest={name,feedback:[],renders:[],errors:[]};
     const oldFeedback=globalThis.emitFeedback;
     if(typeof oldFeedback==='function')globalThis.emitFeedback=function(kind,...rest){
-      try{globalThis.__peerPlaytest.feedback.push({t:performance.now(),kind,move:s?.moveNumber??null,busy:!!busy,drop:dropPresentation?{column:dropPresentation.column,owner:dropPresentation.owner,moveNumber:dropPresentation.moveNumber}:null})}catch{}
+      try{globalThis.__peerPlaytest.feedback.push({t:performance.now(),kind,move:(typeof s!=='undefined'?s?.moveNumber:null),busy:(typeof busy!=='undefined'?!!busy:null),drop:(typeof dropPresentation!=='undefined'&&dropPresentation)?{column:dropPresentation.column,owner:dropPresentation.owner,moveNumber:dropPresentation.moveNumber}:null})}catch{}
       return oldFeedback.call(this,kind,...rest)
     };
     const oldRender=globalThis.render;
     if(typeof oldRender==='function')globalThis.render=function(...args){
       const out=oldRender.apply(this,args);
-      try{globalThis.__peerPlaytest.renders.push({t:performance.now(),move:s?.moveNumber??null,busy:!!busy,handled:duelSession?.handledVersion??null,drop:dropPresentation?{column:dropPresentation.column,owner:dropPresentation.owner,moveNumber:dropPresentation.moveNumber}:null,discCount:document.querySelectorAll('.disc').length})}catch{}
+      try{globalThis.__peerPlaytest.renders.push({t:performance.now(),move:(typeof s!=='undefined'?s?.moveNumber:null),busy:(typeof busy!=='undefined'?!!busy:null),handled:(typeof duelSession!=='undefined'?duelSession?.handledVersion:null),drop:(typeof dropPresentation!=='undefined'&&dropPresentation)?{column:dropPresentation.column,owner:dropPresentation.owner,moveNumber:dropPresentation.moveNumber}:null,discCount:document.querySelectorAll('.disc').length})}catch{}
       return out
     };
   },name);
@@ -34,7 +34,11 @@ async function installProbe(page,name){
 async function snap(page,label){
   return page.evaluate(label=>{
     const seat=Number(globalThis.peerRoom?.seat||0);
-    const st=globalThis.s||{};
+    const st=typeof s!=='undefined'&&s?s:{};
+    const ds=typeof duelSession!=='undefined'&&duelSession?duelSession:{};
+    const isBusy=typeof busy!=='undefined'?!!busy:false;
+    const isReady=typeof ready!=='undefined'?!!ready:false;
+    const dp=typeof dropPresentation!=='undefined'?dropPresentation:null;
     const board=(st.board||[]).map(col=>(col||[]).map(p=>({owner:p.owner,type:p.type??null,id:p.id??null})));
     const turnSeat=st.turn==='human'?seat:st.turn==='ai'?(seat===1?2:1):null;
     const lm=st.lastMove||null;
@@ -44,9 +48,9 @@ async function snap(page,label){
       moveNumber:Number(st.moveNumber||0),turn:st.turn||null,turnSeat,winner:st.winner||null,draw:!!st.draw,
       lastMove:lm?{owner:lm.owner,seat:lastMoveSeat,column:Number(lm.column),type:lm.type??null}:null,
       board,heights:board.map(c=>c.length),
-      busy:!!globalThis.busy,ready:!!globalThis.ready,handled:Number(duelSession?.handledVersion??-1),
-      pending:duelSession?.pendingLocal?{column:Number(duelSession.pendingLocal.column),type:duelSession.pendingLocal.type,tx:!!duelSession.pendingLocal.peerRoomTransaction}:null,
-      drop:dropPresentation?{column:Number(dropPresentation.column),owner:dropPresentation.owner,type:dropPresentation.type??null,moveNumber:Number(dropPresentation.moveNumber||0)}:null,
+      busy:isBusy,ready:isReady,handled:Number(ds.handledVersion??-1),
+      pending:ds.pendingLocal?{column:Number(ds.pendingLocal.column),type:ds.pendingLocal.type,tx:!!ds.pendingLocal.peerRoomTransaction,optimistic:!!ds.pendingLocal.peerOptimistic}:null,
+      drop:dp?{column:Number(dp.column),owner:dp.owner,type:dp.type??null,moveNumber:Number(dp.moveNumber||0)}:null,
       canonical:peerRoom?.role==='host'&&peerRoomMatch?.authority?{version:Number(peerRoomMatch.authority.version),moveNumber:Number(peerRoomMatch.authority.state?.moveNumber||0),turn:peerRoomMatch.authority.state?.turn||null}:null,
       discs:document.querySelectorAll('.disc').length,
       probe:globalThis.__peerPlaytest?{feedback:[...__peerPlaytest.feedback],renders:[...__peerPlaytest.renders]}:null
@@ -54,14 +58,11 @@ async function snap(page,label){
   },label);
 }
 
-function normalizeBoard(snap){
-  return snap.board.map(col=>col.map(p=>({seat:physicalOwner(p.owner,snap.seat),type:p.type})))
-}
 function occupancy(snap){return snap.board.map(col=>col.map(p=>physicalOwner(p.owner,snap.seat)))}
 function reportPair(tag,h,g){
   console.log(`\n=== ${tag} ===`);
-  console.log('HOST',JSON.stringify({move:h.moveNumber,turnSeat:h.turnSeat,handled:h.handled,busy:h.busy,drop:h.drop,heights:h.heights,discs:h.discs,canonical:h.canonical,lastMove:h.lastMove}));
-  console.log('GUEST',JSON.stringify({move:g.moveNumber,turnSeat:g.turnSeat,handled:g.handled,busy:g.busy,drop:g.drop,heights:g.heights,discs:g.discs,lastMove:g.lastMove}));
+  console.log('HOST',JSON.stringify({move:h.moveNumber,turn:h.turn,turnSeat:h.turnSeat,handled:h.handled,busy:h.busy,pending:h.pending,drop:h.drop,heights:h.heights,discs:h.discs,canonical:h.canonical,lastMove:h.lastMove}));
+  console.log('GUEST',JSON.stringify({move:g.moveNumber,turn:g.turn,turnSeat:g.turnSeat,handled:g.handled,busy:g.busy,pending:g.pending,drop:g.drop,heights:g.heights,discs:g.discs,lastMove:g.lastMove}));
 }
 
 async function chooseMove(page,preferredColumn){
@@ -136,7 +137,10 @@ try{
   await host.waitForFunction(()=>peerRoomMatch?.phase==='active'&&duelSession?.active,{timeout:10000});
   await guest.waitForFunction(()=>peerRoomMatch?.phase==='active'&&duelSession?.active,{timeout:10000});
   let h=await snap(host,'start-h'),g=await snap(guest,'start-g');reportPair('MATCH START',h,g);
+  assert.ok([1,2].includes(h.turnSeat),'host must map initial turn to a physical seat');
   assert.equal(h.turnSeat,g.turnSeat,'starting physical turn differs');
+  assert.equal(h.heights.length,8,'host should render all eight columns');
+  assert.equal(g.heights.length,8,'guest should render all eight columns');
   assert.deepEqual(occupancy(h),occupancy(g),'starting board differs');
 
   const columns=[3,3,4,4,2,2,5,5];
@@ -150,8 +154,8 @@ try{
   }
 
   h=await snap(host,'end-h');g=await snap(guest,'end-g');
-  console.log('\nHOST render trace',JSON.stringify(h.probe.renders.slice(-30)));
-  console.log('\nGUEST render trace',JSON.stringify(g.probe.renders.slice(-30)));
+  console.log('\nHOST render trace',JSON.stringify(h.probe.renders.slice(-40)));
+  console.log('\nGUEST render trace',JSON.stringify(g.probe.renders.slice(-40)));
   console.log('\nHOST feedback',JSON.stringify(h.probe.feedback));
   console.log('\nGUEST feedback',JSON.stringify(g.probe.feedback));
 
