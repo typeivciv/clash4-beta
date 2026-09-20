@@ -17,13 +17,26 @@ if(typeof peerRoomKickSeat==='function'&&typeof peerRoomHostReleaseSeat==='funct
   globalThis.peerRoomHardening={version:PEER_ROOM_HARDENING_VERSION,previousKick:peerRoomKickSeatBeforeHardening}
 }
 
+function peerRoomLoadPresentation(){
+  if(typeof document==='undefined')return;
+  if(!document.querySelector('link[data-peer-room-presentation]')){
+    const link=document.createElement('link');link.rel='stylesheet';link.href='src/styles/70-peer-room-presentation.css';link.dataset.peerRoomPresentation='style';document.head.append(link)
+  }
+  if(document.querySelector('script[data-peer-room-presentation]'))return;
+  const script=document.createElement('script');script.src='src/js/39-peer-room-presentation.js';script.async=false;script.dataset.peerRoomPresentation='script';document.head.append(script)
+}
 function peerRoomLoadPolish(){
   if(typeof document==='undefined')return;
   if(!document.querySelector('link[data-peer-room-polish]')){
     const link=document.createElement('link');link.rel='stylesheet';link.href='src/styles/69-peer-room-polish.css';link.dataset.peerRoomPolish='style';document.head.append(link)
   }
-  if(document.querySelector('script[data-peer-room-polish]'))return;
-  const script=document.createElement('script');script.src='src/js/38-peer-room-polish.js';script.async=false;script.dataset.peerRoomPolish='script';document.head.append(script)
+  const existing=document.querySelector('script[data-peer-room-polish]');
+  if(existing){
+    if(globalThis.peerRoomPolish)peerRoomLoadPresentation();
+    else existing.addEventListener('load',peerRoomLoadPresentation,{once:true});
+    return
+  }
+  const script=document.createElement('script');script.src='src/js/38-peer-room-polish.js';script.async=false;script.dataset.peerRoomPolish='script';script.addEventListener('load',peerRoomLoadPresentation,{once:true});document.head.append(script)
 }
 function peerRoomLoadRuntimeBridge(){
   if(typeof document==='undefined')return;
@@ -38,7 +51,8 @@ function peerRoomLoadRuntimeBridge(){
 
 // 0.20 is deliberately layered after the proven 0.19 room transport so the existing
 // Direct Duel and room-connection code remain the reference implementation. 0.20.1 adds
-// the live-game route/chat bridge, then 0.20.2 adds latency, seat-color, and navigation polish.
+// the live-game route/chat bridge, 0.20.2 adds latency/color/navigation polish, and 0.20.3
+// unifies P1/P2 move presentation while separating live utilities from the turn banner.
 function peerRoomLoadPlayableMatch(){
   if(typeof document==='undefined')return;
   if(!document.querySelector('link[data-peer-room-match]')){
@@ -56,3 +70,4 @@ if(typeof document!=='undefined')peerRoomLoadPlayableMatch();
 globalThis.peerRoomLoadPlayableMatch=peerRoomLoadPlayableMatch;
 globalThis.peerRoomLoadRuntimeBridge=peerRoomLoadRuntimeBridge;
 globalThis.peerRoomLoadPolish=peerRoomLoadPolish;
+globalThis.peerRoomLoadPresentation=peerRoomLoadPresentation;
