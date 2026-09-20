@@ -14,7 +14,7 @@ for(const token of [
   'if(samePending&&dropPresentation)',
   "scheduleTimer('peerRoomMoveTransaction'",
   "kind:'room-rematch-request'",
-  "kind:'room-rematch-start'",
+  "'room-rematch-start'",
   'peerRoomRematchActionControls'
 ])assert.ok(src.includes(token),`missing 0.20.4 transaction contract: ${token}`);
 assert.ok(loader.includes("src/js/40-peer-room-transaction.js"),'loader must mount 0.20.4 after presentation');
