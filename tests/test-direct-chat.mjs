@@ -32,11 +32,41 @@ for(const token of [
   'globalThis.directChat='
 ])assert.ok(js.includes(token),`Direct chat contract missing ${token}`);
 
+for(const token of [
+  "const DIRECT_MOBILE_RESUME_VERSION='0.18.5'",
+  'const DIRECT_MOBILE_PONG_TIMEOUT_MS=2600',
+  'const DIRECT_MOBILE_HEARTBEAT_MS=12_000',
+  'function directMobileResumeEligible()',
+  "directDuel?.pairing==='nearby'",
+  'function directMobileEnsureSignaling()',
+  "peer.reconnect()",
+  'function directMobileGuestConnect()',
+  "peer.connect(target,{reliable:true,serialization:'json'})",
+  "kind:'resume-ping'",
+  "kind:'resume-pong'",
+  "kind:'resume-request'",
+  "kind:'resume-state'",
+  'function directMobileSendSnapshot()',
+  'localDuelPayload(auth.state,A,auth.version,[],players)',
+  'function directMobileApplySnapshot(payload)',
+  'duelSession.pendingLocal=null;busy=false',
+  'const directBindChannelBeforeMobileResume=directBindChannel',
+  'const resuming=directMobileResumeEligible()&&(directMobileResumeState.recovering||!directDuel.active)',
+  "directConnectionBadge('online','Direct connected')",
+  "document.addEventListener('visibilitychange',directMobileResumeFromLifecycle)",
+  "window.addEventListener('pageshow',directMobileResumeFromLifecycle)",
+  "window.addEventListener('online',directMobileResumeFromLifecycle)",
+  "window.addEventListener('focus',directMobileResumeFromLifecycle)",
+  '!globalThis.directMobileRecovery?.recovering',
+  'globalThis.directMobileRecovery={'
+])assert.ok(js.includes(token),`Mobile Direct resume contract missing ${token}`);
+
 for(const forbidden of [
   'resolveRaw(', 'applyLocalDuelMove(', 'detectClashmate(', 'criticalColsFor(',
   's.board=', 's.inv=', 's.turn=', 's.winner=', 's.draw=',
-  'fetch(', 'localStorage.setItem(', 'sessionStorage.setItem(', 'innerHTML=message.text'
-])assert.ok(!js.includes(forbidden),`Direct chat must stay outside rules/state/persistence: ${forbidden}`);
+  'fetch(', 'localStorage.setItem(', 'sessionStorage.setItem(', 'innerHTML=message.text',
+  'location.reload(', 'history.go(', 'window.location='
+])assert.ok(!js.includes(forbidden),`Direct social/resume layer must stay outside rules/state/persistence/navigation: ${forbidden}`);
 
 for(const token of [
   '.directChatFab{', '.directChatDrawer{', '.directChatMessage.mine{', '.directChatMessage.theirs{',
@@ -52,5 +82,5 @@ for(const token of [
   'screen_consistency+direct_chat+anchor'
 ])assert.ok(builder.includes(token),`Alpha builder missing Direct Chat package token ${token}`);
 
-try{new Function(js)}catch(error){throw new Error(`Direct chat syntax failed: ${error.message}`)}
-console.log('PASS Direct Duel Chat 0.18.4: P2P-only transport, 50-message memory cap, 200-char plain text, rate limits, quick reactions, mute, unread badge, rematch/leave cleanup, theme-aware responsive drawer');
+try{new Function(js)}catch(error){throw new Error(`Direct chat/mobile-resume syntax failed: ${error.message}`)}
+console.log('PASS Direct Duel social/resume 0.18.5: P2P chat isolation + mobile background heartbeat, signaling reconnect, transport rebuild, host snapshot resync');
