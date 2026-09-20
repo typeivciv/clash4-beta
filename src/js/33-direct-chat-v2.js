@@ -85,12 +85,17 @@ directChatSetOpen=function(open,{restoreFocus=true}={}){
 };
 globalThis.directChatSetOpen=directChatSetOpen;
 
+function directChatV2LoadPeerRoomHardening(){
+  if(document.querySelector('script[data-peer-room-hardening]'))return;
+  const script=document.createElement('script');script.src='src/js/35-peer-room-hardening.js';script.async=false;script.dataset.peerRoomHardening='script';document.head.append(script)
+}
 function directChatV2LoadPeerRoomFoundation(){
-  if(document.querySelector('script[data-peer-room-foundation]'))return;
   if(!document.querySelector('link[data-peer-room-foundation]')){
     const link=document.createElement('link');link.rel='stylesheet';link.href='src/styles/67-peer-room-foundation.css';link.dataset.peerRoomFoundation='style';document.head.append(link)
   }
-  const script=document.createElement('script');script.src='src/js/34-peer-room-foundation.js';script.async=false;script.dataset.peerRoomFoundation='script';document.head.append(script)
+  const existing=document.querySelector('script[data-peer-room-foundation]');
+  if(existing){if(globalThis.peerRoomFoundation)directChatV2LoadPeerRoomHardening();else existing.addEventListener('load',directChatV2LoadPeerRoomHardening,{once:true});return}
+  const script=document.createElement('script');script.src='src/js/34-peer-room-foundation.js';script.async=false;script.dataset.peerRoomFoundation='script';script.addEventListener('load',directChatV2LoadPeerRoomHardening,{once:true});document.head.append(script)
 }
 
 function directChatV2Install(){
