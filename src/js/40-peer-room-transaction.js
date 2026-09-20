@@ -89,6 +89,27 @@ duelApplyActiveUpdate=function(payload){
 };
 globalThis.duelApplyActiveUpdate=duelApplyActiveUpdate;
 
+// The 0.20.2/0.20.3 wrappers intentionally refreshed colors/chrome after every payload,
+// but their final render rebuilt the falling-disc node. Own the Peer Room entry seam here
+// so confirmation cannot restart a local drop or erase the host's staged remote drop.
+const peerRoomMatchEnterPayloadBeforeTransaction=peerRoomMatchEnterPayload;
+peerRoomMatchEnterPayload=function(payload,matchId,seat=peerRoom?.seat){
+  if(!payload?.state)return;
+  const first=peerRoomMatch.matchId!==matchId||!duelSession.active;
+  peerRoomMatch.phase='active';peerRoomMatch.matchId=matchId||peerRoomMatch.matchId;peerRoomMatch.lastPayload=payload;peerRoomMatch.spectator=Number(seat)>2;
+  if(peerRoomMatch.spectator&&!peerRoomMatch.watching)return;
+  peerRoomMatchPrepareGameShell(seat);
+  if(first){duelSession.active=false;duelSession.phase='active';duelSession.version=-1;duelSession.handledVersion=-1;duelSession.pendingLocal=null;duelSession.deferredPayloads=[]}
+  duelApplyPayload(payload);
+  try{directConnectionBadge('online',peerRoomMatch.spectator?'Peer Room · Spectating':'Peer Room · Live')}catch{}
+  if(peerRoomMatch.spectator){ready=true;busy=false;try{msg(payload.state.winner||payload.state.draw?'Shared match complete.':'Spectating Player 1 vs Player 2.')}catch{}}
+  try{peerRoomPolishApplyGameColors()}catch{}
+  try{peerRoomPolishSyncMatchChrome()}catch{}
+  try{peerRoomPresentationSyncUtilities()}catch{}
+  try{peerRoomRuntimeEnterChat()}catch{}
+};
+globalThis.peerRoomMatchEnterPayload=peerRoomMatchEnterPayload;
+
 function peerRoomRematchReset(){peerRoomTransactionState.rematchVotes={1:false,2:false};peerRoomTransactionState.rematchStarting=false}
 function peerRoomRematchTerminal(){return peerRoomTransactionActive()&&!!(s?.winner||s?.draw)}
 function peerRoomRematchUiState(){
