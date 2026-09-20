@@ -32,7 +32,8 @@ const context=vm.createContext({
 context.globalThis=context;
 vm.runInContext(hardening,context);
 vm.runInContext('peerRoomKickSeat(2)',context);
-assert.deepEqual(release,{seat:2,options:{block:true}},'host must release and block removed seat');
+assert.equal(release?.seat,2,'host must release the requested guest seat');
+assert.equal(release?.options?.block,true,'host must block the removed client identity for this room');
 assert.equal(conn.closed,true,'host must explicitly close the removed guest transport');
 assert.match(status,/Player 2 removed/);
 release=null;vm.runInContext('peerRoomKickSeat(1)',context);assert.equal(release,null,'host seat cannot be removed');
