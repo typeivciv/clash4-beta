@@ -35,6 +35,7 @@ on:
       - 'src/js/38-peer-room-polish.js'
       - 'src/js/39-peer-room-presentation.js'
       - 'src/js/40-peer-room-transaction.js'
+      - 'src/js/41-peer-room-presentation-sync.js'
       - 'src/styles/50-private-duel.css'
       - 'src/styles/51-duel-turn-alpha.css'
       - 'src/styles/52-duel-colors-share.css'
@@ -102,6 +103,7 @@ on:
       - 'src/js/38-peer-room-polish.js'
       - 'src/js/39-peer-room-presentation.js'
       - 'src/js/40-peer-room-transaction.js'
+      - 'src/js/41-peer-room-presentation-sync.js'
       - 'src/styles/50-private-duel.css'
       - 'src/styles/51-duel-turn-alpha.css'
       - 'src/styles/52-duel-colors-share.css'
@@ -183,6 +185,7 @@ jobs:
           node --check src/js/38-peer-room-polish.js
           node --check src/js/39-peer-room-presentation.js
           node --check src/js/40-peer-room-transaction.js
+          node --check src/js/41-peer-room-presentation-sync.js
           node --check tests/test-direct-duel-soak.mjs
           node --check tests/test-direct-chat.mjs
           node --check tests/test-direct-chat-generated.mjs
@@ -199,6 +202,7 @@ jobs:
           node --check tests/test-peer-room-hardening.mjs
           node --check tests/test-peer-room-match.mjs
           node --check tests/test-peer-room-transaction.mjs
+          node --check tests/test-peer-room-presentation-sync.mjs
           python3 -m py_compile tools/build_private_duel_alpha.py tools/build_duel_modes_alpha.py
       - name: Client ordering contract
         run: node tests/test-duel-client-contract.mjs
@@ -222,6 +226,8 @@ jobs:
         run: node tests/test-peer-room-match.mjs
       - name: Peer Room single-drop transaction + rematch
         run: node tests/test-peer-room-transaction.mjs
+      - name: Peer Room host-timed presentation sync
+        run: node tests/test-peer-room-presentation-sync.mjs
       - name: Gameplay pacing and visual-flow contract
         run: node tests/test-gameplay-flow.mjs
       - name: Gameplay UI v3 presentation contract
@@ -253,7 +259,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add private-duel-alpha.html multiplayer-alpha.html
-            git commit -m "Build Multiplayer Alpha 0.20.4 Peer Room transaction and rematch"
+            git commit -m "Build Multiplayer Alpha 0.20.5 Peer Room presentation sync"
             git pull --rebase origin main
             git push
           else
