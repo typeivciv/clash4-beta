@@ -17,14 +17,28 @@ if(typeof peerRoomKickSeat==='function'&&typeof peerRoomHostReleaseSeat==='funct
   globalThis.peerRoomHardening={version:PEER_ROOM_HARDENING_VERSION,previousKick:peerRoomKickSeatBeforeHardening}
 }
 
+function peerRoomLoadPolish(){
+  if(typeof document==='undefined')return;
+  if(!document.querySelector('link[data-peer-room-polish]')){
+    const link=document.createElement('link');link.rel='stylesheet';link.href='src/styles/69-peer-room-polish.css';link.dataset.peerRoomPolish='style';document.head.append(link)
+  }
+  if(document.querySelector('script[data-peer-room-polish]'))return;
+  const script=document.createElement('script');script.src='src/js/38-peer-room-polish.js';script.async=false;script.dataset.peerRoomPolish='script';document.head.append(script)
+}
 function peerRoomLoadRuntimeBridge(){
-  if(typeof document==='undefined'||document.querySelector('script[data-peer-room-runtime]'))return;
-  const script=document.createElement('script');script.src='src/js/37-peer-room-runtime.js';script.async=false;script.dataset.peerRoomRuntime='script';document.head.append(script)
+  if(typeof document==='undefined')return;
+  const existing=document.querySelector('script[data-peer-room-runtime]');
+  if(existing){
+    if(globalThis.peerRoomRuntime)peerRoomLoadPolish();
+    else existing.addEventListener('load',peerRoomLoadPolish,{once:true});
+    return
+  }
+  const script=document.createElement('script');script.src='src/js/37-peer-room-runtime.js';script.async=false;script.dataset.peerRoomRuntime='script';script.addEventListener('load',peerRoomLoadPolish,{once:true});document.head.append(script)
 }
 
 // 0.20 is deliberately layered after the proven 0.19 room transport so the existing
-// Direct Duel and room-connection code remain the reference implementation. 0.20.1 then
-// adds the live-game route/chat bridge only after the shared-match layer has initialized.
+// Direct Duel and room-connection code remain the reference implementation. 0.20.1 adds
+// the live-game route/chat bridge, then 0.20.2 adds latency, seat-color, and navigation polish.
 function peerRoomLoadPlayableMatch(){
   if(typeof document==='undefined')return;
   if(!document.querySelector('link[data-peer-room-match]')){
@@ -41,3 +55,4 @@ function peerRoomLoadPlayableMatch(){
 if(typeof document!=='undefined')peerRoomLoadPlayableMatch();
 globalThis.peerRoomLoadPlayableMatch=peerRoomLoadPlayableMatch;
 globalThis.peerRoomLoadRuntimeBridge=peerRoomLoadRuntimeBridge;
+globalThis.peerRoomLoadPolish=peerRoomLoadPolish;
