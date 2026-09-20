@@ -19,7 +19,8 @@ for(const token of [
 ])assert.ok(src.includes(token),`missing runtime contract: ${token}`);
 assert.ok(loader.includes("src/js/37-peer-room-runtime.js"),'0.20 loader must mount runtime bridge after match module');
 assert.ok(loader.includes("addEventListener('load',peerRoomLoadRuntimeBridge"),'runtime bridge must wait for shared-match module load');
-assert.equal(src.includes("duelRequest("),false,'Peer Room runtime must never call hosted-server transport');
+const executable=src.replace(/\/\/.*$/gm,'');
+assert.equal(/\bduelRequest\s*\(/.test(executable),false,'Peer Room runtime must never call hosted-server transport');
 
 let matchMoves=0,legacyMoves=0,hostChat=0,guestChat=0;
 const context={
