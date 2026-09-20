@@ -25,6 +25,7 @@ on:
       - 'src/js/28-gameplay-v3.js'
       - 'src/js/29-ui-consistency.js'
       - 'src/js/30-screen-consistency.js'
+      - 'src/js/31-direct-chat.js'
       - 'src/styles/50-private-duel.css'
       - 'src/styles/51-duel-turn-alpha.css'
       - 'src/styles/52-duel-colors-share.css'
@@ -39,6 +40,7 @@ on:
       - 'src/styles/61-gameplay-v3.css'
       - 'src/styles/62-ui-consistency.css'
       - 'src/styles/63-screen-consistency.css'
+      - 'src/styles/64-direct-chat.css'
       - 'src/ui/private-duel-lobby.html'
       - 'tools/build_private_duel_alpha.py'
       - 'tools/build_duel_modes_alpha.py'
@@ -73,6 +75,7 @@ on:
       - 'src/js/28-gameplay-v3.js'
       - 'src/js/29-ui-consistency.js'
       - 'src/js/30-screen-consistency.js'
+      - 'src/js/31-direct-chat.js'
       - 'src/styles/50-private-duel.css'
       - 'src/styles/51-duel-turn-alpha.css'
       - 'src/styles/52-duel-colors-share.css'
@@ -87,6 +90,7 @@ on:
       - 'src/styles/61-gameplay-v3.css'
       - 'src/styles/62-ui-consistency.css'
       - 'src/styles/63-screen-consistency.css'
+      - 'src/styles/64-direct-chat.css'
       - 'src/ui/private-duel-lobby.html'
       - 'tools/build_private_duel_alpha.py'
       - 'tools/build_duel_modes_alpha.py'
@@ -135,7 +139,10 @@ jobs:
           node --check src/js/28-gameplay-v3.js
           node --check src/js/29-ui-consistency.js
           node --check src/js/30-screen-consistency.js
+          node --check src/js/31-direct-chat.js
           node --check tests/test-direct-duel-soak.mjs
+          node --check tests/test-direct-chat.mjs
+          node --check tests/test-direct-chat-generated.mjs
           node --check tests/test-gameplay-flow.mjs
           node --check tests/test-gameplay-v3.mjs
           node --check tests/test-ui-consistency.mjs
@@ -153,6 +160,8 @@ jobs:
         run: node tests/test-duel-local-core.mjs
       - name: Direct Duel 500-game soak QA
         run: node tests/test-direct-duel-soak.mjs
+      - name: Direct Duel chat isolation contract
+        run: node tests/test-direct-chat.mjs
       - name: Gameplay pacing and visual-flow contract
         run: node tests/test-gameplay-flow.mjs
       - name: Gameplay UI v3 presentation contract
@@ -169,6 +178,8 @@ jobs:
         run: node tests/test-duel-theme-events.mjs
       - name: Build Multiplayer Alpha client
         run: python3 tools/build_duel_modes_alpha.py
+      - name: Generated Direct Chat package contract
+        run: node tests/test-direct-chat-generated.mjs
       - name: Generated client contract
         run: node tests/test-private-duel-build.mjs
       - name: Publish Pages staging client
@@ -178,7 +189,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add private-duel-alpha.html multiplayer-alpha.html
-            git commit -m "Build Multiplayer Alpha 0.18.3 screen consistency sweep"
+            git commit -m "Build Multiplayer Alpha 0.18.3 Direct Chat v1"
             git pull --rebase origin main
             git push
           else
