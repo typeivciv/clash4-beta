@@ -12,7 +12,7 @@ for(const token of [
   'peerRoomRecoveryRetryNow',
   'peerRoomScheduleReconnect=function',
   'peerRoomGuestConnect=function',
-  "id='c4UniversalBack'",
+  "button.id='c4UniversalBack'",
   "'duelWaitingPanel'",
   "'duelLeaveButton'",
   'peerRoomMatchRequestLobby'
