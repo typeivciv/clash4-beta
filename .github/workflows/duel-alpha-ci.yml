@@ -31,6 +31,10 @@ on:
       - 'src/js/34-peer-room-foundation.js'
       - 'src/js/35-peer-room-hardening.js'
       - 'src/js/36-peer-room-match.js'
+      - 'src/js/37-peer-room-runtime.js'
+      - 'src/js/38-peer-room-polish.js'
+      - 'src/js/39-peer-room-presentation.js'
+      - 'src/js/40-peer-room-transaction.js'
       - 'src/styles/50-private-duel.css'
       - 'src/styles/51-duel-turn-alpha.css'
       - 'src/styles/52-duel-colors-share.css'
@@ -50,6 +54,8 @@ on:
       - 'src/styles/66-direct-chat-v2.css'
       - 'src/styles/67-peer-room-foundation.css'
       - 'src/styles/68-peer-room-match.css'
+      - 'src/styles/69-peer-room-polish.css'
+      - 'src/styles/70-peer-room-presentation.css'
       - 'src/ui/private-duel-lobby.html'
       - 'tools/build_private_duel_alpha.py'
       - 'tools/build_duel_modes_alpha.py'
@@ -92,6 +98,10 @@ on:
       - 'src/js/34-peer-room-foundation.js'
       - 'src/js/35-peer-room-hardening.js'
       - 'src/js/36-peer-room-match.js'
+      - 'src/js/37-peer-room-runtime.js'
+      - 'src/js/38-peer-room-polish.js'
+      - 'src/js/39-peer-room-presentation.js'
+      - 'src/js/40-peer-room-transaction.js'
       - 'src/styles/50-private-duel.css'
       - 'src/styles/51-duel-turn-alpha.css'
       - 'src/styles/52-duel-colors-share.css'
@@ -111,6 +121,8 @@ on:
       - 'src/styles/66-direct-chat-v2.css'
       - 'src/styles/67-peer-room-foundation.css'
       - 'src/styles/68-peer-room-match.css'
+      - 'src/styles/69-peer-room-polish.css'
+      - 'src/styles/70-peer-room-presentation.css'
       - 'src/ui/private-duel-lobby.html'
       - 'tools/build_private_duel_alpha.py'
       - 'tools/build_duel_modes_alpha.py'
@@ -167,6 +179,10 @@ jobs:
           node --check src/js/34-peer-room-foundation.js
           node --check src/js/35-peer-room-hardening.js
           node --check src/js/36-peer-room-match.js
+          node --check src/js/37-peer-room-runtime.js
+          node --check src/js/38-peer-room-polish.js
+          node --check src/js/39-peer-room-presentation.js
+          node --check src/js/40-peer-room-transaction.js
           node --check tests/test-direct-duel-soak.mjs
           node --check tests/test-direct-chat.mjs
           node --check tests/test-direct-chat-generated.mjs
@@ -182,6 +198,7 @@ jobs:
           node --check tests/test-duel-theme-events.mjs
           node --check tests/test-peer-room-hardening.mjs
           node --check tests/test-peer-room-match.mjs
+          node --check tests/test-peer-room-transaction.mjs
           python3 -m py_compile tools/build_private_duel_alpha.py tools/build_duel_modes_alpha.py
       - name: Client ordering contract
         run: node tests/test-duel-client-contract.mjs
@@ -203,6 +220,8 @@ jobs:
         run: node tests/test-peer-room-hardening.mjs
       - name: Peer Room playable shared match lifecycle
         run: node tests/test-peer-room-match.mjs
+      - name: Peer Room single-drop transaction + rematch
+        run: node tests/test-peer-room-transaction.mjs
       - name: Gameplay pacing and visual-flow contract
         run: node tests/test-gameplay-flow.mjs
       - name: Gameplay UI v3 presentation contract
@@ -234,7 +253,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add private-duel-alpha.html multiplayer-alpha.html
-            git commit -m "Build Multiplayer Alpha 0.20.0 Peer Room shared match"
+            git commit -m "Build Multiplayer Alpha 0.20.4 Peer Room transaction and rematch"
             git pull --rebase origin main
             git push
           else
