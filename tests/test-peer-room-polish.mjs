@@ -8,6 +8,7 @@ const loader=fs.readFileSync('src/js/35-peer-room-hardening.js','utf8');
 for(const token of [
   "PEER_ROOM_POLISH_VERSION='0.20.2'",
   "peerRoom.matchColors={1:'blue',2:'orange'}",
+  'peerRoomPolishPresets',
   'peerRoomPolishChooseColor',
   "kind:'room-color-select'",
   "kind:'room-color-reject'",
@@ -19,9 +20,12 @@ for(const token of [
   "kind:'room-match-move'",
   'duelSession.pendingLocal=null',
   "button.id='peerRoomMatchLobbyButton'",
-  'peerRoomMatchRequestLobby()'
+  'peerRoomMatchRequestLobby()',
+  'peerRoomRestoreHostBeforePolish',
+  'peerRoomPolishLoadColors()'
 ])assert.ok(src.includes(token),`missing Peer Room polish contract: ${token}`);
 
+assert.equal(src.includes('globalThis.COLOR_PRESETS'),false,'classic-script COLOR_PRESETS must use its lexical binding, not window/globalThis');
 assert.ok(loader.includes("src/js/38-peer-room-polish.js"),'loader must mount 0.20.2 polish script');
 assert.ok(loader.includes("src/styles/69-peer-room-polish.css"),'loader must mount 0.20.2 polish stylesheet');
 assert.ok(loader.includes("addEventListener('load',peerRoomLoadPolish"),'polish must load only after runtime bridge');
@@ -46,4 +50,4 @@ assert.ok(clearPending>reconcileStart&&delegateUpdate>clearPending,'authoritativ
 assert.ok(src.includes("button.disabled=!playing||active||preset.id===other"),'opponent color must not be selectable');
 assert.ok(src.includes("if(colors[other]===id)"),'duplicate color choice must be rejected');
 
-console.log('PASS Peer Room 0.20.2 polish: seat-owned distinct colors, immediate P2 drop preview with authoritative reconciliation, and persistent Return-to-Lobby navigation');
+console.log('PASS Peer Room 0.20.2 polish: seat-owned distinct colors, immediate P2 drop preview with authoritative reconciliation, persisted host color restore, and persistent Return-to-Lobby navigation');
