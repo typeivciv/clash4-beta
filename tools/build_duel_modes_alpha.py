@@ -33,7 +33,7 @@ GAMEPLAY_V3_CSS=ROOT/'src/styles/61-gameplay-v3.css'
 UI_CONSISTENCY_CSS=ROOT/'src/styles/62-ui-consistency.css'
 SCREEN_CONSISTENCY_CSS=ROOT/'src/styles/63-screen-consistency.css'
 DIRECT_CHAT_CSS=ROOT/'src/styles/64-direct-chat.css'
-VERSION='0.18.4'
+VERSION='0.18.3'
 
 runpy.run_path(str(BASE_BUILDER),run_name='__main__')
 html=OUT.read_text(encoding='utf-8')
