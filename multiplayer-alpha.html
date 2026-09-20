@@ -3816,6 +3816,7 @@ function duelPostMatchActionControls(){
     return
   }
   if(matchMode!=='duel')return;
+  if(globalThis.peerRoomRematchActionControls?.(rematchButtons,newMatchButtons))return;
   if(passDuel?.active){
     for(const b of rematchButtons)labelRematch(b)
     for(const b of newMatchButtons)labelInviteNewPlayer(b)
@@ -3922,13 +3923,13 @@ directBindChannel=function(channel){
 };
 globalThis.directBindChannel=directBindChannel;
 
-// Direct Duel rematches require both peers; Arcade keeps the existing immediate rematch.
+// Direct Duel and Peer Room rematches keep their existing peers; Arcade remains immediate.
 document.addEventListener('click',event=>{
   if(matchMode!=='duel')return;
   const rematch=event.target?.closest?.('#restartBottom,#reviewRestart,#sidebarRematch');
-  if(rematch){event.preventDefault();event.stopImmediatePropagation();if(passDuel?.active)globalThis.passRestartMatch?.();else if(directDuel?.active)duelRequestDirectRematch();else globalThis.duelRouteNewDuel?.();return}
+  if(rematch){event.preventDefault();event.stopImmediatePropagation();if(globalThis.peerRoomRematchHandleClick?.())return;if(passDuel?.active)globalThis.passRestartMatch?.();else if(directDuel?.active)duelRequestDirectRematch();else globalThis.duelRouteNewDuel?.();return}
   const newDuel=event.target?.closest?.('#homeBottom,#reviewHome,#sidebarHome');
-  if(newDuel){event.preventDefault();event.stopImmediatePropagation();if(duelTerminalGuard){clearTimeout(duelTerminalGuard);duelTerminalGuard=null}globalThis.duelRouteNewDuel?.()}
+  if(newDuel){event.preventDefault();event.stopImmediatePropagation();if(duelTerminalGuard){clearTimeout(duelTerminalGuard);duelTerminalGuard=null}if(globalThis.peerRoomRematchHandleLobbyClick?.())return;globalThis.duelRouteNewDuel?.()}
 },true);
 
 duelPostMatchEnsureVisual();
