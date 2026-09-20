@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'tests/playtest-peer-room-browser.mjs'
+      - 'tests/playtest-peer-room-ui.mjs'
       - '.github/workflows/peer-room-browser-playtest.yml'
       - 'src/js/34-peer-room-foundation.js'
       - 'src/js/35-peer-room-hardening.js'
@@ -36,8 +37,10 @@ jobs:
           for i in {1..20}; do curl -fsS http://127.0.0.1:8080/multiplayer-alpha.html >/dev/null && exit 0; sleep 0.5; done
           cat /tmp/clash4-http.log
           exit 1
-      - name: Chromium host + WebKit guest live Peer Room playtest
+      - name: Chromium host + WebKit guest controller playtest
         run: node tests/playtest-peer-room-browser.mjs
+      - name: Touch-level visible UI playtest
+        run: node tests/playtest-peer-room-ui.mjs
       - name: Upload visual evidence
         if: always()
         uses: actions/upload-artifact@v4
