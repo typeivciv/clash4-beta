@@ -139,11 +139,11 @@ const DIRECT_MOBILE_RETRY_MS=1800;
 const DIRECT_MOBILE_SLOW_RETRY_MS=5000;
 const DIRECT_MOBILE_FAST_WINDOW_MS=45_000;
 const DIRECT_MOBILE_HEARTBEAT_MS=12_000;
-let directMobileResumeState={recovering:false,targetPeerId:'',hostPeerId:'',pendingPing:'',pingTimer:null,retryTimer:null,recoveryStartedAt:0,lastAttemptAt:0,attempts:0,lastHealthyAt:0};
+let directMobileResumeState={recovering:false,closing:false,targetPeerId:'',hostPeerId:'',pendingPing:'',pingTimer:null,retryTimer:null,recoveryStartedAt:0,lastAttemptAt:0,attempts:0,lastHealthyAt:0};
 globalThis.directMobileRecovery=directMobileResumeState;
 
 function directMobileResumeEligible(){
-  return !!(typeof directDuel!=='undefined'&&directDuel?.pairing==='nearby'&&typeof duelSession!=='undefined'&&duelSession?.active&&typeof s!=='undefined'&&!s?.winner&&!s?.draw)
+  return !!(!directMobileResumeState.closing&&typeof directDuel!=='undefined'&&directDuel?.pairing==='nearby'&&typeof duelSession!=='undefined'&&duelSession?.active&&typeof s!=='undefined'&&!s?.winner&&!s?.draw)
 }
 function directMobileClearTimer(name){const id=directMobileResumeState[name];if(id)clearTimeout(id);directMobileResumeState[name]=null}
 function directMobileCapturePeer(channel=directDuel?.channel){
@@ -196,7 +196,9 @@ function directMobileGuestConnect(){
   }catch{return false}
 }
 function directMobileRecoveryTick(){
-  if(!directMobileResumeState.recovering||!directMobileResumeEligible()||document.hidden)return;
+  if(!directMobileResumeState.recovering)return;
+  if(!directMobileResumeEligible()){directMobileResumeState.recovering=false;directMobileClearTimer('retryTimer');return}
+  if(document.hidden)return;
   if(directDuel?.active&&directDuel?.channel?.readyState==='open'){directMobileFinishRecovery();return}
   directMobileEnsureSignaling();
   if(directDuel?.role==='guest')directMobileGuestConnect();
@@ -210,7 +212,6 @@ function directMobileBeginRecovery(reason='interrupted'){
   directMobileEnsureSignaling();directMobileScheduleRetry(120)
 }
 function directMobileFinishRecovery(){
-  if(!directMobileResumeState.recovering)return;
   directMobileResumeState.recovering=false;directMobileClearTimer('retryTimer');directMobileClearTimer('pingTimer');directMobileResumeState.pendingPing='';directMobileResumeState.lastHealthyAt=Date.now();
   directConnectionBadge('online','Direct connected');directSetStatus('');directChatState.wasConnected=true
 }
@@ -233,7 +234,9 @@ function directMobileHealthCheck(reason='heartbeat'){
   directMobileCapturePeer();
   if(!directDuel.active||directDuel?.channel?.readyState!=='open'){directMobileBeginRecovery(reason==='resume'?'resume':'interrupted');return}
   directMobileClearTimer('pingTimer');
-  const nonce=directMobileNonce();directMobileResumeState.pendingPing=nonce;directSend({kind:'resume-ping',resumeVersion:DIRECT_MOBILE_RESUME_VERSION,nonce});
+  const nonce=directMobileNonce();directMobileResumeState.pendingPing=nonce;
+  try{directSend({kind:'resume-ping',resumeVersion:DIRECT_MOBILE_RESUME_VERSION,nonce})}
+  catch{directMobileResumeState.pendingPing='';directMobileSetRecovering('Connection was suspended. Restoring the Direct Duel…');directMobileReleaseStaleConnection();directDuel.active=false;directMobileEnsureSignaling();directMobileScheduleRetry(120);return}
   directMobileResumeState.pingTimer=setTimeout(()=>{
     if(directMobileResumeState.pendingPing!==nonce||!directMobileResumeEligible())return;
     directMobileResumeState.pendingPing='';directMobileSetRecovering('Connection was suspended. Restoring the Direct Duel…');directMobileReleaseStaleConnection();directDuel.active=false;directMobileEnsureSignaling();directMobileScheduleRetry(120)
@@ -242,7 +245,7 @@ function directMobileHealthCheck(reason='heartbeat'){
 
 const directHandleMessageBeforeMobileResume=directHandleMessage;
 directHandleMessage=function(data){
-  if(data?.kind==='resume-ping'){directSend({kind:'resume-pong',resumeVersion:DIRECT_MOBILE_RESUME_VERSION,nonce:data.nonce});return}
+  if(data?.kind==='resume-ping'){try{directSend({kind:'resume-pong',resumeVersion:DIRECT_MOBILE_RESUME_VERSION,nonce:data.nonce})}catch{directMobileBeginRecovery('ping-send')};return}
   if(data?.kind==='resume-pong'){
     if(data.nonce&&data.nonce===directMobileResumeState.pendingPing){directMobileResumeState.pendingPing='';directMobileClearTimer('pingTimer');directMobileResumeState.lastHealthyAt=Date.now();if(directMobileResumeState.recovering)directMobileFinishRecovery()}
     return
@@ -278,8 +281,8 @@ globalThis.directBindChannel=directBindChannel;
 
 const directClosePeerBeforeMobileResume=directClosePeer;
 directClosePeer=function(options={}){
-  directMobileResumeState.recovering=false;directMobileClearTimer('retryTimer');directMobileClearTimer('pingTimer');directMobileResumeState.pendingPing='';directMobileResumeState.targetPeerId='';directMobileResumeState.hostPeerId='';
-  return directClosePeerBeforeMobileResume(options)
+  directMobileResumeState.closing=true;directMobileResumeState.recovering=false;directMobileClearTimer('retryTimer');directMobileClearTimer('pingTimer');directMobileResumeState.pendingPing='';directMobileResumeState.targetPeerId='';directMobileResumeState.hostPeerId='';
+  try{return directClosePeerBeforeMobileResume(options)}finally{directMobileResumeState.closing=false}
 };
 globalThis.directClosePeer=directClosePeer;
 
