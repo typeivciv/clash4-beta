@@ -17,10 +17,20 @@ if(typeof peerRoomKickSeat==='function'&&typeof peerRoomHostReleaseSeat==='funct
   globalThis.peerRoomHardening={version:PEER_ROOM_HARDENING_VERSION,previousKick:peerRoomKickSeatBeforeHardening}
 }
 
+function peerRoomLoadPresentationSync(){
+  if(typeof document==='undefined')return;
+  if(document.querySelector('script[data-peer-room-presentation-sync]'))return;
+  const script=document.createElement('script');script.src='src/js/41-peer-room-presentation-sync.js';script.async=false;script.dataset.peerRoomPresentationSync='script';document.head.append(script)
+}
 function peerRoomLoadTransaction(){
   if(typeof document==='undefined')return;
-  if(document.querySelector('script[data-peer-room-transaction]'))return;
-  const script=document.createElement('script');script.src='src/js/40-peer-room-transaction.js';script.async=false;script.dataset.peerRoomTransaction='script';document.head.append(script)
+  const existing=document.querySelector('script[data-peer-room-transaction]');
+  if(existing){
+    if(globalThis.peerRoomTransaction)peerRoomLoadPresentationSync();
+    else existing.addEventListener('load',peerRoomLoadPresentationSync,{once:true});
+    return
+  }
+  const script=document.createElement('script');script.src='src/js/40-peer-room-transaction.js';script.async=false;script.dataset.peerRoomTransaction='script';script.addEventListener('load',peerRoomLoadPresentationSync,{once:true});document.head.append(script)
 }
 function peerRoomLoadPresentation(){
   if(typeof document==='undefined')return;
@@ -62,8 +72,8 @@ function peerRoomLoadRuntimeBridge(){
 // 0.20 is deliberately layered after the proven 0.19 room transport so the existing
 // Direct Duel and room-connection code remain the reference implementation. 0.20.1 adds
 // the live-game route/chat bridge, 0.20.2 adds latency/color/navigation polish, 0.20.3
-// separates live utilities and aligns presentation, and 0.20.4 makes each move one
-// visual transaction while adding same-room rematch voting.
+// separates live utilities and aligns presentation, 0.20.4 makes each move one visual
+// transaction/rematch, and 0.20.5 gives that transaction one host-timed presentation clock.
 function peerRoomLoadPlayableMatch(){
   if(typeof document==='undefined')return;
   if(!document.querySelector('link[data-peer-room-match]')){
@@ -83,3 +93,4 @@ globalThis.peerRoomLoadRuntimeBridge=peerRoomLoadRuntimeBridge;
 globalThis.peerRoomLoadPolish=peerRoomLoadPolish;
 globalThis.peerRoomLoadPresentation=peerRoomLoadPresentation;
 globalThis.peerRoomLoadTransaction=peerRoomLoadTransaction;
+globalThis.peerRoomLoadPresentationSync=peerRoomLoadPresentationSync;
