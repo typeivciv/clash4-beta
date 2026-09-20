@@ -23,7 +23,7 @@ function directChatRemember(message){
   directChatTrimSeen();return true
 }
 function directChatRender(){
-  const log=directChatEl('directChatLog'),empty=directChatEl('directChatEmpty'),badge=directChatEl('directChatBadge'),mute=directChatEl('directChatMute'),count=directChatEl('directChatCount');
+  const log=directChatEl('directChatLog'),empty=directChatEl('directChatEmpty'),badge=directChatEl('directChatBadge'),mute=directChatEl('directChatMute'),count=directChatEl('directChatCount'),fab=directChatEl('directChatFab');
   if(log){
     log.querySelectorAll('.directChatMessage').forEach(node=>node.remove());
     for(const message of directChatState.messages){
@@ -38,6 +38,7 @@ function directChatRender(){
   }
   if(empty)empty.hidden=directChatState.messages.length>0;
   if(badge){badge.textContent=directChatState.unread>99?'99+':String(directChatState.unread);badge.hidden=directChatState.unread===0||directChatState.muted}
+  if(fab)fab.setAttribute('aria-label',directChatState.unread&&!directChatState.muted?`Open Direct Duel chat, ${directChatState.unread} unread ${directChatState.unread===1?'message':'messages'}`:'Open Direct Duel chat');
   if(mute){mute.textContent=directChatState.muted?'Unmute':'Mute';mute.setAttribute('aria-pressed',String(directChatState.muted))}
   if(count){const input=directChatEl('directChatInput');count.textContent=`${input?.value?.length||0}/${DIRECT_CHAT_MAX_CHARS}`}
 }
@@ -96,11 +97,11 @@ function directChatSyncVisibility(){
 }
 function directChatCreateUi(){
   if(directChatEl('directChatFab')||!document.body)return;
-  const fab=document.createElement('button');fab.id='directChatFab';fab.className='directChatFab';fab.type='button';fab.hidden=true;fab.setAttribute('aria-controls','directChatDrawer');fab.setAttribute('aria-haspopup','dialog');fab.setAttribute('aria-expanded','false');fab.innerHTML='<span class="directChatFabIcon" aria-hidden="true">💬</span><span class="directChatFabLabel">Chat</span><span id="directChatBadge" class="directChatBadge" hidden>0</span>';
+  const fab=document.createElement('button');fab.id='directChatFab';fab.className='directChatFab';fab.type='button';fab.hidden=true;fab.setAttribute('aria-label','Open Direct Duel chat');fab.setAttribute('aria-controls','directChatDrawer');fab.setAttribute('aria-haspopup','dialog');fab.setAttribute('aria-expanded','false');fab.innerHTML='<span class="directChatFabIcon" aria-hidden="true">💬</span><span class="directChatFabLabel">Chat</span><span id="directChatBadge" class="directChatBadge" aria-hidden="true" hidden>0</span>';
   const drawer=document.createElement('aside');drawer.id='directChatDrawer';drawer.className='directChatDrawer';drawer.hidden=true;drawer.setAttribute('role','dialog');drawer.setAttribute('aria-modal','false');drawer.setAttribute('aria-labelledby','directChatTitle');
   const quick=DIRECT_CHAT_QUICK.map((text,index)=>`<button type="button" class="directChatQuick" data-chat-quick="${index}">${text}</button>`).join('');
   drawer.innerHTML=`<div class="directChatHead"><div><span>DIRECT DUEL</span><strong id="directChatTitle">Chat</strong><small>Private WebRTC · this match only</small></div><div class="directChatHeadActions"><button id="directChatMute" type="button" aria-pressed="false">Mute</button><button id="directChatClose" type="button" aria-label="Close chat">×</button></div></div><div id="directChatLog" class="directChatLog" role="log" aria-live="polite" aria-relevant="additions text"><div id="directChatEmpty" class="directChatEmpty"><strong>Say hi.</strong><span>Messages travel over the same encrypted Direct Duel connection and are not saved after the duel.</span></div></div><div class="directChatQuickRow" aria-label="Quick messages">${quick}</div><form id="directChatForm" class="directChatForm"><label><span class="srOnly">Message opponent</span><input id="directChatInput" type="text" maxlength="${DIRECT_CHAT_MAX_CHARS}" autocomplete="off" enterkeyhint="send" placeholder="Message opponent…"></label><span id="directChatCount" class="directChatCount">0/${DIRECT_CHAT_MAX_CHARS}</span><button id="directChatSend" type="submit">Send</button></form>`;
-  document.body.append(fab,drawer);
+  const topActions=document.querySelector('.topActions');(topActions||document.body).append(fab);document.body.append(drawer);
   fab.addEventListener('click',directChatOpen);directChatEl('directChatClose').addEventListener('click',()=>directChatClose());directChatEl('directChatMute').addEventListener('click',directChatToggleMute);directChatEl('directChatForm').addEventListener('submit',directChatSubmit);
   directChatEl('directChatInput').addEventListener('input',directChatRender);
   drawer.addEventListener('click',event=>{const button=event.target?.closest?.('[data-chat-quick]');if(!button)return;const value=DIRECT_CHAT_QUICK[Number(button.dataset.chatQuick)];if(value)directChatSendText(value)});
