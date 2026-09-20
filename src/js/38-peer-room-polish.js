@@ -6,10 +6,11 @@ if(!peerRoom.matchColors)peerRoom.matchColors={1:'blue',2:'orange'};
 const peerRoomPolishState={previewPending:null};
 globalThis.peerRoomPolishState=peerRoomPolishState;
 
-function peerRoomPolishColorIds(){return new Set((globalThis.COLOR_PRESETS||[]).map(p=>p.id))}
+function peerRoomPolishPresets(){try{return Array.isArray(COLOR_PRESETS)?COLOR_PRESETS:[]}catch{return[]}}
+function peerRoomPolishColorIds(){return new Set(peerRoomPolishPresets().map(p=>p.id))}
 function peerRoomPolishColorPreset(id){
   if(typeof duelColorPreset==='function')return duelColorPreset(id);
-  return(globalThis.COLOR_PRESETS||[]).find(p=>p.id===id)||(globalThis.COLOR_PRESETS||[])[0]||{id:'blue',label:'Blue',hex:'#2F70E8'}
+  return peerRoomPolishPresets().find(p=>p.id===id)||peerRoomPolishPresets()[0]||{id:'blue',label:'Blue',hex:'#2F70E8'}
 }
 function peerRoomPolishNormalizeColors(value=peerRoom.matchColors){
   const ids=peerRoomPolishColorIds(),source=value||{};
@@ -63,7 +64,7 @@ function peerRoomPolishRenderColors(){
   const ownLabel=document.getElementById('peerRoomOwnColorLabel'),oppEl=document.getElementById('peerRoomOpponentColor'),help=document.getElementById('peerRoomColorHelp'),swatches=document.getElementById('peerRoomColorSwatches');
   if(ownLabel)ownLabel.textContent=playing?`Player ${seat} · ${peerRoomPolishColorPreset(own).label}`:'Match colors';
   if(oppEl)oppEl.innerHTML=playing?`<i style="background:${opp.hex}"></i><span>Opponent · ${opp.label}</span>`:`<span>P1 ${peerRoomPolishColorPreset(colors[1]).label} · P2 ${peerRoomPolishColorPreset(colors[2]).label}</span>`;
-  if(swatches){swatches.innerHTML='';for(const preset of globalThis.COLOR_PRESETS||[]){
+  if(swatches){swatches.innerHTML='';for(const preset of peerRoomPolishPresets()){
     const button=document.createElement('button');button.type='button';button.className='peerRoomColorChoice'+(own===preset.id?' selected':'');button.disabled=!playing||active||preset.id===other;button.setAttribute('aria-pressed',String(own===preset.id));button.setAttribute('aria-label',preset.id===other?`${preset.label} is used by your opponent`:`Use ${preset.label}`);button.innerHTML=`<i style="background:${preset.hex}"></i><span>${preset.label}</span>`;button.addEventListener('click',()=>peerRoomPolishChooseColor(preset.id));swatches.append(button)
   }}
   if(help)help.textContent=!playing?'Players 1 and 2 own the match colors.':active?'Colors are locked until the room returns to the lobby.':'Choose any color except the color currently used by your opponent.';
@@ -159,6 +160,14 @@ globalThis.peerRoomMatchRenderLobby=peerRoomMatchRenderLobby;
 const peerRoomCreateHostBeforePolish=peerRoomCreateHost;
 peerRoomCreateHost=function(){peerRoom.matchColors={1:'blue',2:'orange'};const out=peerRoomCreateHostBeforePolish();peerRoomPolishRenderColors();return out};
 globalThis.peerRoomCreateHost=peerRoomCreateHost;
+
+const peerRoomRestoreHostBeforePolish=peerRoomRestoreHost;
+peerRoomRestoreHost=function(snapshot){const out=peerRoomRestoreHostBeforePolish(snapshot);peerRoomPolishLoadColors();peerRoomPolishRenderColors();return out};
+globalThis.peerRoomRestoreHost=peerRoomRestoreHost;
+
+const peerRoomShutdownBeforePolish=peerRoomShutdown;
+peerRoomShutdown=function(options={}){if(options?.clearPersistence)try{localStorage.removeItem(PEER_ROOM_POLISH_COLOR_STORAGE)}catch{};return peerRoomShutdownBeforePolish(options)};
+globalThis.peerRoomShutdown=peerRoomShutdown;
 
 // Keep the navigation control correct after resize/orientation and delayed dynamic module work.
 window.addEventListener('resize',()=>requestAnimationFrame(peerRoomPolishSyncMatchChrome),{passive:true});
