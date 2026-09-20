@@ -79,7 +79,7 @@ for(const token of [
   "DIRECT_CHAT=ROOT/'src/js/31-direct-chat.js'",
   "DIRECT_CHAT_CSS=ROOT/'src/styles/64-direct-chat.css'",
   "direct_chat=DIRECT_CHAT.read_text",
-  'screen_consistency+direct_chat+ios_chat_keyboard+anchor'
+  'screen_consistency+direct_chat+ios_chat_keyboard+direct_chat_v2+anchor'
 ])assert.ok(builder.includes(token),`Alpha builder missing Direct Chat package token ${token}`);
 
 try{new Function(js)}catch(error){throw new Error(`Direct chat/mobile-resume syntax failed: ${error.message}`)}
