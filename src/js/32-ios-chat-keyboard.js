@@ -1,5 +1,6 @@
 'use strict';
-const IOS_CHAT_KEYBOARD_VERSION='0.18.6';
+const IOS_CHAT_KEYBOARD_VERSION='0.18.7';
+let directChatViewportBaseline=0;
 
 function directChatIOSLike(){
   const ua=String(navigator.userAgent||'');
@@ -9,52 +10,58 @@ function directChatFocusComposer({scroll=false}={}){
   const input=directChatEl('directChatInput');
   if(!input||!directChatState?.open||input.disabled||input.readOnly)return false;
   try{input.focus({preventScroll:true})}catch{try{input.focus()}catch{return false}}
-  if(scroll){requestAnimationFrame(()=>{try{input.scrollIntoView({block:'nearest',inline:'nearest',behavior:'auto'})}catch{}})}
+  if(scroll)requestAnimationFrame(()=>{try{input.scrollIntoView({block:'nearest',inline:'nearest',behavior:'auto'})}catch{}});
   return document.activeElement===input
 }
 function directChatKeyboardViewport(){
-  const root=document.documentElement,vv=window.visualViewport;
-  if(!root||!vv)return;
-  const visible=Math.max(240,Math.round(vv.height));
-  root.style.setProperty('--direct-chat-visible-height',`${visible}px`);
-  const keyboard=Math.max(0,Math.round(window.innerHeight-vv.height-vv.offsetTop));
-  root.style.setProperty('--direct-chat-keyboard-inset',`${keyboard}px`)
+  const root=document.documentElement,body=document.body,vv=window.visualViewport;
+  if(!root||!body)return;
+  const focused=body.classList.contains('direct-chat-input-focused');
+  const visible=Math.max(220,Math.round(vv?.height||window.innerHeight||220));
+  const top=Math.max(0,Math.round(vv?.offsetTop||0));
+  if(!focused||!directChatViewportBaseline)directChatViewportBaseline=Math.max(directChatViewportBaseline,visible);
+  if(visible>directChatViewportBaseline)directChatViewportBaseline=visible;
+  const layoutGap=vv?Math.max(0,Math.round(window.innerHeight-vv.height-vv.offsetTop)):0;
+  const baselineGap=focused?Math.max(0,Math.round(directChatViewportBaseline-visible)):0;
+  const keyboard=Math.max(layoutGap,baselineGap);
+  root.style.setProperty('--direct-chat-visual-height',`${visible}px`);
+  root.style.setProperty('--direct-chat-visual-top',`${top}px`);
+  root.style.setProperty('--direct-chat-keyboard-inset',`${keyboard}px`);
+  body.classList.toggle('direct-chat-keyboard-shown',!!(directChatState?.open&&focused&&keyboard>72))
 }
 function directChatInstallKeyboardFix(){
-  const fab=directChatEl('directChatFab'),input=directChatEl('directChatInput'),form=directChatEl('directChatForm');
-  if(!fab||!input||!form||fab.dataset.keyboardFix==='1')return;
-  fab.dataset.keyboardFix='1';
+  const input=directChatEl('directChatInput'),form=directChatEl('directChatForm');
+  if(!input||!form||input.dataset.keyboardFix==='1')return;
+  input.dataset.keyboardFix='1';
   input.setAttribute('inputmode','text');
   input.setAttribute('autocapitalize','sentences');
   input.setAttribute('spellcheck','true');
+  input.setAttribute('enterkeyhint','send');
 
-  // iOS/WebKit only presents the software keyboard reliably when focus happens
-  // synchronously inside the original user gesture. The base chat's rAF focus is too late.
-  fab.addEventListener('click',()=>{
-    if(!directChatState?.open)return;
-    directChatFocusComposer({scroll:false});
-    directChatKeyboardViewport()
-  });
-
-  // Keep native input behavior; never preventDefault on the input itself.
-  input.addEventListener('pointerup',()=>{if(directChatIOSLike())directChatFocusComposer({scroll:false})},{passive:true});
-  input.addEventListener('touchend',()=>{if(directChatIOSLike())directChatFocusComposer({scroll:false})},{passive:true});
+  // Keep mobile chat opening keyboard-neutral. The keyboard is requested only when the
+  // composer itself receives a trusted tap, which behaves consistently on iOS and Android.
+  input.addEventListener('pointerdown',()=>{
+    if(directChatIOSLike()&&document.activeElement!==input)directChatFocusComposer({scroll:false})
+  },{passive:true});
   input.addEventListener('focus',()=>{
-    document.body.classList.add('direct-chat-keyboard-active');
+    document.body.classList.add('direct-chat-input-focused');
     directChatKeyboardViewport();
-    setTimeout(()=>directChatFocusComposer({scroll:true}),80)
+    requestAnimationFrame(directChatKeyboardViewport);
+    setTimeout(directChatKeyboardViewport,90);setTimeout(directChatKeyboardViewport,240)
   });
   input.addEventListener('blur',()=>{
-    document.body.classList.remove('direct-chat-keyboard-active');
-    directChatKeyboardViewport()
+    document.body.classList.remove('direct-chat-input-focused','direct-chat-keyboard-shown');
+    setTimeout(directChatKeyboardViewport,60)
   });
-  form.addEventListener('submit',()=>setTimeout(()=>directChatFocusComposer({scroll:true}),0));
+  form.addEventListener('submit',()=>setTimeout(()=>{if(directChatState?.open)directChatFocusComposer({scroll:true})},0));
 
   if(window.visualViewport){
     window.visualViewport.addEventListener('resize',directChatKeyboardViewport,{passive:true});
     window.visualViewport.addEventListener('scroll',directChatKeyboardViewport,{passive:true})
   }
-  window.addEventListener('orientationchange',()=>setTimeout(directChatKeyboardViewport,120),{passive:true});
+  window.addEventListener('resize',directChatKeyboardViewport,{passive:true});
+  window.addEventListener('orientationchange',()=>{directChatViewportBaseline=0;setTimeout(directChatKeyboardViewport,180)},{passive:true});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(directChatKeyboardViewport,80)});
   directChatKeyboardViewport()
 }
 
