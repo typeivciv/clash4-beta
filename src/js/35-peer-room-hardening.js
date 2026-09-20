@@ -17,13 +17,23 @@ if(typeof peerRoomKickSeat==='function'&&typeof peerRoomHostReleaseSeat==='funct
   globalThis.peerRoomHardening={version:PEER_ROOM_HARDENING_VERSION,previousKick:peerRoomKickSeatBeforeHardening}
 }
 
+function peerRoomLoadTransaction(){
+  if(typeof document==='undefined')return;
+  if(document.querySelector('script[data-peer-room-transaction]'))return;
+  const script=document.createElement('script');script.src='src/js/40-peer-room-transaction.js';script.async=false;script.dataset.peerRoomTransaction='script';document.head.append(script)
+}
 function peerRoomLoadPresentation(){
   if(typeof document==='undefined')return;
   if(!document.querySelector('link[data-peer-room-presentation]')){
     const link=document.createElement('link');link.rel='stylesheet';link.href='src/styles/70-peer-room-presentation.css';link.dataset.peerRoomPresentation='style';document.head.append(link)
   }
-  if(document.querySelector('script[data-peer-room-presentation]'))return;
-  const script=document.createElement('script');script.src='src/js/39-peer-room-presentation.js';script.async=false;script.dataset.peerRoomPresentation='script';document.head.append(script)
+  const existing=document.querySelector('script[data-peer-room-presentation]');
+  if(existing){
+    if(globalThis.peerRoomPresentation)peerRoomLoadTransaction();
+    else existing.addEventListener('load',peerRoomLoadTransaction,{once:true});
+    return
+  }
+  const script=document.createElement('script');script.src='src/js/39-peer-room-presentation.js';script.async=false;script.dataset.peerRoomPresentation='script';script.addEventListener('load',peerRoomLoadTransaction,{once:true});document.head.append(script)
 }
 function peerRoomLoadPolish(){
   if(typeof document==='undefined')return;
@@ -51,8 +61,9 @@ function peerRoomLoadRuntimeBridge(){
 
 // 0.20 is deliberately layered after the proven 0.19 room transport so the existing
 // Direct Duel and room-connection code remain the reference implementation. 0.20.1 adds
-// the live-game route/chat bridge, 0.20.2 adds latency/color/navigation polish, and 0.20.3
-// unifies P1/P2 move presentation while separating live utilities from the turn banner.
+// the live-game route/chat bridge, 0.20.2 adds latency/color/navigation polish, 0.20.3
+// separates live utilities and aligns presentation, and 0.20.4 makes each move one
+// visual transaction while adding same-room rematch voting.
 function peerRoomLoadPlayableMatch(){
   if(typeof document==='undefined')return;
   if(!document.querySelector('link[data-peer-room-match]')){
@@ -71,3 +82,4 @@ globalThis.peerRoomLoadPlayableMatch=peerRoomLoadPlayableMatch;
 globalThis.peerRoomLoadRuntimeBridge=peerRoomLoadRuntimeBridge;
 globalThis.peerRoomLoadPolish=peerRoomLoadPolish;
 globalThis.peerRoomLoadPresentation=peerRoomLoadPresentation;
+globalThis.peerRoomLoadTransaction=peerRoomLoadTransaction;
