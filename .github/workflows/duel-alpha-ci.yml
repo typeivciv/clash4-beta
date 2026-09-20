@@ -28,6 +28,9 @@ on:
       - 'src/js/31-direct-chat.js'
       - 'src/js/32-ios-chat-keyboard.js'
       - 'src/js/33-direct-chat-v2.js'
+      - 'src/js/34-peer-room-foundation.js'
+      - 'src/js/35-peer-room-hardening.js'
+      - 'src/js/36-peer-room-match.js'
       - 'src/styles/50-private-duel.css'
       - 'src/styles/51-duel-turn-alpha.css'
       - 'src/styles/52-duel-colors-share.css'
@@ -45,6 +48,8 @@ on:
       - 'src/styles/64-direct-chat.css'
       - 'src/styles/65-ios-chat-keyboard.css'
       - 'src/styles/66-direct-chat-v2.css'
+      - 'src/styles/67-peer-room-foundation.css'
+      - 'src/styles/68-peer-room-match.css'
       - 'src/ui/private-duel-lobby.html'
       - 'tools/build_private_duel_alpha.py'
       - 'tools/build_duel_modes_alpha.py'
@@ -55,6 +60,7 @@ on:
       - 'tests/test-gameplay-v3.mjs'
       - 'tests/test-ui-consistency.mjs'
       - 'tests/test-screen-consistency.mjs'
+      - 'tests/test-peer-room-*.mjs'
       - 'tests/test-private-duel-build.mjs'
       - '.github/workflows/duel-alpha-ci.yml'
   pull_request:
@@ -83,6 +89,9 @@ on:
       - 'src/js/31-direct-chat.js'
       - 'src/js/32-ios-chat-keyboard.js'
       - 'src/js/33-direct-chat-v2.js'
+      - 'src/js/34-peer-room-foundation.js'
+      - 'src/js/35-peer-room-hardening.js'
+      - 'src/js/36-peer-room-match.js'
       - 'src/styles/50-private-duel.css'
       - 'src/styles/51-duel-turn-alpha.css'
       - 'src/styles/52-duel-colors-share.css'
@@ -100,6 +109,8 @@ on:
       - 'src/styles/64-direct-chat.css'
       - 'src/styles/65-ios-chat-keyboard.css'
       - 'src/styles/66-direct-chat-v2.css'
+      - 'src/styles/67-peer-room-foundation.css'
+      - 'src/styles/68-peer-room-match.css'
       - 'src/ui/private-duel-lobby.html'
       - 'tools/build_private_duel_alpha.py'
       - 'tools/build_duel_modes_alpha.py'
@@ -110,6 +121,7 @@ on:
       - 'tests/test-gameplay-v3.mjs'
       - 'tests/test-ui-consistency.mjs'
       - 'tests/test-screen-consistency.mjs'
+      - 'tests/test-peer-room-*.mjs'
       - 'tests/test-private-duel-build.mjs'
       - '.github/workflows/duel-alpha-ci.yml'
 
@@ -152,6 +164,9 @@ jobs:
           node --check src/js/31-direct-chat.js
           node --check src/js/32-ios-chat-keyboard.js
           node --check src/js/33-direct-chat-v2.js
+          node --check src/js/34-peer-room-foundation.js
+          node --check src/js/35-peer-room-hardening.js
+          node --check src/js/36-peer-room-match.js
           node --check tests/test-direct-duel-soak.mjs
           node --check tests/test-direct-chat.mjs
           node --check tests/test-direct-chat-generated.mjs
@@ -165,6 +180,8 @@ jobs:
           node --check tests/test-screen-consistency.mjs
           node --check tests/test-duel-clash-presentation.mjs
           node --check tests/test-duel-theme-events.mjs
+          node --check tests/test-peer-room-hardening.mjs
+          node --check tests/test-peer-room-match.mjs
           python3 -m py_compile tools/build_private_duel_alpha.py tools/build_duel_modes_alpha.py
       - name: Client ordering contract
         run: node tests/test-duel-client-contract.mjs
@@ -182,6 +199,10 @@ jobs:
         run: node tests/test-ios-chat-keyboard.mjs
       - name: Universal Direct Chat v2 source contract
         run: node tests/test-direct-chat-v2.mjs
+      - name: Peer Room Remove Player hardening
+        run: node tests/test-peer-room-hardening.mjs
+      - name: Peer Room playable shared match lifecycle
+        run: node tests/test-peer-room-match.mjs
       - name: Gameplay pacing and visual-flow contract
         run: node tests/test-gameplay-flow.mjs
       - name: Gameplay UI v3 presentation contract
@@ -213,7 +234,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add private-duel-alpha.html multiplayer-alpha.html
-            git commit -m "Build Multiplayer Alpha 0.18.3 Universal Direct Chat v2"
+            git commit -m "Build Multiplayer Alpha 0.20.0 Peer Room shared match"
             git pull --rebase origin main
             git push
           else
