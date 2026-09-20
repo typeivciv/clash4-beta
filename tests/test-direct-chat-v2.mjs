@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import vm from 'node:vm';
 
 const js=fs.readFileSync('src/js/33-direct-chat-v2.js','utf8');
 const css=fs.readFileSync('src/styles/66-direct-chat-v2.css','utf8');
@@ -110,6 +111,47 @@ for(const token of [
 ])assert.ok(roomCss.includes(token),`Peer Room CSS missing ${token}`);
 assert.ok(!roomCss.includes('var(--blue-piece)')&&!roomCss.includes('var(--orange-piece)'),'Peer Room atmosphere must remain independent from player ownership colors');
 
+// Protocol simulation: exercise the actual authority helpers in a minimal browser-like VM.
+const store=new Map();
+const context=vm.createContext({
+  console,Date,Math,JSON,Map,Set,URLSearchParams,Uint8Array,
+  crypto:{getRandomValues(bytes){for(let i=0;i<bytes.length;i++)bytes[i]=(i*29+17)%256;return bytes}},
+  localStorage:{getItem:key=>store.get(key)||null,setItem:(key,value)=>store.set(key,String(value)),removeItem:key=>store.delete(key)},
+  location:{hash:'',origin:'https://example.test',pathname:'/clash4-beta/multiplayer-alpha.html',search:''},
+  history:{replaceState(){}},navigator:{},
+  document:{readyState:'loading',hidden:false,addEventListener(){},getElementById(){return null},querySelector(){return null},createElement(){return{}}},
+  window:{innerHeight:800,addEventListener(){},matchMedia(){return{matches:false}}},
+  setTimeout(){return 1},clearTimeout(){},
+  globalThis:null
+});
+context.globalThis=context;
+vm.runInContext(room,context);
+vm.runInContext(`
+  peerRoom.role='host';peerRoom.active=true;peerRoom.hostId='c4r-test-room';peerRoom.roomId='ABC123';peerRoom.seat=1;
+  peerRoom.roomVersion=1;peerRoom.projectionVersion=1;peerRoom.seats=peerRoomDefaultSeats();peerRoom.privateTokens={1:'HOST-A',2:'SEAT2-A',3:'SEAT3-A',4:'SEAT4-A'};
+  peerRoom.connections=new Map();peerRoom.seatByClient=new Map();peerRoom.blocked=new Set();peerRoom.chat=[];
+  sent=[];
+  function fake(name){return{name,open:true,closed:false,send(data){sent.push({name,data})},close(){this.closed=true}}}
+  a=fake('a');b=fake('b');c=fake('c');d=fake('d');a2=fake('a2');
+`,context);
+assert.equal(vm.runInContext("peerRoomHostAssign(a,'client_aaaaaaaaaaaa')",context),2,'first guest should receive seat 2');
+assert.equal(vm.runInContext("peerRoomHostAssign(b,'client_bbbbbbbbbbbb')",context),3,'second guest should receive seat 3');
+assert.equal(vm.runInContext("peerRoomHostAssign(c,'client_cccccccccccc')",context),4,'third guest should receive seat 4');
+assert.equal(vm.runInContext("peerRoomHostAssign(d,'client_dddddddddddd')",context),null,'fifth total participant must be rejected when room is full');
+assert.ok(vm.runInContext("sent.some(x=>x.name==='d'&&x.data.kind==='room-full')",context),'full room must explicitly reject the extra guest');
+assert.equal(vm.runInContext("peerRoomHostAssign(a2,'client_aaaaaaaaaaaa')",context),2,'reconnecting client must reclaim its reserved seat');
+assert.equal(vm.runInContext("a.closed",context),true,'reconnect must retire the stale connection for that seat');
+const projection=vm.runInContext('peerRoomProjectionFor(2)',context);
+assert.equal(projection.seat,2);assert.equal(projection.privateToken,'SEAT2-A');
+const publicState=vm.runInContext('peerRoomPublicState()',context);
+assert.equal(publicState.seats.length,4);assert.ok(publicState.seats.every(seat=>!('clientKey' in seat)),'public roster must never expose client keys');
+assert.ok(!JSON.stringify(publicState).includes('SEAT2-A'),'public roster must never expose private projection tokens');
+vm.runInContext("peerRoomHostAppendChat(2,'  hello   room  ','msg_123456')",context);
+assert.equal(vm.runInContext('peerRoom.chat.at(-1).text',context),'hello room','host must normalize authoritative room chat');
+assert.ok(vm.runInContext("sent.some(x=>x.data.kind==='room-chat'&&x.data.message.text==='hello room')",context),'host must broadcast authoritative chat');
+vm.runInContext('peerRoomPersistHost()',context);
+assert.ok(store.has('clash4.peerRoomHost.v1'),'host room snapshot must persist locally for reload recovery');
+
 try{new Function(js)}catch(error){throw new Error(`Universal Chat v2 syntax failed: ${error.message}`)}
 try{new Function(room)}catch(error){throw new Error(`Peer Room foundation syntax failed: ${error.message}`)}
-console.log('PASS Universal Chat + Multiplayer Foundation 0.19: 2–4 host-as-server peers, seat reservations, room chat, reconnect, host persistence, and seat-private projection test remain outside gameplay rules');
+console.log('PASS Universal Chat + Multiplayer Foundation 0.19: simulated 4-seat authority, full-room rejection, seat reclaim, private projection isolation, authoritative chat, reconnect hooks, and host persistence stay outside gameplay rules');
