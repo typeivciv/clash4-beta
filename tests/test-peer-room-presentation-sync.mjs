@@ -19,14 +19,23 @@ assert.match(src,/tx\.hostPayload\.peerPresentation=\{\.\.\.presentation\}/,'hos
 assert.match(src,/tx\.guestPayload\.peerPresentation=\{\.\.\.presentation\}/,'guest payload must carry final shared presentation transaction');
 assert.match(src,/peerRoomSynchronized:true/,'local move must use synchronized pending intent');
 assert.match(src,/hoverCol=c;dropPresentation=null;render\(\)/,'input should acknowledge intent without starting a real checker drop');
-assert.match(src,/scheduleTimer\('peerRoomPresentationStart'/,'actual checker must wait for final shared presentation time');
+assert.match(src,/peerRoomPresentationSyncScheduleAt\('dropStart'/,'actual checker must use the shared absolute presentation clock');
+assert.match(src,/peerRoomPresentationSyncScheduleAt\('dropCommit'/,'drop completion must use the shared absolute presentation clock');
 assert.match(src,/peerRoomPresentationSyncStage\(tx\)/,'authoritative transaction must stage the checker');
-assert.match(src,/scheduleTimer\('peerRoomMoveTransaction'/,'authoritative transaction must own drop completion');
 assert.match(src,/peerRoomTransactionCommit\(tx\)/,'canonical transaction commit seam must remain');
-assert.match(src,/Canonical move validation still happens once/,'receipt handshake must remain presentation-only');
+assert.match(src,/requestAnimationFrame/,'visible Peer Room timing should not depend only on setTimeout');
+assert.match(src,/peerRoomPresentationSyncLocalEventAnchor/,'post-drop event anchor missing');
+assert.match(src,/peerRoomPresentationSyncPlayEvents/,'synchronized event player missing');
+assert.match(src,/prepareEvents\(events\)/,'event player must preserve canonical presentation queue construction');
+assert.match(src,/eventDuration\(event\)/,'event player must preserve canonical event durations');
+assert.match(src,/activePresentation=\{event,column:presentationColumn\(event,column\)\}/,'event player must preserve canonical event rendering state');
+assert.match(src,/emitFeedback\(feedbackCueForEvent\(event\)\)/,'event player must preserve feedback semantics');
+assert.match(src,/showEvent\(event\)/,'event player must preserve existing event overlay renderer');
+assert.match(src,/duelFinishNetworkPresentationBeforePresentationSync\(\[\],column\)/,'synchronized event playback must return to the existing network completion seam');
+assert.match(src,/Canonical move validation still happens once/,'receipt/timeline layer must remain presentation-only');
 assert.doesNotMatch(src,/applyLocalDuelMove\(/,'presentation sync must not duplicate canonical rule execution');
 assert.doesNotMatch(src,/s\.winner\s*=/,'presentation sync must not author winner state');
 assert.match(loader,/src\/js\/41-peer-room-presentation-sync\.js/,'loader must include sync after transaction layer');
 assert.match(loader,/existing\.addEventListener\('load',peerRoomLoadPresentationSync/,'sync must wait for the transaction layer');
 
-console.log('PASS Peer Room 0.20.6 presentation sync contract: PREPARE/READY/GO receipt gating, NTP-style clock sampling, intent-only input feedback, adaptive delivery lead, and canonical-rule isolation.');
+console.log('PASS Peer Room 0.20.6 presentation sync contract: PREPARE/READY/GO receipt gating, NTP-style clock sampling, absolute rAF-driven drop/commit/event timing, canonical event rendering, and canonical-rule isolation.');
