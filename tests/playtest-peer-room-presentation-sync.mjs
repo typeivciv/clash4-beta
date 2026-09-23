@@ -26,7 +26,7 @@ async function snapshot(page){
     return{
       seat,move:s.moveNumber,turnSeat:physical(s.turn),busy:!!busy,handled:duelSession.handledVersion,visibility:document.visibilityState,
       occupancy:s.board.map(c=>c.map(p=>physical(p.owner))),heights:s.board.map(c=>c.length),
-      drops:[...__syncProbe.drops],events:[...__syncProbe.events],sync:{...peerRoomPresentationSyncState,pendingPings:undefined},
+      drops:[...__syncProbe.drops],events:[...__syncProbe.events],sync:{...peerRoomPresentationSyncState,pendingPings:undefined,pendingHostTransactions:undefined,pendingGuestTransactions:undefined},
       lastPresentation:peerRoomPresentationSyncState.lastPresentation?{...peerRoomPresentationSyncState.lastPresentation}:null
     }
   })
@@ -109,7 +109,10 @@ try{
       host:hDrop.wall,guest:gDrop.wall,deltaMs:delta,
       hostReceived:hp.receivedAt,guestReceived:gp.receivedAt,
       hostTarget:hp.targetAt,guestTarget:gp.targetAt,
+      hostStaged:hp.stagedAt,guestStaged:gp.stagedAt,
       hostReceiveLead:Number(hp.targetAt)-Number(hp.receivedAt),guestReceiveLead:Number(gp.targetAt)-Number(gp.receivedAt),
+      hostTimerLate:Number(hp.stagedAt)-Number(hp.targetAt),guestTimerLate:Number(gp.stagedAt)-Number(gp.targetAt),
+      hostRenderAfterStage:hDrop.wall-Number(hp.stagedAt),guestRenderAfterStage:gDrop.wall-Number(gp.stagedAt),
       hostStageLate:hDrop.wall-Number(hp.targetAt),guestStageLate:gDrop.wall-Number(gp.targetAt),
       hostVisibility:dropH.visibility,guestVisibility:dropG.visibility
     }));
