@@ -4,6 +4,7 @@ const PEER_ROOM_PRESENTATION_SYNC_PROTOCOL=1;
 const PEER_ROOM_PRESENTATION_BASE_LEAD_MS=280;
 const PEER_ROOM_PRESENTATION_MAX_LEAD_MS=2400;
 const PEER_ROOM_PRESENTATION_PREP_WARN_MS=4500;
+const PEER_ROOM_PRESENTATION_EVENT_GAP_MS=48;
 
 const peerRoomPresentationSyncState={
   sequence:0,
@@ -11,6 +12,8 @@ const peerRoomPresentationSyncState={
   pendingPings:new Map(),
   pendingHostTransactions:new Map(),
   pendingGuestTransactions:new Map(),
+  schedules:new Map(),
+  pendingEventPresentation:null,
   offsetMs:0,
   bestRttMs:Infinity,
   synced:false,
@@ -54,6 +57,34 @@ function peerRoomPresentationSyncLocalTarget(meta){
   const oneWay=Number.isFinite(peerRoomPresentationSyncState.bestRttMs)?peerRoomPresentationSyncState.bestRttMs/2:40;
   return Date.now()+Math.max(0,lead-oneWay)
 }
+function peerRoomPresentationSyncLocalEventAnchor(meta){
+  const duration=Math.max(1,Number(meta?.duration)||peerRoomPresentationSyncDropMs());
+  return peerRoomPresentationSyncLocalTarget({...meta,presentAtHost:Number(meta?.presentAtHost||Date.now())+duration+PEER_ROOM_PRESENTATION_EVENT_GAP_MS})
+}
+
+// WebKit can occasionally delay a setTimeout even while the page is visible. Peer Room
+// presentation uses a short requestAnimationFrame clock so checker commit and every combat
+// frame are driven by the same absolute host timeline instead of accumulating local timer drift.
+function peerRoomPresentationSyncCancelSchedule(name){
+  const record=peerRoomPresentationSyncState.schedules.get(name);if(!record)return;
+  record.cancelled=true;
+  if(record.raf!==null&&typeof cancelAnimationFrame==='function')try{cancelAnimationFrame(record.raf)}catch{}
+  if(record.timer!==null)clearTimeout(record.timer);
+  peerRoomPresentationSyncState.schedules.delete(name)
+}
+function peerRoomPresentationSyncCancelAllSchedules(){for(const name of [...peerRoomPresentationSyncState.schedules.keys()])peerRoomPresentationSyncCancelSchedule(name)}
+function peerRoomPresentationSyncScheduleAt(name,targetAt,fn){
+  peerRoomPresentationSyncCancelSchedule(name);
+  const target=Number(targetAt),record={targetAt:Number.isFinite(target)?target:Date.now(),raf:null,timer:null,cancelled:false};
+  peerRoomPresentationSyncState.schedules.set(name,record);
+  const tick=()=>{
+    if(record.cancelled||peerRoomPresentationSyncState.schedules.get(name)!==record)return;
+    if(Date.now()+1>=record.targetAt){peerRoomPresentationSyncState.schedules.delete(name);fn();return}
+    if(typeof requestAnimationFrame==='function')record.raf=requestAnimationFrame(tick);
+    else record.timer=setTimeout(tick,Math.min(16,Math.max(1,record.targetAt-Date.now())))
+  };
+  tick();return record
+}
 
 function peerRoomPresentationSyncSendPing(){
   if(peerRoom?.role!=='guest'||!peerRoom.conn?.open)return false;
@@ -82,9 +113,8 @@ function peerRoomPresentationSyncApplyPong(data){
   if(peerRoom.conn?.open)peerRoomSend(peerRoom.conn,{kind:'room-clock-report',protocol:PEER_ROOM_PROTOCOL,syncProtocol:PEER_ROOM_PRESENTATION_SYNC_PROTOCOL,rttMs:peerRoomPresentationSyncState.bestRttMs})
 }
 
-// The clock remains presentation-only. Canonical move validation still happens once in
-// peerRoomMatchAuthorityMove/applyLocalDuelMove. 0.20.6 adds a receipt handshake because a
-// future timestamp cannot synchronize a browser that receives the payload after that time.
+// Canonical move validation still happens once in peerRoomMatchAuthorityMove/applyLocalDuelMove.
+// The receipt gate and synchronized timeline below only control when already-projected visuals run.
 function peerRoomPresentationSyncEstimateHostReceipt(guestReceivedAt){
   if(peerRoomPresentationSyncState.synced)return Number(guestReceivedAt)-Number(peerRoomPresentationSyncState.offsetMs||0);
   return Number(guestReceivedAt)-((Number.isFinite(peerRoomPresentationSyncState.bestRttMs)?peerRoomPresentationSyncState.bestRttMs:80)/2)
@@ -104,8 +134,7 @@ function peerRoomPresentationSyncFinalizeHost(tx,conn,observedDownlink=0){
   tx.finalized=true;if(tx.warnTimer)clearTimeout(tx.warnTimer);
   const leadMs=peerRoomPresentationSyncReceiptLeadMs(conn,observedDownlink),presentation=peerRoomPresentationSyncMakeMeta({id:tx.id,version:tx.version,leadMs});
   tx.hostPayload.peerPresentation={...presentation};tx.guestPayload.peerPresentation={...presentation};
-  // GO is intentionally tiny: Player 2 already has the Fog-safe payload from PREPARE, so
-  // the synchronization signal is much less likely to be delayed behind a large packet.
+  // GO is intentionally tiny: Player 2 already has the Fog-safe payload from PREPARE.
   if(conn?.open)peerRoomSend(conn,{kind:'room-presentation-go',protocol:PEER_ROOM_PROTOCOL,syncProtocol:PEER_ROOM_PRESENTATION_SYNC_PROTOCOL,id:tx.id,version:tx.version,matchId:tx.matchId,presentation:{...presentation}});
   for(const [seat,spectatorConn] of peerRoom.connections){if(Number(seat)<=2)continue;const payload=peerRoomMatchPayloadForSeat(seat,tx.events);if(!payload)continue;payload.peerPresentation={...presentation};peerRoomSend(spectatorConn,{kind:'room-match-payload',protocol:PEER_ROOM_PROTOCOL,matchId:tx.matchId,payload})}
   peerRoomMatchEnterPayload(tx.hostPayload,tx.matchId,1);peerRoomMatchPersist();peerRoomPresentationSyncState.pendingHostTransactions.delete(tx.id);return true
@@ -162,9 +191,8 @@ peerRoomGuestMessage=function(data){
 };
 globalThis.peerRoomGuestMessage=peerRoomGuestMessage;
 
-// Every validated P1/P2 move now uses PREPARE -> READY -> GO. The host does not start its
-// own checker until Player 2 has confirmed receipt of the prepared Fog-safe transaction.
-// This preserves one canonical game while making presentation robust to WebKit packet stalls.
+// Every validated P1/P2 move uses PREPARE -> READY -> GO. The host does not start its own
+// checker until Player 2 has confirmed receipt of the prepared Fog-safe transaction.
 const peerRoomMatchBroadcastBeforePresentationSync=peerRoomMatchBroadcast;
 peerRoomMatchBroadcast=function(events=[],kind='room-match-payload'){
   const auth=peerRoomMatch?.authority,lm=auth?.state?.lastMove;
@@ -188,8 +216,7 @@ peerRoomMatchSendSeat=function(seat,conn,events=[],kind='room-match-payload'){
 globalThis.peerRoomMatchSendSeat=peerRoomMatchSendSeat;
 
 // Input gets immediate lightweight acknowledgement (column intent + busy state), but the
-// real checker does not begin falling until authority validates and the receipt handshake
-// has established a start time both browsers can still meet.
+// real checker does not begin falling until authority validates and receipt gating completes.
 const peerRoomMatchMoveBeforePresentationSync=peerRoomMatchMove;
 peerRoomMatchMove=function(owner,type,column){
   if(!peerRoomPresentationSyncActive())return peerRoomMatchMoveBeforePresentationSync(owner,type,column);
@@ -205,10 +232,17 @@ globalThis.peerRoomMatchMove=peerRoomMatchMove;
 
 function peerRoomPresentationSyncStage(tx){
   if(peerRoomTransactionState.activeVersion!==tx.version)return;
-  hoverCol=null;peerRoomPresentationSyncState.lastPresentation={...peerRoomPresentationSyncState.lastPresentation,stagedAt:Date.now()};
+  peerRoomPresentationSyncCancelSchedule('dropStart');hoverCol=null;
+  const targetAt=peerRoomPresentationSyncLocalTarget(tx.presentation);
+  peerRoomPresentationSyncState.lastPresentation={...peerRoomPresentationSyncState.lastPresentation,stagedAt:Date.now(),commitTargetAt:targetAt+tx.duration};
   dropPresentation={before:tx.before,owner:tx.lm.owner,type:tx.lm.owner===H?tx.ownType:null,column:tx.column,targetRow:dropTargetRow(tx.before,tx.column),moveNumber:tx.after.moveNumber,duration:tx.duration};
   render();try{emitFeedback('drop')}catch{}
-  try{clearTimer('peerRoomMoveTransaction')}catch{};scheduleTimer('peerRoomMoveTransaction',()=>peerRoomTransactionCommit(tx),tx.duration)
+  try{clearTimer('peerRoomMoveTransaction')}catch{}
+  peerRoomPresentationSyncScheduleAt('dropCommit',targetAt+tx.duration,()=>{
+    if(peerRoomTransactionState.activeVersion!==tx.version)return;
+    peerRoomPresentationSyncState.pendingEventPresentation={id:String(tx.presentation?.id||''),version:tx.version,presentation:{...tx.presentation}};
+    peerRoomTransactionCommit(tx)
+  })
 }
 
 const duelApplyActiveUpdateBeforePresentationSync=duelApplyActiveUpdate;
@@ -222,15 +256,48 @@ duelApplyActiveUpdate=function(payload){
   if(!lm||!Number.isInteger(Number(lm.column))){hoverCol=null;peerRoomTransactionState.activeVersion=0;s=after;peerRoomTransactionRecord(before,after,events,lm);render();duelFinishNetworkPresentation(events,null);return}
   const column=Number(lm.column),ownType=samePending&&pending?.type?pending.type:lm.type,duration=Math.max(1,Number(payload.peerPresentation.duration)||peerRoomPresentationSyncDropMs());
   const tx={version,before,after,events,lm,column,ownType,duration,presentation:payload.peerPresentation};
-  const receivedAt=Date.now(),targetAt=peerRoomPresentationSyncLocalTarget(payload.peerPresentation);peerRoomPresentationSyncState.lastPresentation={id:String(payload.peerPresentation.id||''),version,receivedAt,targetAt,scheduledWaitMs:Math.max(0,targetAt-receivedAt),stagedAt:null};
-  const wait=Math.max(0,targetAt-Date.now());try{clearTimer('peerRoomPresentationStart');clearTimer('peerRoomMoveTransaction')}catch{};scheduleTimer('peerRoomPresentationStart',()=>peerRoomPresentationSyncStage(tx),wait)
+  const receivedAt=Date.now(),targetAt=peerRoomPresentationSyncLocalTarget(payload.peerPresentation);peerRoomPresentationSyncState.lastPresentation={id:String(payload.peerPresentation.id||''),version,receivedAt,targetAt,scheduledWaitMs:Math.max(0,targetAt-receivedAt),stagedAt:null,commitTargetAt:targetAt+duration};
+  try{clearTimer('peerRoomPresentationStart');clearTimer('peerRoomMoveTransaction')}catch{};peerRoomPresentationSyncCancelSchedule('dropStart');peerRoomPresentationSyncCancelSchedule('dropCommit');
+  peerRoomPresentationSyncScheduleAt('dropStart',targetAt,()=>peerRoomPresentationSyncStage(tx))
 };
 globalThis.duelApplyActiveUpdate=duelApplyActiveUpdate;
 
+// Peer Room events use absolute timestamps derived from the same host-authored drop target.
+// Each event is scheduled from the anchor, not from the previous event callback, so one slow
+// browser frame cannot permanently push the rest of a combat chain behind the other player.
+function peerRoomPresentationSyncPlayEvents(events,column,presentation,done){
+  const queue=prepareEvents(events);if(!queue.length){done();return}
+  try{clearTimer('event')}catch{}
+  const anchor=peerRoomPresentationSyncLocalEventAnchor(presentation);let index=0,offset=0;
+  const next=()=>{
+    if(index>=queue.length){
+      peerRoomPresentationSyncScheduleAt('event',anchor+offset,()=>{activePresentation=null;overlay.classList.remove('show');done()});return
+    }
+    const event=queue[index],target=anchor+offset,duration=Math.max(1,Number(eventDuration(event))||1);index++;offset+=duration;
+    peerRoomPresentationSyncScheduleAt('event',target,()=>{
+      if(!peerRoomPresentationSyncActive()){activePresentation=null;overlay.classList.remove('show');done();return}
+      activePresentation={event,column:presentationColumn(event,column)};render();try{emitFeedback(feedbackCueForEvent(event))}catch{};showEvent(event);next()
+    })
+  };
+  next()
+}
+const duelFinishNetworkPresentationBeforePresentationSync=duelFinishNetworkPresentation;
+duelFinishNetworkPresentation=function(events,column){
+  const pending=peerRoomPresentationSyncState.pendingEventPresentation;
+  if(!pending||!peerRoomPresentationSyncActive()||Number(pending.version)!==Number(duelSession.handledVersion))return duelFinishNetworkPresentationBeforePresentationSync(events,column);
+  peerRoomPresentationSyncState.pendingEventPresentation=null;
+  const done=()=>duelFinishNetworkPresentationBeforePresentationSync([],column);
+  if(!events?.length){done();return}
+  return peerRoomPresentationSyncPlayEvents(events,column,pending.presentation,done)
+};
+globalThis.duelFinishNetworkPresentation=duelFinishNetworkPresentation;
+
 const peerRoomTransactionClearVisualBeforePresentationSync=peerRoomTransactionClearVisual;
-peerRoomTransactionClearVisual=function(){try{clearTimer('peerRoomPresentationStart')}catch{};hoverCol=null;return peerRoomTransactionClearVisualBeforePresentationSync()};
+peerRoomTransactionClearVisual=function(){
+  try{clearTimer('peerRoomPresentationStart');clearTimer('event')}catch{};peerRoomPresentationSyncCancelAllSchedules();peerRoomPresentationSyncState.pendingEventPresentation=null;hoverCol=null;return peerRoomTransactionClearVisualBeforePresentationSync()
+};
 globalThis.peerRoomTransactionClearVisual=peerRoomTransactionClearVisual;if(globalThis.peerRoomTransaction)globalThis.peerRoomTransaction.clearVisual=peerRoomTransactionClearVisual;
 
 if(peerRoom?.role==='guest'&&peerRoom.conn?.open)setTimeout(peerRoomPresentationSyncBurst,0);
 
-globalThis.peerRoomPresentationSync={version:PEER_ROOM_PRESENTATION_SYNC_VERSION,protocol:PEER_ROOM_PRESENTATION_SYNC_PROTOCOL,state:peerRoomPresentationSyncState,active:peerRoomPresentationSyncActive,burst:peerRoomPresentationSyncBurst,leadMs:peerRoomPresentationSyncLeadMs,receiptLeadMs:peerRoomPresentationSyncReceiptLeadMs,localTarget:peerRoomPresentationSyncLocalTarget};
+globalThis.peerRoomPresentationSync={version:PEER_ROOM_PRESENTATION_SYNC_VERSION,protocol:PEER_ROOM_PRESENTATION_SYNC_PROTOCOL,state:peerRoomPresentationSyncState,active:peerRoomPresentationSyncActive,burst:peerRoomPresentationSyncBurst,leadMs:peerRoomPresentationSyncLeadMs,receiptLeadMs:peerRoomPresentationSyncReceiptLeadMs,localTarget:peerRoomPresentationSyncLocalTarget,eventAnchor:peerRoomPresentationSyncLocalEventAnchor,scheduleAt:peerRoomPresentationSyncScheduleAt};
