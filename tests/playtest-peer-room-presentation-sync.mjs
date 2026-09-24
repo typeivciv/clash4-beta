@@ -1,9 +1,10 @@
 import { chromium, webkit } from 'playwright';
 import assert from 'node:assert/strict';
 
-const BASE='http://127.0.0.1:8080/multiplayer-alpha.html?playtest=sync0205';
+const BASE='http://127.0.0.1:8080/multiplayer-alpha.html?playtest=sync0206';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const browsers=[];
+const COMBAT_CUES=new Set(['combat-win','combat-tie','decoy']);
 
 async function waitRuntime(page){
   await page.waitForFunction(()=>globalThis.peerRoomFoundation&&globalThis.peerRoomMatch&&globalThis.peerRoomPresentationSync,{timeout:20000});
@@ -26,7 +27,7 @@ async function snapshot(page){
     return{
       seat,move:s.moveNumber,turnSeat:physical(s.turn),busy:!!busy,handled:duelSession.handledVersion,visibility:document.visibilityState,
       occupancy:s.board.map(c=>c.map(p=>physical(p.owner))),heights:s.board.map(c=>c.length),
-      drops:[...__syncProbe.drops],events:[...__syncProbe.events],sync:{...peerRoomPresentationSyncState,pendingPings:undefined,pendingHostTransactions:undefined,pendingGuestTransactions:undefined},
+      drops:[...__syncProbe.drops],events:[...__syncProbe.events],sync:{...peerRoomPresentationSyncState,pendingPings:undefined,pendingHostTransactions:undefined,pendingGuestTransactions:undefined,schedules:undefined},
       lastPresentation:peerRoomPresentationSyncState.lastPresentation?{...peerRoomPresentationSyncState.lastPresentation}:null
     }
   })
@@ -123,14 +124,21 @@ try{
     const afterH=await snapshot(host),afterG=await snapshot(guest);sameBoard(afterH,afterG,`move ${i} final`);assert.equal(afterH.turnSeat,afterG.turnSeat,`move ${i} final turn mismatch`);assert.equal(afterH.move,beforeMove+1);assert.equal(afterG.move,beforeMove+1);
     assert.equal(afterH.drops.length,i,`move ${i}: host duplicate/missing checker drop`);assert.equal(afterG.drops.length,i,`move ${i}: guest duplicate/missing checker drop`);
 
-    const hTies=afterH.events.filter(e=>e.kind==='combat-tie'),gTies=afterG.events.filter(e=>e.kind==='combat-tie');
-    if(hTies.length>combatCount&&gTies.length>combatCount){
-      const eventDelta=Math.abs(hTies[combatCount].wall-gTies[combatCount].wall);console.log(`COMBAT ${combatCount+1} SYNC`,JSON.stringify({deltaMs:eventDelta}));assert.ok(eventDelta<=90,`combat ${combatCount+1}: presentation started ${eventDelta}ms apart`);combatCount++
+    const canonicalMove=beforeMove+1;
+    const hCombat=afterH.events.filter(e=>e.move===canonicalMove&&COMBAT_CUES.has(e.kind));
+    const gCombat=afterG.events.filter(e=>e.move===canonicalMove&&COMBAT_CUES.has(e.kind));
+    assert.equal(hCombat.length,gCombat.length,`move ${i}: host/guest combat cue count mismatch`);
+    for(let j=0;j<hCombat.length;j++){
+      assert.equal(hCombat[j].kind,gCombat[j].kind,`move ${i} combat ${j+1}: cue mismatch`);
+      const eventDelta=Math.abs(hCombat[j].wall-gCombat[j].wall);
+      console.log(`MOVE ${i} COMBAT ${j+1} SYNC`,JSON.stringify({kind:hCombat[j].kind,host:hCombat[j].wall,guest:gCombat[j].wall,deltaMs:eventDelta}));
+      assert.ok(eventDelta<=90,`move ${i} combat ${j+1}: presentation started ${eventDelta}ms apart`);
+      combatCount++
     }
   }
 
   assert.ok(combatCount>=2,'playtest should exercise at least two combat presentations');
   assert.deepEqual(pageErrors,[],'browser page errors occurred');
   await host.screenshot({path:'artifacts/peer-room-sync-host.png'});await guest.screenshot({path:'artifacts/peer-room-sync-guest.png'});
-  console.log(`PASS Peer Room 0.20.5 real-browser presentation sync: 6 touch moves, ${combatCount} combats, asymmetric 70/110ms transport jitter, synchronized host-timed drops.`)
+  console.log(`PASS Peer Room 0.20.6 real-browser presentation sync: 6 touch moves, ${combatCount} matched combat cues, asymmetric 70/110ms transport jitter, synchronized host-timed drops and event timeline.`)
 } finally {for(const b of browsers)await b.close().catch(()=>{})}
