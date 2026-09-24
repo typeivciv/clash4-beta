@@ -39,6 +39,36 @@ async function snapshot(page){
     }
   })
 }
+async function diagnostics(page,label){
+  return page.evaluate(label=>{
+    const pc=peerRoom?.conn?.peerConnection||null;
+    const seat=Number(peerRoom?.seat||0),physical=o=>o==='human'?seat:o==='ai'?(seat===1?2:1):null;
+    const pendingHost=[...(peerRoomPresentationSyncState?.pendingHostTransactions?.values?.()||[])].map(tx=>({id:tx.id,version:tx.version,finalized:!!tx.finalized,preparedAt:tx.preparedAt,matchId:tx.matchId}));
+    const pendingGuest=[...(peerRoomPresentationSyncState?.pendingGuestTransactions?.values?.()||[])].map(tx=>({id:tx.id,version:tx.version,receivedAt:tx.receivedAt,matchId:tx.matchId}));
+    const schedules=[...(peerRoomPresentationSyncState?.schedules?.entries?.()||[])].map(([name,v])=>({name,targetAt:v?.targetAt,cancelled:!!v?.cancelled}));
+    let legal=[];try{legal=legalCols(H)}catch{}
+    return{
+      label,now:Date.now(),seat,role:peerRoom?.role,active:!!peerRoom?.active,matchPhase:peerRoomMatch?.phase,matchId:peerRoomMatch?.matchId,
+      move:s?.moveNumber,turn:s?.turn,turnSeat:physical(s?.turn),ready:!!ready,busy:!!busy,winner:s?.winner||null,draw:!!s?.draw,selected,
+      legal,heights:s?.board?.map?.(c=>c.length)||[],handled:duelSession?.handledVersion,sessionVersion:duelSession?.version,
+      pendingLocal:duelSession?.pendingLocal?{type:duelSession.pendingLocal.type,column:duelSession.pendingLocal.column,baseVersion:duelSession.pendingLocal.baseVersion,peerRoomSynchronized:!!duelSession.pendingLocal.peerRoomSynchronized,requestedAt:duelSession.pendingLocal.requestedAt}:null,
+      authorityVersion:peerRoomMatch?.authority?.version??null,authorityMove:peerRoomMatch?.authority?.state?.moveNumber??null,
+      connOpen:!!peerRoom?.conn?.open,peerId:peerRoom?.conn?.peer||null,ice:pc?.iceConnectionState||null,connection:pc?.connectionState||null,
+      pendingHost,pendingGuest,schedules,cssDrops:__syncProbe?.cssDrops?.length||0,dropFeedback:__syncProbe?.drops?.length||0,
+      lastPresentation:peerRoomPresentationSyncState?.lastPresentation?{...peerRoomPresentationSyncState.lastPresentation}:null
+    }
+  },label)
+}
+async function waitCssDropPair(host,guest,n){
+  try{
+    await host.waitForFunction(count=>__syncProbe.cssDrops.length>=count,n,{timeout:5000});
+    await guest.waitForFunction(count=>__syncProbe.cssDrops.length>=count,n,{timeout:5000})
+  }catch(error){
+    const [hd,gd]=await Promise.all([diagnostics(host,`host move ${n} timeout`),diagnostics(guest,`guest move ${n} timeout`)]);
+    console.log(`MOVE ${n} DROP WAIT TIMEOUT`,JSON.stringify({host:hd,guest:gd}));
+    throw error
+  }
+}
 function sameBoard(a,b,label){assert.deepEqual(a.occupancy,b.occupancy,label);assert.deepEqual(a.heights,b.heights,`${label} heights`)}
 
 async function installTransportJitter(page,role){
@@ -101,6 +131,7 @@ try{
   for(let i=1;i<=6;i++){
     hs=await snapshot(host);gs=await snapshot(guest);sameBoard(hs,gs,`move ${i} before`);assert.equal(hs.turnSeat,gs.turnSeat,`move ${i} physical turn before input`);
     const mover=hs.turnSeat===1?host:guest;
+    console.log(`MOVE ${i} BEFORE INPUT`,JSON.stringify({host:{move:hs.move,turnSeat:hs.turnSeat,busy:hs.busy,heights:hs.heights},guest:{move:gs.move,turnSeat:gs.turnSeat,busy:gs.busy,heights:gs.heights},mover:hs.turnSeat}));
     const beforeMove=await tapMove(mover);
 
     await sleep(45);
@@ -108,8 +139,7 @@ try{
     assert.ok(intentH.cssDrops.length<=i-1,`move ${i}: host CSS checker started before presentation transaction`);
     assert.ok(intentG.cssDrops.length<=i-1,`move ${i}: guest CSS checker started before presentation transaction`);
 
-    await host.waitForFunction(n=>__syncProbe.cssDrops.length>=n,i,{timeout:5000});
-    await guest.waitForFunction(n=>__syncProbe.cssDrops.length>=n,i,{timeout:5000});
+    await waitCssDropPair(host,guest,i);
     const dropH=await snapshot(host),dropG=await snapshot(guest);
     const hDrop=dropH.cssDrops[i-1],gDrop=dropG.cssDrops[i-1],dispatchDelta=Math.abs(hDrop.wall-gDrop.wall),targetDelta=Math.abs(Number(hDrop.target)-Number(gDrop.target));
     const hp=dropH.lastPresentation||{},gp=dropG.lastPresentation||{};
@@ -122,9 +152,6 @@ try{
       hostCssDelay:hp.cssDelayMs,guestCssDelay:gp.cssDelayMs,hostVisibility:dropH.visibility,guestVisibility:dropG.visibility
     }));
     assert.ok(targetDelta<=12,`move ${i}: CSS checker targets differ by ${targetDelta}ms`);
-    // animationstart dispatch itself can wait behind WebKit's main thread even while the
-    // compositor has already started the CSS animation. Keep a generous dispatch guard so
-    // the test catches a stalled browser without treating JS event delivery as visual time.
     assert.ok(dispatchDelta<=140,`move ${i}: CSS animationstart events dispatched ${dispatchDelta}ms apart`);
 
     await host.waitForFunction(n=>s.moveNumber>=n&&!busy,beforeMove+1,{timeout:10000});
