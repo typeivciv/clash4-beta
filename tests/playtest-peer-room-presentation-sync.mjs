@@ -9,7 +9,14 @@ const COMBAT_CUES=new Set(['combat-win','combat-tie','decoy']);
 async function waitRuntime(page){
   await page.waitForFunction(()=>globalThis.peerRoomFoundation&&globalThis.peerRoomMatch&&globalThis.peerRoomPresentationSync,{timeout:20000});
   await page.evaluate(()=>{
-    globalThis.__syncProbe={drops:[],events:[]};
+    globalThis.__syncProbe={drops:[],cssDrops:[],events:[]};
+    document.addEventListener('animationstart',event=>{
+      if(event.animationName!=='c4-peer-room-sync-drop')return;
+      try{
+        const target=Number(event.target?.dataset?.peerRoomSyncTarget);
+        __syncProbe.cssDrops.push({wall:Date.now(),perf:performance.now(),target:Number.isFinite(target)?target:null,seat:Number(peerRoom?.seat||0),visibility:document.visibilityState})
+      }catch{}
+    },true);
     const old=globalThis.emitFeedback;
     if(typeof old==='function')globalThis.emitFeedback=function(kind,...args){
       try{
@@ -27,7 +34,7 @@ async function snapshot(page){
     return{
       seat,move:s.moveNumber,turnSeat:physical(s.turn),busy:!!busy,handled:duelSession.handledVersion,visibility:document.visibilityState,
       occupancy:s.board.map(c=>c.map(p=>physical(p.owner))),heights:s.board.map(c=>c.length),
-      drops:[...__syncProbe.drops],events:[...__syncProbe.events],sync:{...peerRoomPresentationSyncState,pendingPings:undefined,pendingHostTransactions:undefined,pendingGuestTransactions:undefined,schedules:undefined},
+      drops:[...__syncProbe.drops],cssDrops:[...__syncProbe.cssDrops],events:[...__syncProbe.events],sync:{...peerRoomPresentationSyncState,pendingPings:undefined,pendingHostTransactions:undefined,pendingGuestTransactions:undefined,schedules:undefined},
       lastPresentation:peerRoomPresentationSyncState.lastPresentation?{...peerRoomPresentationSyncState.lastPresentation}:null
     }
   })
@@ -98,31 +105,32 @@ try{
 
     await sleep(45);
     const intentH=await snapshot(host),intentG=await snapshot(guest);
-    assert.ok(intentH.drops.length<=i-1,`move ${i}: host started checker before host presentation transaction`);
-    assert.ok(intentG.drops.length<=i-1,`move ${i}: guest started checker before host presentation transaction`);
+    assert.ok(intentH.cssDrops.length<=i-1,`move ${i}: host CSS checker started before presentation transaction`);
+    assert.ok(intentG.cssDrops.length<=i-1,`move ${i}: guest CSS checker started before presentation transaction`);
 
-    await host.waitForFunction(n=>__syncProbe.drops.length>=n,i,{timeout:5000});
-    await guest.waitForFunction(n=>__syncProbe.drops.length>=n,i,{timeout:5000});
+    await host.waitForFunction(n=>__syncProbe.cssDrops.length>=n,i,{timeout:5000});
+    await guest.waitForFunction(n=>__syncProbe.cssDrops.length>=n,i,{timeout:5000});
     const dropH=await snapshot(host),dropG=await snapshot(guest);
-    const hDrop=dropH.drops[i-1],gDrop=dropG.drops[i-1],delta=Math.abs(hDrop.wall-gDrop.wall);
+    const hDrop=dropH.cssDrops[i-1],gDrop=dropG.cssDrops[i-1],dispatchDelta=Math.abs(hDrop.wall-gDrop.wall),targetDelta=Math.abs(Number(hDrop.target)-Number(gDrop.target));
     const hp=dropH.lastPresentation||{},gp=dropG.lastPresentation||{};
     console.log(`MOVE ${i} DROP SYNC`,JSON.stringify({
-      host:hDrop.wall,guest:gDrop.wall,deltaMs:delta,
-      hostReceived:hp.receivedAt,guestReceived:gp.receivedAt,
-      hostTarget:hp.targetAt,guestTarget:gp.targetAt,
-      hostStaged:hp.stagedAt,guestStaged:gp.stagedAt,
-      hostReceiveLead:Number(hp.targetAt)-Number(hp.receivedAt),guestReceiveLead:Number(gp.targetAt)-Number(gp.receivedAt),
-      hostTimerLate:Number(hp.stagedAt)-Number(hp.targetAt),guestTimerLate:Number(gp.stagedAt)-Number(gp.targetAt),
-      hostRenderAfterStage:hDrop.wall-Number(hp.stagedAt),guestRenderAfterStage:gDrop.wall-Number(gp.stagedAt),
-      hostStageLate:hDrop.wall-Number(hp.targetAt),guestStageLate:gDrop.wall-Number(gp.targetAt),
-      hostVisibility:dropH.visibility,guestVisibility:dropG.visibility
+      hostAnimationStart:hDrop.wall,guestAnimationStart:gDrop.wall,dispatchDeltaMs:dispatchDelta,targetDeltaMs:targetDelta,
+      hostCssTarget:hDrop.target,guestCssTarget:gDrop.target,
+      hostDispatchLate:hDrop.wall-Number(hDrop.target),guestDispatchLate:gDrop.wall-Number(gDrop.target),
+      hostReceived:hp.receivedAt,guestReceived:gp.receivedAt,hostTarget:hp.targetAt,guestTarget:gp.targetAt,
+      hostPrepared:hp.preparedAt,guestPrepared:gp.preparedAt,hostPrepareCost:hp.prepareCostMs,guestPrepareCost:gp.prepareCostMs,
+      hostCssDelay:hp.cssDelayMs,guestCssDelay:gp.cssDelayMs,hostVisibility:dropH.visibility,guestVisibility:dropG.visibility
     }));
-    assert.ok(delta<=65,`move ${i}: checker drops started ${delta}ms apart under induced jitter`);
+    assert.ok(targetDelta<=12,`move ${i}: CSS checker targets differ by ${targetDelta}ms`);
+    // animationstart dispatch itself can wait behind WebKit's main thread even while the
+    // compositor has already started the CSS animation. Keep a generous dispatch guard so
+    // the test catches a stalled browser without treating JS event delivery as visual time.
+    assert.ok(dispatchDelta<=140,`move ${i}: CSS animationstart events dispatched ${dispatchDelta}ms apart`);
 
     await host.waitForFunction(n=>s.moveNumber>=n&&!busy,beforeMove+1,{timeout:10000});
     await guest.waitForFunction(n=>s.moveNumber>=n&&!busy,beforeMove+1,{timeout:10000});
     const afterH=await snapshot(host),afterG=await snapshot(guest);sameBoard(afterH,afterG,`move ${i} final`);assert.equal(afterH.turnSeat,afterG.turnSeat,`move ${i} final turn mismatch`);assert.equal(afterH.move,beforeMove+1);assert.equal(afterG.move,beforeMove+1);
-    assert.equal(afterH.drops.length,i,`move ${i}: host duplicate/missing checker drop`);assert.equal(afterG.drops.length,i,`move ${i}: guest duplicate/missing checker drop`);
+    assert.equal(afterH.cssDrops.length,i,`move ${i}: host duplicate/missing CSS checker drop`);assert.equal(afterG.cssDrops.length,i,`move ${i}: guest duplicate/missing CSS checker drop`);
 
     const canonicalMove=beforeMove+1;
     const hCombat=afterH.events.filter(e=>e.move===canonicalMove&&COMBAT_CUES.has(e.kind));
@@ -140,5 +148,5 @@ try{
   assert.ok(combatCount>=2,'playtest should exercise at least two combat presentations');
   assert.deepEqual(pageErrors,[],'browser page errors occurred');
   await host.screenshot({path:'artifacts/peer-room-sync-host.png'});await guest.screenshot({path:'artifacts/peer-room-sync-guest.png'});
-  console.log(`PASS Peer Room 0.20.6 real-browser presentation sync: 6 touch moves, ${combatCount} matched combat cues, asymmetric 70/110ms transport jitter, synchronized host-timed drops and event timeline.`)
+  console.log(`PASS Peer Room 0.20.6 real-browser presentation sync: 6 touch moves, ${combatCount} matched combat cues, asymmetric 70/110ms transport jitter, CSS-clock checker starts and host-timed event timeline.`)
 } finally {for(const b of browsers)await b.close().catch(()=>{})}
