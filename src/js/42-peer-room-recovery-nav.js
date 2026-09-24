@@ -155,3 +155,25 @@ if(typeof document!=='undefined'){
 }
 
 globalThis.peerRoomRecoveryNav={version:PEER_ROOM_RECOVERY_NAV_VERSION,state:peerRoomRecoveryState,retry:peerRoomRecoveryRetryNow,syncBack:c4BackSync};
+
+// WebKit's requestAnimationFrame can be delayed by a full frame bucket even while visible.
+// Override the 0.20.6 presentation clock with absolute setTimeout targets. Every callback
+// re-checks Date.now(), so early timers are corrected without chaining drift from prior events.
+if(typeof globalThis.peerRoomPresentationSyncScheduleAt==='function'&&globalThis.peerRoomPresentationSyncState?.schedules){
+  globalThis.peerRoomPresentationSyncScheduleAt=function(name,targetAt,fn){
+    try{globalThis.peerRoomPresentationSyncCancelSchedule?.(name)}catch{
+      const prior=globalThis.peerRoomPresentationSyncState.schedules.get(name);if(prior?.timer)clearTimeout(prior.timer);globalThis.peerRoomPresentationSyncState.schedules.delete(name)
+    }
+    const target=Number(targetAt),record={targetAt:Number.isFinite(target)?target:Date.now(),raf:null,timer:null,cancelled:false};
+    globalThis.peerRoomPresentationSyncState.schedules.set(name,record);
+    const fire=()=>{
+      if(record.cancelled||globalThis.peerRoomPresentationSyncState.schedules.get(name)!==record)return;
+      const remaining=record.targetAt-Date.now();
+      if(remaining>1){record.timer=setTimeout(fire,remaining);return}
+      globalThis.peerRoomPresentationSyncState.schedules.delete(name);fn()
+    };
+    record.timer=setTimeout(fire,Math.max(0,record.targetAt-Date.now()));return record
+  };
+  try{peerRoomPresentationSyncScheduleAt=globalThis.peerRoomPresentationSyncScheduleAt}catch{}
+  if(globalThis.peerRoomPresentationSync)globalThis.peerRoomPresentationSync.scheduleAt=globalThis.peerRoomPresentationSyncScheduleAt
+}
