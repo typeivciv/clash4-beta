@@ -9,13 +9,21 @@ const PEER_ROOM_RENDER_SYNC_EVENT_GAP_MS=340;
 function peerRoomRenderSyncInstallStyle(){
   if(typeof document==='undefined'||document.querySelector('style[data-peer-room-render-sync]'))return;
   const style=document.createElement('style');style.dataset.peerRoomRenderSync='1';style.textContent=`
-    body.peer-room-sync-prepared #board .disc.justDropped{animation-play-state:paused!important;visibility:hidden!important}
+    body.peer-room-sync-prepared #board .disc.justDropped{animation:none!important;visibility:hidden!important}
+    #board .disc.justDropped.peerRoomSyncedDrop{visibility:visible!important;animation:c4-peer-room-sync-drop var(--drop-duration,500ms) cubic-bezier(.18,.78,.25,1.04) var(--peer-room-sync-delay,0ms) both!important;transform-origin:center}
+    @keyframes c4-peer-room-sync-drop{
+      0%{transform:translateY(var(--drop-distance,-420%)) scale(.94);filter:brightness(1.08);opacity:0}
+      .1%{transform:translateY(var(--drop-distance,-420%)) scale(.94);filter:brightness(1.08);opacity:1}
+      68%{transform:translateY(7%) scale(1.025);opacity:1}
+      84%{transform:translateY(-3%) scale(.995);opacity:1}
+      100%{transform:translateY(0) scale(1);filter:none;opacity:1}
+    }
   `;document.head.append(style)
 }
 function peerRoomRenderSyncGhost(){return document.querySelector('#board .disc.justDropped')}
 function peerRoomRenderSyncClearPrepared(){
   try{document.body.classList.remove('peer-room-sync-prepared')}catch{}
-  const ghost=peerRoomRenderSyncGhost();if(ghost){ghost.style.removeProperty('animation-play-state');ghost.style.removeProperty('visibility')}
+  const ghost=peerRoomRenderSyncGhost();if(ghost){ghost.classList.remove('peerRoomSyncedDrop');ghost.style.removeProperty('--peer-room-sync-delay');delete ghost.dataset.peerRoomSyncTarget}
 }
 
 // Give WebKit enough preparation headroom to build/decorate the board before the shared
@@ -36,7 +44,6 @@ function peerRoomRenderSyncEventPresentation(presentation){
 function peerRoomRenderSyncEventTarget(presentation){
   const hostAt=Number(presentation?.presentAtHost),duration=Math.max(1,Number(presentation?.duration)||220);
   if(!Number.isFinite(hostAt))return null;
-  // Informational host-clock target. Player 2 maps this with the existing clock offset in 41.
   return hostAt+duration+PEER_ROOM_RENDER_SYNC_EVENT_GAP_MS
 }
 
@@ -45,27 +52,33 @@ function peerRoomRenderSyncPrepare(tx,targetAt){
   const prepStarted=Date.now();hoverCol=null;
   peerRoomRenderSyncInstallStyle();document.body.classList.add('peer-room-sync-prepared');
   dropPresentation={before:tx.before,owner:tx.lm.owner,type:tx.lm.owner===H?tx.ownType:null,column:tx.column,targetRow:dropTargetRow(tx.before,tx.column),moveNumber:tx.after.moveNumber,duration:tx.duration};
-  // This is deliberately early. The expensive 8x6 board/HUD rebuild is removed from the
-  // synchronized instant; the shared timestamp only reveals and releases an existing disc.
+  // Build the expensive 8x6 board before the shared clock. While this render runs the
+  // prepared class prevents the normal justDropped animation from starting at all.
   render();
-  const ghost=peerRoomRenderSyncGhost();if(ghost){ghost.style.animationPlayState='paused';ghost.style.visibility='hidden'}
+  const ghost=peerRoomRenderSyncGhost();
+  const configuredAt=Date.now(),delay=Math.max(0,targetAt-configuredAt);
+  if(ghost){
+    ghost.dataset.peerRoomSyncTarget=String(targetAt);
+    ghost.style.setProperty('--peer-room-sync-delay',`${delay}ms`);
+    ghost.classList.add('peerRoomSyncedDrop');
+    // Releasing the preparation class starts a CSS animation with a positive delay. The
+    // browser animation timeline, rather than a JavaScript wake-up, now owns the exact start.
+    document.body.classList.remove('peer-room-sync-prepared')
+  }else document.body.classList.remove('peer-room-sync-prepared');
   tx.preparedGhost=ghost;tx.targetAt=targetAt;
-  peerRoomPresentationSyncState.lastPresentation={...peerRoomPresentationSyncState.lastPresentation,preparedAt:Date.now(),prepareCostMs:Date.now()-prepStarted,commitTargetAt:targetAt+tx.duration,eventTargetAt:peerRoomRenderSyncEventTarget(tx.presentation)};
+  peerRoomPresentationSyncState.lastPresentation={...peerRoomPresentationSyncState.lastPresentation,preparedAt:configuredAt,prepareCostMs:configuredAt-prepStarted,cssDelayMs:delay,cssTargetAt:targetAt,commitTargetAt:targetAt+tx.duration,eventTargetAt:peerRoomRenderSyncEventTarget(tx.presentation)};
   return true
 }
 function peerRoomRenderSyncStart(tx){
   if(peerRoomTransactionState.activeVersion!==tx.version)return;
-  let ghost=tx.preparedGhost;if(!ghost?.isConnected)ghost=peerRoomRenderSyncGhost();
-  document.body.classList.remove('peer-room-sync-prepared');
-  if(ghost){ghost.style.visibility='visible';ghost.style.animationPlayState='running'}
-  peerRoomPresentationSyncState.lastPresentation={...peerRoomPresentationSyncState.lastPresentation,stagedAt:Date.now(),renderAfterStageMs:0};
+  // Audio/haptic feedback can tolerate a late JS wake. The checker itself is already owned
+  // by the CSS animation clock and does not depend on this callback for visual timing.
+  peerRoomPresentationSyncState.lastPresentation={...peerRoomPresentationSyncState.lastPresentation,feedbackAt:Date.now()};
   try{emitFeedback('drop')}catch{}
 }
 function peerRoomRenderSyncCommit(tx){
   if(peerRoomTransactionState.activeVersion!==tx.version)return;
   peerRoomRenderSyncClearPrepared();
-  // 41 owns the actual event scheduler. Feed it an event-only timestamp shifted by the
-  // shared resolution beat rather than reaching across dynamic-script lexical scope.
   peerRoomPresentationSyncState.pendingEventPresentation={
     id:String(tx.presentation?.id||''),version:tx.version,
     presentation:peerRoomRenderSyncEventPresentation(tx.presentation)
@@ -89,10 +102,11 @@ duelApplyActiveUpdate=function(payload){
   const column=Number(lm.column),ownType=samePending&&pending?.type?pending.type:lm.type,duration=Math.max(1,Number(payload.peerPresentation.duration)||peerRoomPresentationSyncDropMs());
   const tx={version,before,after,events,lm,column,ownType,duration,presentation:payload.peerPresentation};
   const receivedAt=Date.now(),targetAt=peerRoomPresentationSyncLocalTarget(payload.peerPresentation);
-  peerRoomPresentationSyncState.lastPresentation={id:String(payload.peerPresentation.id||''),version,receivedAt,targetAt,scheduledWaitMs:Math.max(0,targetAt-receivedAt),preparedAt:null,prepareCostMs:null,stagedAt:null,commitTargetAt:targetAt+duration,eventTargetAt:peerRoomRenderSyncEventTarget(payload.peerPresentation)};
+  peerRoomPresentationSyncState.lastPresentation={id:String(payload.peerPresentation.id||''),version,receivedAt,targetAt,scheduledWaitMs:Math.max(0,targetAt-receivedAt),preparedAt:null,prepareCostMs:null,feedbackAt:null,commitTargetAt:targetAt+duration,eventTargetAt:peerRoomRenderSyncEventTarget(payload.peerPresentation)};
   try{clearTimer('peerRoomPresentationStart');clearTimer('peerRoomMoveTransaction')}catch{}
   try{peerRoomPresentationSyncCancelSchedule('dropStart');peerRoomPresentationSyncCancelSchedule('dropCommit')}catch{}
   if(!peerRoomRenderSyncPrepare(tx,targetAt))return;
+  // Only feedback and commit need JS callbacks now; visual drop start is CSS-scheduled.
   peerRoomPresentationSyncScheduleAt('dropStart',targetAt,()=>peerRoomRenderSyncStart(tx));
   peerRoomPresentationSyncScheduleAt('dropCommit',targetAt+duration,()=>peerRoomRenderSyncCommit(tx))
 };
