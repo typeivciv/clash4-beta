@@ -1,6 +1,7 @@
 'use strict';
 const PEER_ROOM_RENDER_SYNC_VERSION='0.20.6';
 const PEER_ROOM_RENDER_SYNC_MIN_LEAD_MS=420;
+const PEER_ROOM_RENDER_SYNC_EVENT_GAP_MS=340;
 
 function peerRoomRenderSyncInstallStyle(){
   if(typeof document==='undefined'||document.querySelector('style[data-peer-room-render-sync]'))return;
@@ -24,6 +25,19 @@ peerRoomPresentationSyncReceiptLeadMs=function(conn,observedDownlink=0){
 globalThis.peerRoomPresentationSyncReceiptLeadMs=peerRoomPresentationSyncReceiptLeadMs;
 if(globalThis.peerRoomPresentationSync)globalThis.peerRoomPresentationSync.receiptLeadMs=peerRoomPresentationSyncReceiptLeadMs;
 
+// Resolving the canonical board after the checker lands can take materially longer in
+// WebKit than Chromium. Give both clients the same deliberate post-drop beat, then anchor
+// the first combat/special event to that host timestamp. Subsequent event targets remain
+// absolute, so one slow callback cannot accumulate drift through the chain.
+const peerRoomPresentationSyncEventAnchorBeforeRenderSync=peerRoomPresentationSyncEventAnchor;
+peerRoomPresentationSyncEventAnchor=function(presentation){
+  const hostAt=Number(presentation?.presentAtHost),duration=Math.max(1,Number(presentation?.duration)||peerRoomPresentationSyncDropMs());
+  if(!Number.isFinite(hostAt))return peerRoomPresentationSyncEventAnchorBeforeRenderSync(presentation);
+  return hostAt+duration+PEER_ROOM_RENDER_SYNC_EVENT_GAP_MS
+};
+globalThis.peerRoomPresentationSyncEventAnchor=peerRoomPresentationSyncEventAnchor;
+if(globalThis.peerRoomPresentationSync)globalThis.peerRoomPresentationSync.eventAnchor=peerRoomPresentationSyncEventAnchor;
+
 function peerRoomRenderSyncPrepare(tx,targetAt){
   if(peerRoomTransactionState.activeVersion!==tx.version)return false;
   const prepStarted=Date.now();hoverCol=null;
@@ -34,7 +48,7 @@ function peerRoomRenderSyncPrepare(tx,targetAt){
   render();
   const ghost=peerRoomRenderSyncGhost();if(ghost){ghost.style.animationPlayState='paused';ghost.style.visibility='hidden'}
   tx.preparedGhost=ghost;tx.targetAt=targetAt;
-  peerRoomPresentationSyncState.lastPresentation={...peerRoomPresentationSyncState.lastPresentation,preparedAt:Date.now(),prepareCostMs:Date.now()-prepStarted,commitTargetAt:targetAt+tx.duration};
+  peerRoomPresentationSyncState.lastPresentation={...peerRoomPresentationSyncState.lastPresentation,preparedAt:Date.now(),prepareCostMs:Date.now()-prepStarted,commitTargetAt:targetAt+tx.duration,eventTargetAt:peerRoomPresentationSyncEventAnchor(tx.presentation)};
   return true
 }
 function peerRoomRenderSyncStart(tx){
@@ -68,7 +82,7 @@ duelApplyActiveUpdate=function(payload){
   const column=Number(lm.column),ownType=samePending&&pending?.type?pending.type:lm.type,duration=Math.max(1,Number(payload.peerPresentation.duration)||peerRoomPresentationSyncDropMs());
   const tx={version,before,after,events,lm,column,ownType,duration,presentation:payload.peerPresentation};
   const receivedAt=Date.now(),targetAt=peerRoomPresentationSyncLocalTarget(payload.peerPresentation);
-  peerRoomPresentationSyncState.lastPresentation={id:String(payload.peerPresentation.id||''),version,receivedAt,targetAt,scheduledWaitMs:Math.max(0,targetAt-receivedAt),preparedAt:null,prepareCostMs:null,stagedAt:null,commitTargetAt:targetAt+duration};
+  peerRoomPresentationSyncState.lastPresentation={id:String(payload.peerPresentation.id||''),version,receivedAt,targetAt,scheduledWaitMs:Math.max(0,targetAt-receivedAt),preparedAt:null,prepareCostMs:null,stagedAt:null,commitTargetAt:targetAt+duration,eventTargetAt:peerRoomPresentationSyncEventAnchor(payload.peerPresentation)};
   try{clearTimer('peerRoomPresentationStart');clearTimer('peerRoomMoveTransaction')}catch{}
   try{peerRoomPresentationSyncCancelSchedule('dropStart');peerRoomPresentationSyncCancelSchedule('dropCommit')}catch{}
   if(!peerRoomRenderSyncPrepare(tx,targetAt))return;
@@ -82,4 +96,4 @@ peerRoomTransactionClearVisual=function(){peerRoomRenderSyncClearPrepared();retu
 globalThis.peerRoomTransactionClearVisual=peerRoomTransactionClearVisual;if(globalThis.peerRoomTransaction)globalThis.peerRoomTransaction.clearVisual=peerRoomTransactionClearVisual;
 
 peerRoomRenderSyncInstallStyle();
-globalThis.peerRoomRenderSync={version:PEER_ROOM_RENDER_SYNC_VERSION,prepare:peerRoomRenderSyncPrepare,start:peerRoomRenderSyncStart,clear:peerRoomRenderSyncClearPrepared};
+globalThis.peerRoomRenderSync={version:PEER_ROOM_RENDER_SYNC_VERSION,prepare:peerRoomRenderSyncPrepare,start:peerRoomRenderSyncStart,clear:peerRoomRenderSyncClearPrepared,eventGapMs:PEER_ROOM_RENDER_SYNC_EVENT_GAP_MS};
