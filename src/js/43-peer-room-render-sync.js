@@ -1,10 +1,11 @@
 'use strict';
 const PEER_ROOM_RENDER_SYNC_VERSION='0.20.6';
 const PEER_ROOM_RENDER_SYNC_MIN_LEAD_MS=420;
-// 41 already adds a 48 ms event gap. Shift only the event presentation by another
-// 292 ms so the total post-drop resolution beat is 340 ms without changing drop time.
-const PEER_ROOM_RENDER_SYNC_EVENT_EXTRA_MS=292;
-const PEER_ROOM_RENDER_SYNC_EVENT_GAP_MS=340;
+const PEER_ROOM_RENDER_SYNC_EVENT_MIN_AFTER_DROP_MS=160;
+const PEER_ROOM_RENDER_SYNC_EVENT_ARM_LEAD_MS=260;
+
+const peerRoomRenderSyncEventState={current:null};
+globalThis.peerRoomRenderSyncEventState=peerRoomRenderSyncEventState;
 
 function peerRoomRenderSyncInstallStyle(){
   if(typeof document==='undefined'||document.querySelector('style[data-peer-room-render-sync]'))return;
@@ -36,15 +37,80 @@ peerRoomPresentationSyncReceiptLeadMs=function(conn,observedDownlink=0){
 globalThis.peerRoomPresentationSyncReceiptLeadMs=peerRoomPresentationSyncReceiptLeadMs;
 if(globalThis.peerRoomPresentationSync)globalThis.peerRoomPresentationSync.receiptLeadMs=peerRoomPresentationSyncReceiptLeadMs;
 
-function peerRoomRenderSyncEventPresentation(presentation){
-  const out={...(presentation||{})},hostAt=Number(out.presentAtHost);
-  if(Number.isFinite(hostAt))out.presentAtHost=hostAt+PEER_ROOM_RENDER_SYNC_EVENT_EXTRA_MS;
-  return out
-}
 function peerRoomRenderSyncEventTarget(presentation){
   const hostAt=Number(presentation?.presentAtHost),duration=Math.max(1,Number(presentation?.duration)||220);
   if(!Number.isFinite(hostAt))return null;
-  return hostAt+duration+PEER_ROOM_RENDER_SYNC_EVENT_GAP_MS
+  return hostAt+duration+PEER_ROOM_RENDER_SYNC_EVENT_MIN_AFTER_DROP_MS
+}
+function peerRoomRenderSyncLocalHostTime(hostAt){
+  const at=Number(hostAt);if(!Number.isFinite(at))return Date.now();
+  if(peerRoom?.role==='guest'&&peerRoomPresentationSyncState.synced)return at+Number(peerRoomPresentationSyncState.offsetMs||0);
+  return at
+}
+function peerRoomRenderSyncCancelEventSchedules(){
+  try{for(const name of [...peerRoomPresentationSyncState.schedules.keys()])if(String(name).startsWith('renderEvent:'))peerRoomPresentationSyncCancelSchedule(name)}catch{}
+}
+function peerRoomRenderSyncResetEventState(){
+  peerRoomRenderSyncCancelEventSchedules();
+  peerRoomRenderSyncEventState.current=null
+}
+function peerRoomRenderSyncCreateEventState(tx){
+  const queue=prepareEvents(tx.events||[]),state={
+    id:String(tx.presentation?.id||''),version:tx.version,tx,events:tx.events||[],queue,column:tx.column,presentation:tx.presentation,
+    hostPrepared:peerRoom?.role==='host',guestPrepared:false,eventsAtHost:null,scheduled:false,committed:false,complete:false
+  };
+  peerRoomRenderSyncCancelEventSchedules();peerRoomRenderSyncEventState.current=state;return state
+}
+function peerRoomRenderSyncCurrent(version=null){
+  const state=peerRoomRenderSyncEventState.current;if(!state)return null;
+  if(version!==null&&Number(state.version)!==Number(version))return null;
+  return state
+}
+function peerRoomRenderSyncDispatchEvent(state,event,column){
+  if(!state||state.complete||peerRoomRenderSyncEventState.current!==state)return;
+  if(!state.committed&&state.tx&&Number(peerRoomTransactionState.activeVersion)===Number(state.version))peerRoomRenderSyncCommit(state.tx);
+  if(!state.committed)return;
+  if(!peerRoomPresentationSyncActive()){peerRoomRenderSyncFinishEvents(state);return}
+  activePresentation={event,column:presentationColumn(event,column)};render();try{emitFeedback(feedbackCueForEvent(event))}catch{};showEvent(event)
+}
+function peerRoomRenderSyncFinishEvents(state){
+  if(!state||state.complete||peerRoomRenderSyncEventState.current!==state)return;
+  if(!state.committed&&state.tx&&Number(peerRoomTransactionState.activeVersion)===Number(state.version))peerRoomRenderSyncCommit(state.tx);
+  if(!state.committed)return;
+  state.complete=true;peerRoomRenderSyncCancelEventSchedules();activePresentation=null;overlay.classList.remove('show');
+  peerRoomRenderSyncEventState.current=null;
+  duelFinishNetworkPresentationBeforeRenderEventSync([],state.column)
+}
+function peerRoomRenderSyncArmEvents(state,eventsAtHost){
+  if(!state||state.complete||state.scheduled||!state.queue.length)return false;
+  const hostAt=Number(eventsAtHost);if(!Number.isFinite(hostAt))return false;
+  state.eventsAtHost=hostAt;state.scheduled=true;
+  let offset=0;
+  for(let i=0;i<state.queue.length;i++){
+    const event=state.queue[i],target=peerRoomRenderSyncLocalHostTime(hostAt+offset),duration=Math.max(1,Number(eventDuration(event))||1);
+    peerRoomPresentationSyncScheduleAt(`renderEvent:${state.version}:${i}`,target,()=>peerRoomRenderSyncDispatchEvent(state,event,state.column));
+    offset+=duration
+  }
+  const endTarget=peerRoomRenderSyncLocalHostTime(hostAt+offset);
+  peerRoomPresentationSyncScheduleAt(`renderEvent:${state.version}:end`,endTarget,()=>peerRoomRenderSyncFinishEvents(state));
+  return true
+}
+function peerRoomRenderSyncMaybeStartHostEvents(){
+  const state=peerRoomRenderSyncCurrent();
+  if(peerRoom?.role!=='host'||!state||state.complete||state.scheduled||!state.queue.length||!state.hostPrepared||!state.guestPrepared)return false;
+  const dropEnd=Number(state.presentation?.presentAtHost||Date.now())+Math.max(1,Number(state.presentation?.duration)||220);
+  const eventsAtHost=Math.max(dropEnd+PEER_ROOM_RENDER_SYNC_EVENT_MIN_AFTER_DROP_MS,Date.now()+PEER_ROOM_RENDER_SYNC_EVENT_ARM_LEAD_MS);
+  state.eventsAtHost=eventsAtHost;
+  const conn=peerRoom.connections?.get?.(2);
+  if(conn?.open)peerRoomSend(conn,{kind:'room-presentation-events-go',protocol:PEER_ROOM_PROTOCOL,syncProtocol:PEER_ROOM_PRESENTATION_SYNC_PROTOCOL,id:state.id,version:state.version,eventsAtHost});
+  return peerRoomRenderSyncArmEvents(state,eventsAtHost)
+}
+function peerRoomRenderSyncSignalPrepared(state){
+  if(!state||!state.queue.length)return;
+  if(peerRoom?.role==='host'){state.hostPrepared=true;peerRoomRenderSyncMaybeStartHostEvents();return}
+  if(peerRoom?.role==='guest'&&Number(peerRoom.seat)===2&&peerRoom.conn?.open){
+    peerRoomSend(peerRoom.conn,{kind:'room-presentation-render-ready',protocol:PEER_ROOM_PROTOCOL,syncProtocol:PEER_ROOM_PRESENTATION_SYNC_PROTOCOL,id:state.id,version:state.version,preparedAtGuest:Date.now()})
+  }
 }
 
 function peerRoomRenderSyncPrepare(tx,targetAt){
@@ -67,22 +133,18 @@ function peerRoomRenderSyncPrepare(tx,targetAt){
   }else document.body.classList.remove('peer-room-sync-prepared');
   tx.preparedGhost=ghost;tx.targetAt=targetAt;
   peerRoomPresentationSyncState.lastPresentation={...peerRoomPresentationSyncState.lastPresentation,preparedAt:configuredAt,prepareCostMs:configuredAt-prepStarted,cssDelayMs:delay,cssTargetAt:targetAt,commitTargetAt:targetAt+tx.duration,eventTargetAt:peerRoomRenderSyncEventTarget(tx.presentation)};
+  peerRoomRenderSyncSignalPrepared(peerRoomRenderSyncCurrent(tx.version));
   return true
 }
 function peerRoomRenderSyncStart(tx){
   if(peerRoomTransactionState.activeVersion!==tx.version)return;
-  // Audio/haptic feedback can tolerate a late JS wake. The checker itself is already owned
-  // by the CSS animation clock and does not depend on this callback for visual timing.
   peerRoomPresentationSyncState.lastPresentation={...peerRoomPresentationSyncState.lastPresentation,feedbackAt:Date.now()};
   try{emitFeedback('drop')}catch{}
 }
 function peerRoomRenderSyncCommit(tx){
   if(peerRoomTransactionState.activeVersion!==tx.version)return;
   peerRoomRenderSyncClearPrepared();
-  peerRoomPresentationSyncState.pendingEventPresentation={
-    id:String(tx.presentation?.id||''),version:tx.version,
-    presentation:peerRoomRenderSyncEventPresentation(tx.presentation)
-  };
+  peerRoomPresentationSyncState.pendingEventPresentation=null;
   peerRoomTransactionCommit(tx)
 }
 
@@ -97,7 +159,7 @@ duelApplyActiveUpdate=function(payload){
   const before=samePending?pending.before:cloneState(s);
   duelSession.handledVersion=version;peerRoomTransactionState.activeVersion=version;busy=true;duelSession.pendingLocal=null;try{peerRoomPolishState.previewPending=null}catch{}
   if(!lm||!Number.isInteger(Number(lm.column))){
-    peerRoomRenderSyncClearPrepared();hoverCol=null;peerRoomTransactionState.activeVersion=0;s=after;peerRoomTransactionRecord(before,after,events,lm);render();duelFinishNetworkPresentation(events,null);return
+    peerRoomRenderSyncClearPrepared();peerRoomRenderSyncResetEventState();hoverCol=null;peerRoomTransactionState.activeVersion=0;s=after;peerRoomTransactionRecord(before,after,events,lm);render();duelFinishNetworkPresentation(events,null);return
   }
   const column=Number(lm.column),ownType=samePending&&pending?.type?pending.type:lm.type,duration=Math.max(1,Number(payload.peerPresentation.duration)||peerRoomPresentationSyncDropMs());
   const tx={version,before,after,events,lm,column,ownType,duration,presentation:payload.peerPresentation};
@@ -105,6 +167,7 @@ duelApplyActiveUpdate=function(payload){
   peerRoomPresentationSyncState.lastPresentation={id:String(payload.peerPresentation.id||''),version,receivedAt,targetAt,scheduledWaitMs:Math.max(0,targetAt-receivedAt),preparedAt:null,prepareCostMs:null,feedbackAt:null,commitTargetAt:targetAt+duration,eventTargetAt:peerRoomRenderSyncEventTarget(payload.peerPresentation)};
   try{clearTimer('peerRoomPresentationStart');clearTimer('peerRoomMoveTransaction')}catch{}
   try{peerRoomPresentationSyncCancelSchedule('dropStart');peerRoomPresentationSyncCancelSchedule('dropCommit')}catch{}
+  peerRoomRenderSyncCreateEventState(tx);
   if(!peerRoomRenderSyncPrepare(tx,targetAt))return;
   // Only feedback and commit need JS callbacks now; visual drop start is CSS-scheduled.
   peerRoomPresentationSyncScheduleAt('dropStart',targetAt,()=>peerRoomRenderSyncStart(tx));
@@ -112,9 +175,45 @@ duelApplyActiveUpdate=function(payload){
 };
 globalThis.duelApplyActiveUpdate=duelApplyActiveUpdate;
 
+// Hold the turn in busy state after canonical commit until the shared event timeline finishes.
+// If there are no presentation events, continue immediately through the proven Duel path.
+const duelFinishNetworkPresentationBeforeRenderEventSync=duelFinishNetworkPresentation;
+duelFinishNetworkPresentation=function(events,column){
+  const state=peerRoomRenderSyncCurrent(duelSession.handledVersion);
+  if(!state)return duelFinishNetworkPresentationBeforeRenderEventSync(events,column);
+  state.committed=true;state.column=column;
+  peerRoomPresentationSyncState.pendingEventPresentation=null;
+  if(!events?.length||!state.queue.length){peerRoomRenderSyncEventState.current=null;peerRoomRenderSyncCancelEventSchedules();return duelFinishNetworkPresentationBeforeRenderEventSync([],column)}
+  // The event GO can arrive before or after drop commit. Either way, the pre-armed absolute
+  // timeline owns the visuals, so this callback deliberately does not start local playEvents().
+  if(peerRoom?.role==='host')peerRoomRenderSyncMaybeStartHostEvents();
+};
+globalThis.duelFinishNetworkPresentation=duelFinishNetworkPresentation;
+
+const peerRoomHostMessageBeforeRenderSync=peerRoomHostMessage;
+peerRoomHostMessage=function(conn,data){
+  if(data?.protocol===PEER_ROOM_PROTOCOL&&data?.syncProtocol===PEER_ROOM_PRESENTATION_SYNC_PROTOCOL&&data?.kind==='room-presentation-render-ready'){
+    if(Number(conn?.__peerRoomSeat)!==2)return;
+    const state=peerRoomRenderSyncCurrent(Number(data.version));if(!state||String(data.id||'')!==state.id)return;
+    state.guestPrepared=true;peerRoomRenderSyncMaybeStartHostEvents();return
+  }
+  return peerRoomHostMessageBeforeRenderSync(conn,data)
+};
+globalThis.peerRoomHostMessage=peerRoomHostMessage;
+
+const peerRoomGuestMessageBeforeRenderSync=peerRoomGuestMessage;
+peerRoomGuestMessage=function(data){
+  if(data?.protocol===PEER_ROOM_PROTOCOL&&data?.syncProtocol===PEER_ROOM_PRESENTATION_SYNC_PROTOCOL&&data?.kind==='room-presentation-events-go'){
+    const state=peerRoomRenderSyncCurrent(Number(data.version));if(!state||String(data.id||'')!==state.id)return;
+    peerRoomRenderSyncArmEvents(state,Number(data.eventsAtHost));return
+  }
+  return peerRoomGuestMessageBeforeRenderSync(data)
+};
+globalThis.peerRoomGuestMessage=peerRoomGuestMessage;
+
 const peerRoomTransactionClearVisualBeforeRenderSync=peerRoomTransactionClearVisual;
-peerRoomTransactionClearVisual=function(){peerRoomRenderSyncClearPrepared();return peerRoomTransactionClearVisualBeforeRenderSync()};
+peerRoomTransactionClearVisual=function(){peerRoomRenderSyncClearPrepared();peerRoomRenderSyncResetEventState();return peerRoomTransactionClearVisualBeforeRenderSync()};
 globalThis.peerRoomTransactionClearVisual=peerRoomTransactionClearVisual;if(globalThis.peerRoomTransaction)globalThis.peerRoomTransaction.clearVisual=peerRoomTransactionClearVisual;
 
 peerRoomRenderSyncInstallStyle();
-globalThis.peerRoomRenderSync={version:PEER_ROOM_RENDER_SYNC_VERSION,prepare:peerRoomRenderSyncPrepare,start:peerRoomRenderSyncStart,clear:peerRoomRenderSyncClearPrepared,eventGapMs:PEER_ROOM_RENDER_SYNC_EVENT_GAP_MS,eventPresentation:peerRoomRenderSyncEventPresentation};
+globalThis.peerRoomRenderSync={version:PEER_ROOM_RENDER_SYNC_VERSION,prepare:peerRoomRenderSyncPrepare,start:peerRoomRenderSyncStart,clear:peerRoomRenderSyncClearPrepared,eventState:peerRoomRenderSyncEventState,eventTarget:peerRoomRenderSyncEventTarget,armEvents:peerRoomRenderSyncArmEvents};
