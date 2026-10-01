@@ -10,8 +10,9 @@ globalThis.peerRoomRenderSyncEventState=peerRoomRenderSyncEventState;
 function peerRoomRenderSyncInstallStyle(){
   if(typeof document==='undefined'||document.querySelector('style[data-peer-room-render-sync]'))return;
   const style=document.createElement('style');style.dataset.peerRoomRenderSync='1';style.textContent=`
-    body.peer-room-sync-prepared #board .disc.justDropped{animation:none!important;visibility:hidden!important}
-    #board .disc.justDropped.peerRoomSyncedDrop{visibility:visible!important;animation:c4-peer-room-sync-drop var(--drop-duration,500ms) cubic-bezier(.18,.78,.25,1.04) var(--peer-room-sync-delay,0ms) both!important;transform-origin:center}
+    body.peer-room-sync-prepared #board .disc.justDropped{animation-play-state:paused!important;visibility:hidden!important}
+    #board .disc.justDropped.peerRoomSyncedDrop{visibility:visible!important;animation:c4-peer-room-sync-drop var(--drop-duration,500ms) cubic-bezier(.18,.78,.25,1.04) var(--peer-room-sync-delay,0ms) both!important;transform-origin:center;animation-play-state:running!important}
+    body.peer-room-sync-prepared #board .disc.justDropped.peerRoomSyncedDrop{animation-play-state:paused!important;visibility:hidden!important}
     @keyframes c4-peer-room-sync-drop{
       0%{transform:translateY(var(--drop-distance,-420%)) scale(.94);filter:brightness(1.08);opacity:0}
       .1%{transform:translateY(var(--drop-distance,-420%)) scale(.94);filter:brightness(1.08);opacity:1}
@@ -27,9 +28,6 @@ function peerRoomRenderSyncClearPrepared(){
   const ghost=peerRoomRenderSyncGhost();if(ghost){ghost.classList.remove('peerRoomSyncedDrop');ghost.style.removeProperty('--peer-room-sync-delay');delete ghost.dataset.peerRoomSyncTarget}
 }
 
-// Give WebKit enough preparation headroom to build/decorate the board before the shared
-// visual timestamp. This changes presentation latency only; canonical move validation is
-// still complete before PREPARE and neither player can mutate authority during the wait.
 const peerRoomPresentationSyncReceiptLeadBeforeRenderSync=peerRoomPresentationSyncReceiptLeadMs;
 peerRoomPresentationSyncReceiptLeadMs=function(conn,observedDownlink=0){
   return Math.max(PEER_ROOM_RENDER_SYNC_MIN_LEAD_MS,peerRoomPresentationSyncReceiptLeadBeforeRenderSync(conn,observedDownlink))
@@ -118,8 +116,6 @@ function peerRoomRenderSyncPrepare(tx,targetAt){
   const prepStarted=Date.now();hoverCol=null;
   peerRoomRenderSyncInstallStyle();document.body.classList.add('peer-room-sync-prepared');
   dropPresentation={before:tx.before,owner:tx.lm.owner,type:tx.lm.owner===H?tx.ownType:null,column:tx.column,targetRow:dropTargetRow(tx.before,tx.column),moveNumber:tx.after.moveNumber,duration:tx.duration};
-  // Build the expensive 8x6 board before the shared clock. While this render runs the
-  // prepared class prevents the normal justDropped animation from starting at all.
   render();
   const ghost=peerRoomRenderSyncGhost();
   const configuredAt=Date.now(),delay=Math.max(0,targetAt-configuredAt);
@@ -127,9 +123,14 @@ function peerRoomRenderSyncPrepare(tx,targetAt){
     ghost.dataset.peerRoomSyncTarget=String(targetAt);
     ghost.style.setProperty('--peer-room-sync-delay',`${delay}ms`);
     ghost.classList.add('peerRoomSyncedDrop');
-    // Releasing the preparation class starts a CSS animation with a positive delay. The
-    // browser animation timeline, rather than a JavaScript wake-up, now owns the exact start.
-    document.body.classList.remove('peer-room-sync-prepared')
+    // WebKit can collapse a same-turn `animation:none -> delayed animation` transition and
+    // never create the animation. Keep the animation object paused while hidden, force the
+    // prepared style to resolve, then release it. The browser compositor owns the delay.
+    void ghost.offsetWidth;
+    try{getComputedStyle(ghost).animationName}catch{}
+    document.body.classList.remove('peer-room-sync-prepared');
+    void ghost.offsetWidth;
+    try{getComputedStyle(ghost).animationName}catch{}
   }else document.body.classList.remove('peer-room-sync-prepared');
   tx.preparedGhost=ghost;tx.targetAt=targetAt;
   peerRoomPresentationSyncState.lastPresentation={...peerRoomPresentationSyncState.lastPresentation,preparedAt:configuredAt,prepareCostMs:configuredAt-prepStarted,cssDelayMs:delay,cssTargetAt:targetAt,commitTargetAt:targetAt+tx.duration,eventTargetAt:peerRoomRenderSyncEventTarget(tx.presentation)};
@@ -146,14 +147,9 @@ function peerRoomRenderSyncCommit(tx){
   peerRoomRenderSyncClearPrepared();
   peerRoomPresentationSyncState.pendingEventPresentation=null;
   peerRoomTransactionCommit(tx);
-  // peerRoomTransactionCommit performs the canonical settled-board render and then enters
-  // duelFinishNetworkPresentation. Signal readiness only after that work has returned, so
-  // the host can never start a clash while WebKit is still rebuilding the settled board.
   if(state&&state.committed)peerRoomRenderSyncSignalCommitReady(state)
 }
 
-// Replace only the active Peer Room presentation seam. Direct Duel, Hosted Room, Solo and
-// Pass & Play continue through the previously proven client path unchanged.
 const duelApplyActiveUpdateBeforeRenderSync=duelApplyActiveUpdate;
 duelApplyActiveUpdate=function(payload){
   if(!peerRoomPresentationSyncActive()||!payload?.peerPresentation)return duelApplyActiveUpdateBeforeRenderSync(payload);
@@ -173,14 +169,11 @@ duelApplyActiveUpdate=function(payload){
   try{peerRoomPresentationSyncCancelSchedule('dropStart');peerRoomPresentationSyncCancelSchedule('dropCommit')}catch{}
   peerRoomRenderSyncCreateEventState(tx);
   if(!peerRoomRenderSyncPrepare(tx,targetAt))return;
-  // Only feedback and commit need JS callbacks now; visual drop start is CSS-scheduled.
   peerRoomPresentationSyncScheduleAt('dropStart',targetAt,()=>peerRoomRenderSyncStart(tx));
   peerRoomPresentationSyncScheduleAt('dropCommit',targetAt+duration,()=>peerRoomRenderSyncCommit(tx))
 };
 globalThis.duelApplyActiveUpdate=duelApplyActiveUpdate;
 
-// Hold the turn in busy state after canonical commit until the shared event timeline finishes.
-// If there are no presentation events, continue immediately through the proven Duel path.
 const duelFinishNetworkPresentationBeforeRenderEventSync=duelFinishNetworkPresentation;
 duelFinishNetworkPresentation=function(events,column){
   const state=peerRoomRenderSyncCurrent(duelSession.handledVersion);
@@ -188,9 +181,6 @@ duelFinishNetworkPresentation=function(events,column){
   state.committed=true;state.column=column;
   peerRoomPresentationSyncState.pendingEventPresentation=null;
   if(!events?.length||!state.queue.length){peerRoomRenderSyncEventState.current=null;peerRoomRenderSyncCancelEventSchedules();return duelFinishNetworkPresentationBeforeRenderEventSync([],column)}
-  // Event presentation is deliberately held here. peerRoomRenderSyncCommit signals local
-  // commit readiness only after this callback returns; the host begins events after both
-  // settled-board renders have completed.
 };
 globalThis.duelFinishNetworkPresentation=duelFinishNetworkPresentation;
 
