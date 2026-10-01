@@ -57,7 +57,7 @@ function peerRoomRenderSyncResetEventState(){
 function peerRoomRenderSyncCreateEventState(tx){
   const queue=prepareEvents(tx.events||[]),state={
     id:String(tx.presentation?.id||''),version:tx.version,tx,events:tx.events||[],queue,column:tx.column,presentation:tx.presentation,
-    hostPrepared:peerRoom?.role==='host',guestPrepared:false,eventsAtHost:null,scheduled:false,committed:false,complete:false
+    hostCommitReady:false,guestCommitReady:false,hostCommitAt:null,guestCommitAt:null,eventsAtHost:null,scheduled:false,committed:false,complete:false
   };
   peerRoomRenderSyncCancelEventSchedules();peerRoomRenderSyncEventState.current=state;return state
 }
@@ -67,16 +67,12 @@ function peerRoomRenderSyncCurrent(version=null){
   return state
 }
 function peerRoomRenderSyncDispatchEvent(state,event,column){
-  if(!state||state.complete||peerRoomRenderSyncEventState.current!==state)return;
-  if(!state.committed&&state.tx&&Number(peerRoomTransactionState.activeVersion)===Number(state.version))peerRoomRenderSyncCommit(state.tx);
-  if(!state.committed)return;
+  if(!state||state.complete||peerRoomRenderSyncEventState.current!==state||!state.committed)return;
   if(!peerRoomPresentationSyncActive()){peerRoomRenderSyncFinishEvents(state);return}
   activePresentation={event,column:presentationColumn(event,column)};render();try{emitFeedback(feedbackCueForEvent(event))}catch{};showEvent(event)
 }
 function peerRoomRenderSyncFinishEvents(state){
-  if(!state||state.complete||peerRoomRenderSyncEventState.current!==state)return;
-  if(!state.committed&&state.tx&&Number(peerRoomTransactionState.activeVersion)===Number(state.version))peerRoomRenderSyncCommit(state.tx);
-  if(!state.committed)return;
+  if(!state||state.complete||peerRoomRenderSyncEventState.current!==state||!state.committed)return;
   state.complete=true;peerRoomRenderSyncCancelEventSchedules();activePresentation=null;overlay.classList.remove('show');
   peerRoomRenderSyncEventState.current=null;
   duelFinishNetworkPresentationBeforeRenderEventSync([],state.column)
@@ -97,7 +93,7 @@ function peerRoomRenderSyncArmEvents(state,eventsAtHost){
 }
 function peerRoomRenderSyncMaybeStartHostEvents(){
   const state=peerRoomRenderSyncCurrent();
-  if(peerRoom?.role!=='host'||!state||state.complete||state.scheduled||!state.queue.length||!state.hostPrepared||!state.guestPrepared)return false;
+  if(peerRoom?.role!=='host'||!state||state.complete||state.scheduled||!state.queue.length||!state.hostCommitReady||!state.guestCommitReady)return false;
   const dropEnd=Number(state.presentation?.presentAtHost||Date.now())+Math.max(1,Number(state.presentation?.duration)||220);
   const eventsAtHost=Math.max(dropEnd+PEER_ROOM_RENDER_SYNC_EVENT_MIN_AFTER_DROP_MS,Date.now()+PEER_ROOM_RENDER_SYNC_EVENT_ARM_LEAD_MS);
   state.eventsAtHost=eventsAtHost;
@@ -105,11 +101,15 @@ function peerRoomRenderSyncMaybeStartHostEvents(){
   if(conn?.open)peerRoomSend(conn,{kind:'room-presentation-events-go',protocol:PEER_ROOM_PROTOCOL,syncProtocol:PEER_ROOM_PRESENTATION_SYNC_PROTOCOL,id:state.id,version:state.version,eventsAtHost});
   return peerRoomRenderSyncArmEvents(state,eventsAtHost)
 }
-function peerRoomRenderSyncSignalPrepared(state){
-  if(!state||!state.queue.length)return;
-  if(peerRoom?.role==='host'){state.hostPrepared=true;peerRoomRenderSyncMaybeStartHostEvents();return}
+function peerRoomRenderSyncSignalCommitReady(state){
+  if(!state||!state.queue.length||!state.committed)return;
+  const at=Date.now();
+  if(peerRoom?.role==='host'){
+    state.hostCommitReady=true;state.hostCommitAt=at;peerRoomRenderSyncMaybeStartHostEvents();return
+  }
   if(peerRoom?.role==='guest'&&Number(peerRoom.seat)===2&&peerRoom.conn?.open){
-    peerRoomSend(peerRoom.conn,{kind:'room-presentation-render-ready',protocol:PEER_ROOM_PROTOCOL,syncProtocol:PEER_ROOM_PRESENTATION_SYNC_PROTOCOL,id:state.id,version:state.version,preparedAtGuest:Date.now()})
+    state.guestCommitAt=at;
+    peerRoomSend(peerRoom.conn,{kind:'room-presentation-commit-ready',protocol:PEER_ROOM_PROTOCOL,syncProtocol:PEER_ROOM_PRESENTATION_SYNC_PROTOCOL,id:state.id,version:state.version,committedAtGuest:at})
   }
 }
 
@@ -133,7 +133,6 @@ function peerRoomRenderSyncPrepare(tx,targetAt){
   }else document.body.classList.remove('peer-room-sync-prepared');
   tx.preparedGhost=ghost;tx.targetAt=targetAt;
   peerRoomPresentationSyncState.lastPresentation={...peerRoomPresentationSyncState.lastPresentation,preparedAt:configuredAt,prepareCostMs:configuredAt-prepStarted,cssDelayMs:delay,cssTargetAt:targetAt,commitTargetAt:targetAt+tx.duration,eventTargetAt:peerRoomRenderSyncEventTarget(tx.presentation)};
-  peerRoomRenderSyncSignalPrepared(peerRoomRenderSyncCurrent(tx.version));
   return true
 }
 function peerRoomRenderSyncStart(tx){
@@ -143,9 +142,14 @@ function peerRoomRenderSyncStart(tx){
 }
 function peerRoomRenderSyncCommit(tx){
   if(peerRoomTransactionState.activeVersion!==tx.version)return;
+  const state=peerRoomRenderSyncCurrent(tx.version);
   peerRoomRenderSyncClearPrepared();
   peerRoomPresentationSyncState.pendingEventPresentation=null;
-  peerRoomTransactionCommit(tx)
+  peerRoomTransactionCommit(tx);
+  // peerRoomTransactionCommit performs the canonical settled-board render and then enters
+  // duelFinishNetworkPresentation. Signal readiness only after that work has returned, so
+  // the host can never start a clash while WebKit is still rebuilding the settled board.
+  if(state&&state.committed)peerRoomRenderSyncSignalCommitReady(state)
 }
 
 // Replace only the active Peer Room presentation seam. Direct Duel, Hosted Room, Solo and
@@ -184,18 +188,18 @@ duelFinishNetworkPresentation=function(events,column){
   state.committed=true;state.column=column;
   peerRoomPresentationSyncState.pendingEventPresentation=null;
   if(!events?.length||!state.queue.length){peerRoomRenderSyncEventState.current=null;peerRoomRenderSyncCancelEventSchedules();return duelFinishNetworkPresentationBeforeRenderEventSync([],column)}
-  // The event GO can arrive before or after drop commit. Either way, the pre-armed absolute
-  // timeline owns the visuals, so this callback deliberately does not start local playEvents().
-  if(peerRoom?.role==='host')peerRoomRenderSyncMaybeStartHostEvents();
+  // Event presentation is deliberately held here. peerRoomRenderSyncCommit signals local
+  // commit readiness only after this callback returns; the host begins events after both
+  // settled-board renders have completed.
 };
 globalThis.duelFinishNetworkPresentation=duelFinishNetworkPresentation;
 
 const peerRoomHostMessageBeforeRenderSync=peerRoomHostMessage;
 peerRoomHostMessage=function(conn,data){
-  if(data?.protocol===PEER_ROOM_PROTOCOL&&data?.syncProtocol===PEER_ROOM_PRESENTATION_SYNC_PROTOCOL&&data?.kind==='room-presentation-render-ready'){
+  if(data?.protocol===PEER_ROOM_PROTOCOL&&data?.syncProtocol===PEER_ROOM_PRESENTATION_SYNC_PROTOCOL&&data?.kind==='room-presentation-commit-ready'){
     if(Number(conn?.__peerRoomSeat)!==2)return;
     const state=peerRoomRenderSyncCurrent(Number(data.version));if(!state||String(data.id||'')!==state.id)return;
-    state.guestPrepared=true;peerRoomRenderSyncMaybeStartHostEvents();return
+    state.guestCommitReady=true;state.guestCommitAt=Number(data.committedAtGuest)||Date.now();peerRoomRenderSyncMaybeStartHostEvents();return
   }
   return peerRoomHostMessageBeforeRenderSync(conn,data)
 };
