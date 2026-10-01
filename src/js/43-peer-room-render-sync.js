@@ -5,27 +5,26 @@ const PEER_ROOM_RENDER_SYNC_EVENT_MIN_AFTER_DROP_MS=160;
 const PEER_ROOM_RENDER_SYNC_EVENT_ARM_LEAD_MS=260;
 
 const peerRoomRenderSyncEventState={current:null};
+const peerRoomRenderSyncState={dropSequence:0,activeDrop:null,lastDrop:null};
 globalThis.peerRoomRenderSyncEventState=peerRoomRenderSyncEventState;
+globalThis.peerRoomRenderSyncState=peerRoomRenderSyncState;
 
 function peerRoomRenderSyncInstallStyle(){
   if(typeof document==='undefined'||document.querySelector('style[data-peer-room-render-sync]'))return;
   const style=document.createElement('style');style.dataset.peerRoomRenderSync='1';style.textContent=`
-    body.peer-room-sync-prepared #board .disc.justDropped{animation-play-state:paused!important;visibility:hidden!important}
-    #board .disc.justDropped.peerRoomSyncedDrop{visibility:visible!important;animation:c4-peer-room-sync-drop var(--drop-duration,500ms) cubic-bezier(.18,.78,.25,1.04) var(--peer-room-sync-delay,0ms) both!important;transform-origin:center;animation-play-state:running!important}
-    body.peer-room-sync-prepared #board .disc.justDropped.peerRoomSyncedDrop{animation-play-state:paused!important;visibility:hidden!important}
-    @keyframes c4-peer-room-sync-drop{
-      0%{transform:translateY(var(--drop-distance,-420%)) scale(.94);filter:brightness(1.08);opacity:0}
-      .1%{transform:translateY(var(--drop-distance,-420%)) scale(.94);filter:brightness(1.08);opacity:1}
-      68%{transform:translateY(7%) scale(1.025);opacity:1}
-      84%{transform:translateY(-3%) scale(.995);opacity:1}
-      100%{transform:translateY(0) scale(1);filter:none;opacity:1}
-    }
+    body.peer-room-sync-prepared #board .disc.justDropped{animation:none!important;visibility:hidden!important}
+    #board .disc.justDropped.peerRoomWaapiDrop{animation:none!important;visibility:visible!important;transform-origin:center;will-change:transform,opacity,filter}
   `;document.head.append(style)
 }
 function peerRoomRenderSyncGhost(){return document.querySelector('#board .disc.justDropped')}
+function peerRoomRenderSyncCancelDrop(){
+  const active=peerRoomRenderSyncState.activeDrop;if(!active)return;
+  peerRoomRenderSyncState.activeDrop=null;
+  try{active.animation?.cancel?.()}catch{}
+}
 function peerRoomRenderSyncClearPrepared(){
   try{document.body.classList.remove('peer-room-sync-prepared')}catch{}
-  const ghost=peerRoomRenderSyncGhost();if(ghost){ghost.classList.remove('peerRoomSyncedDrop');ghost.style.removeProperty('--peer-room-sync-delay');delete ghost.dataset.peerRoomSyncTarget}
+  const ghost=peerRoomRenderSyncGhost();if(ghost){ghost.classList.remove('peerRoomWaapiDrop');delete ghost.dataset.peerRoomSyncTarget;delete ghost.dataset.peerRoomSyncDropId}
 }
 
 const peerRoomPresentationSyncReceiptLeadBeforeRenderSync=peerRoomPresentationSyncReceiptLeadMs;
@@ -111,29 +110,47 @@ function peerRoomRenderSyncSignalCommitReady(state){
   }
 }
 
+function peerRoomRenderSyncDistance(ghost){
+  try{return getComputedStyle(ghost).getPropertyValue('--drop-distance').trim()||'-420%'}catch{return'-420%'}
+}
+function peerRoomRenderSyncCreateDropAnimation(tx,ghost,targetAt){
+  if(!ghost||typeof ghost.animate!=='function')return null;
+  const createdAt=Date.now(),delay=Math.max(0,targetAt-createdAt),distance=peerRoomRenderSyncDistance(ghost),dropId=`prd_${tx.version}_${++peerRoomRenderSyncState.dropSequence}`;
+  ghost.dataset.peerRoomSyncTarget=String(targetAt);ghost.dataset.peerRoomSyncDropId=dropId;ghost.classList.add('peerRoomWaapiDrop');
+  document.body.classList.remove('peer-room-sync-prepared');
+  const animation=ghost.animate([
+    {offset:0,transform:`translateY(${distance}) scale(.94)`,filter:'brightness(1.08)',opacity:0},
+    {offset:.001,transform:`translateY(${distance}) scale(.94)`,filter:'brightness(1.08)',opacity:1},
+    {offset:.68,transform:'translateY(7%) scale(1.025)',filter:'brightness(1.02)',opacity:1},
+    {offset:.84,transform:'translateY(-3%) scale(.995)',filter:'none',opacity:1},
+    {offset:1,transform:'translateY(0) scale(1)',filter:'none',opacity:1}
+  ],{duration:tx.duration,delay,easing:'cubic-bezier(.18,.78,.25,1.04)',fill:'both'});
+  const active={id:dropId,version:tx.version,targetAt,duration:tx.duration,createdAt,delay,animation,ghost,finished:false};
+  peerRoomRenderSyncState.activeDrop=active;peerRoomRenderSyncState.lastDrop={id:dropId,version:tx.version,targetAt,duration:tx.duration,createdAt,delay,finishedAt:null};
+  try{document.dispatchEvent(new CustomEvent('peer-room-drop-created',{detail:{id:dropId,version:tx.version,targetAt,duration:tx.duration,createdAt,delay}}))}catch{}
+  animation.finished.then(()=>{
+    if(active.finished)return;active.finished=true;const finishedAt=Date.now();
+    if(peerRoomRenderSyncState.lastDrop?.id===dropId)peerRoomRenderSyncState.lastDrop={...peerRoomRenderSyncState.lastDrop,finishedAt};
+    try{document.dispatchEvent(new CustomEvent('peer-room-drop-finished',{detail:{id:dropId,version:tx.version,targetAt,finishedAt}}))}catch{}
+    if(peerRoomRenderSyncState.activeDrop===active)peerRoomRenderSyncState.activeDrop=null;
+    peerRoomRenderSyncCommit(tx)
+  }).catch(()=>{});
+  return active
+}
 function peerRoomRenderSyncPrepare(tx,targetAt){
   if(peerRoomTransactionState.activeVersion!==tx.version)return false;
   const prepStarted=Date.now();hoverCol=null;
   peerRoomRenderSyncInstallStyle();document.body.classList.add('peer-room-sync-prepared');
   dropPresentation={before:tx.before,owner:tx.lm.owner,type:tx.lm.owner===H?tx.ownType:null,column:tx.column,targetRow:dropTargetRow(tx.before,tx.column),moveNumber:tx.after.moveNumber,duration:tx.duration};
   render();
-  const ghost=peerRoomRenderSyncGhost();
-  const configuredAt=Date.now(),delay=Math.max(0,targetAt-configuredAt);
-  if(ghost){
-    ghost.dataset.peerRoomSyncTarget=String(targetAt);
-    ghost.style.setProperty('--peer-room-sync-delay',`${delay}ms`);
-    ghost.classList.add('peerRoomSyncedDrop');
-    // WebKit can collapse a same-turn `animation:none -> delayed animation` transition and
-    // never create the animation. Keep the animation object paused while hidden, force the
-    // prepared style to resolve, then release it. The browser compositor owns the delay.
-    void ghost.offsetWidth;
-    try{getComputedStyle(ghost).animationName}catch{}
-    document.body.classList.remove('peer-room-sync-prepared');
-    void ghost.offsetWidth;
-    try{getComputedStyle(ghost).animationName}catch{}
-  }else document.body.classList.remove('peer-room-sync-prepared');
+  const ghost=peerRoomRenderSyncGhost(),configuredAt=Date.now();
   tx.preparedGhost=ghost;tx.targetAt=targetAt;
-  peerRoomPresentationSyncState.lastPresentation={...peerRoomPresentationSyncState.lastPresentation,preparedAt:configuredAt,prepareCostMs:configuredAt-prepStarted,cssDelayMs:delay,cssTargetAt:targetAt,commitTargetAt:targetAt+tx.duration,eventTargetAt:peerRoomRenderSyncEventTarget(tx.presentation)};
+  const active=peerRoomRenderSyncCreateDropAnimation(tx,ghost,targetAt);
+  if(!active){
+    document.body.classList.remove('peer-room-sync-prepared');
+    peerRoomPresentationSyncScheduleAt('dropCommitFallback',targetAt+tx.duration,()=>peerRoomRenderSyncCommit(tx))
+  }
+  peerRoomPresentationSyncState.lastPresentation={...peerRoomPresentationSyncState.lastPresentation,preparedAt:configuredAt,prepareCostMs:configuredAt-prepStarted,animationEngine:active?'waapi':'fallback',waapiDelayMs:active?.delay??null,cssTargetAt:targetAt,commitTargetAt:targetAt+tx.duration,eventTargetAt:peerRoomRenderSyncEventTarget(tx.presentation)};
   return true
 }
 function peerRoomRenderSyncStart(tx){
@@ -159,18 +176,17 @@ duelApplyActiveUpdate=function(payload){
   const before=samePending?pending.before:cloneState(s);
   duelSession.handledVersion=version;peerRoomTransactionState.activeVersion=version;busy=true;duelSession.pendingLocal=null;try{peerRoomPolishState.previewPending=null}catch{}
   if(!lm||!Number.isInteger(Number(lm.column))){
-    peerRoomRenderSyncClearPrepared();peerRoomRenderSyncResetEventState();hoverCol=null;peerRoomTransactionState.activeVersion=0;s=after;peerRoomTransactionRecord(before,after,events,lm);render();duelFinishNetworkPresentation(events,null);return
+    peerRoomRenderSyncCancelDrop();peerRoomRenderSyncClearPrepared();peerRoomRenderSyncResetEventState();hoverCol=null;peerRoomTransactionState.activeVersion=0;s=after;peerRoomTransactionRecord(before,after,events,lm);render();duelFinishNetworkPresentation(events,null);return
   }
   const column=Number(lm.column),ownType=samePending&&pending?.type?pending.type:lm.type,duration=Math.max(1,Number(payload.peerPresentation.duration)||peerRoomPresentationSyncDropMs());
   const tx={version,before,after,events,lm,column,ownType,duration,presentation:payload.peerPresentation};
   const receivedAt=Date.now(),targetAt=peerRoomPresentationSyncLocalTarget(payload.peerPresentation);
   peerRoomPresentationSyncState.lastPresentation={id:String(payload.peerPresentation.id||''),version,receivedAt,targetAt,scheduledWaitMs:Math.max(0,targetAt-receivedAt),preparedAt:null,prepareCostMs:null,feedbackAt:null,commitTargetAt:targetAt+duration,eventTargetAt:peerRoomRenderSyncEventTarget(payload.peerPresentation)};
   try{clearTimer('peerRoomPresentationStart');clearTimer('peerRoomMoveTransaction')}catch{}
-  try{peerRoomPresentationSyncCancelSchedule('dropStart');peerRoomPresentationSyncCancelSchedule('dropCommit')}catch{}
-  peerRoomRenderSyncCreateEventState(tx);
+  try{peerRoomPresentationSyncCancelSchedule('dropStart');peerRoomPresentationSyncCancelSchedule('dropCommit');peerRoomPresentationSyncCancelSchedule('dropCommitFallback')}catch{}
+  peerRoomRenderSyncCancelDrop();peerRoomRenderSyncCreateEventState(tx);
   if(!peerRoomRenderSyncPrepare(tx,targetAt))return;
-  peerRoomPresentationSyncScheduleAt('dropStart',targetAt,()=>peerRoomRenderSyncStart(tx));
-  peerRoomPresentationSyncScheduleAt('dropCommit',targetAt+duration,()=>peerRoomRenderSyncCommit(tx))
+  peerRoomPresentationSyncScheduleAt('dropStart',targetAt,()=>peerRoomRenderSyncStart(tx))
 };
 globalThis.duelApplyActiveUpdate=duelApplyActiveUpdate;
 
@@ -206,8 +222,8 @@ peerRoomGuestMessage=function(data){
 globalThis.peerRoomGuestMessage=peerRoomGuestMessage;
 
 const peerRoomTransactionClearVisualBeforeRenderSync=peerRoomTransactionClearVisual;
-peerRoomTransactionClearVisual=function(){peerRoomRenderSyncClearPrepared();peerRoomRenderSyncResetEventState();return peerRoomTransactionClearVisualBeforeRenderSync()};
+peerRoomTransactionClearVisual=function(){peerRoomRenderSyncCancelDrop();peerRoomRenderSyncClearPrepared();peerRoomRenderSyncResetEventState();return peerRoomTransactionClearVisualBeforeRenderSync()};
 globalThis.peerRoomTransactionClearVisual=peerRoomTransactionClearVisual;if(globalThis.peerRoomTransaction)globalThis.peerRoomTransaction.clearVisual=peerRoomTransactionClearVisual;
 
 peerRoomRenderSyncInstallStyle();
-globalThis.peerRoomRenderSync={version:PEER_ROOM_RENDER_SYNC_VERSION,prepare:peerRoomRenderSyncPrepare,start:peerRoomRenderSyncStart,clear:peerRoomRenderSyncClearPrepared,eventState:peerRoomRenderSyncEventState,eventTarget:peerRoomRenderSyncEventTarget,armEvents:peerRoomRenderSyncArmEvents};
+globalThis.peerRoomRenderSync={version:PEER_ROOM_RENDER_SYNC_VERSION,prepare:peerRoomRenderSyncPrepare,start:peerRoomRenderSyncStart,clear:peerRoomRenderSyncClearPrepared,eventState:peerRoomRenderSyncEventState,state:peerRoomRenderSyncState,eventTarget:peerRoomRenderSyncEventTarget,armEvents:peerRoomRenderSyncArmEvents};
