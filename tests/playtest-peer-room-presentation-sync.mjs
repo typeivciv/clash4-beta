@@ -114,12 +114,14 @@ try{
   for(let i=1;i<=6;i++){
     hs=await snapshot(host);gs=await snapshot(guest);sameBoard(hs,gs,`move ${i} before`);assert.equal(hs.turnSeat,gs.turnSeat,`move ${i} physical turn before input`);
     const mover=hs.turnSeat===1?host:guest;console.log(`MOVE ${i} BEFORE INPUT`,JSON.stringify({host:{move:hs.move,turnSeat:hs.turnSeat,busy:hs.busy,heights:hs.heights},guest:{move:gs.move,turnSeat:gs.turnSeat,busy:gs.busy,heights:gs.heights},mover:hs.turnSeat}));
-    const beforeMove=await tapMove(mover);await sleep(45);
-    const intentH=await snapshot(host),intentG=await snapshot(guest);assert.ok(intentH.waapiDrops.length<=i-1,`move ${i}: host checker animated before both clients were ready`);assert.ok(intentG.waapiDrops.length<=i-1,`move ${i}: guest checker animated before both clients were ready`);
+    const beforeMove=await tapMove(mover);
 
     await waitWaapiDropPair(host,guest,i);const dropH=await snapshot(host),dropG=await snapshot(guest),hDrop=dropH.waapiDrops[i-1],gDrop=dropG.waapiDrops[i-1];
     const targetDelta=Math.abs(Number(hDrop.targetAt)-Number(gDrop.targetAt)),hostLead=Number(hDrop.targetAt)-Number(hDrop.createdAt),guestLead=Number(gDrop.targetAt)-Number(gDrop.createdAt);
-    console.log(`MOVE ${i} DROP SYNC`,JSON.stringify({hostTarget:hDrop.targetAt,guestTarget:gDrop.targetAt,targetDeltaMs:targetDelta,hostLeadMs:hostLead,guestLeadMs:guestLead,hostCreated:hDrop.createdAt,guestCreated:gDrop.createdAt,hostPrepareCost:dropH.lastPresentation?.prepareCostMs,guestPrepareCost:dropG.lastPresentation?.prepareCostMs,hostEngine:dropH.lastPresentation?.animationEngine,guestEngine:dropG.lastPresentation?.animationEngine}));
+    console.log(`MOVE ${i} DROP SYNC`,JSON.stringify({hostTarget:hDrop.targetAt,guestTarget:gDrop.targetAt,targetDeltaMs:targetDelta,hostLeadMs:hostLead,guestLeadMs:guestLead,hostCreated:hDrop.createdAt,guestCreated:gDrop.createdAt,hostBarrier:dropH.renderSync,guestBarrier:dropG.renderSync,hostPrepareCost:dropH.lastPresentation?.prepareCostMs,guestPrepareCost:dropG.lastPresentation?.prepareCostMs,hostEngine:dropH.lastPresentation?.animationEngine,guestEngine:dropG.lastPresentation?.animationEngine}));
+    assert.ok(dropH.renderSync?.hostDropReady&&dropH.renderSync?.guestDropReady,`move ${i}: host started checker without both DROP READY signals`);
+    assert.ok(dropH.renderSync?.dropStarted,`move ${i}: host DROP GO did not start the prepared checker`);
+    assert.ok(dropG.renderSync?.dropStarted,`move ${i}: guest created checker without receiving DROP GO`);
     assert.ok(targetDelta<=12,`move ${i}: WAAPI checker targets differ by ${targetDelta}ms`);assert.ok(hostLead>=20,`move ${i}: host did not receive enough animation lead (${hostLead}ms)`);assert.ok(guestLead>=20,`move ${i}: guest did not receive enough animation lead (${guestLead}ms)`);
 
     const probeWait=Math.max(0,Math.min(Number(hDrop.targetAt),Number(gDrop.targetAt))+120-Date.now());if(probeWait)await sleep(probeWait);
@@ -141,5 +143,5 @@ try{
 
   assert.ok(combatCount>=2,'playtest should exercise at least two combat presentations');assert.deepEqual(pageErrors,[],'browser page errors occurred');
   await host.screenshot({path:'artifacts/peer-room-sync-host.png'});await guest.screenshot({path:'artifacts/peer-room-sync-guest.png'});
-  console.log(`PASS Peer Room 0.20.6 real-browser presentation sync: 6 touch moves, ${combatCount} matched combat cues, asymmetric 70/110ms transport jitter, render-ready WAAPI drops and post-commit event barriers.`)
+  console.log(`PASS Peer Room 0.20.6 real-browser presentation sync: 6 touch moves, ${combatCount} matched combat cues, asymmetric 70/110ms transport jitter, explicit DROP READY barrier, WAAPI drops, and post-commit event barriers.`)
 } finally {for(const b of browsers)await b.close().catch(()=>{})}
