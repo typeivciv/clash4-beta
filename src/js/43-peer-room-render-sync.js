@@ -141,7 +141,7 @@ function peerRoomRenderSyncCreateDropAnimation(state,dropAtHost){
   const active={id:dropId,version:tx.version,targetAt,duration:tx.duration,createdAt,delay,animation,ghost,finished:false};peerRoomRenderSyncState.activeDrop=active;
   peerRoomRenderSyncState.lastDrop={id:dropId,version:tx.version,targetAt,duration:tx.duration,createdAt,delay,finishedAt:null};
   peerRoomPresentationSyncState.lastPresentation={...peerRoomPresentationSyncState.lastPresentation,targetAt,dropAtHost:Number(dropAtHost),animationEngine:'waapi',waapiCreatedAt:createdAt,waapiDelayMs:delay,commitTargetAt:targetAt+tx.duration};
-  try{document.dispatchEvent(new CustomEvent('peer-room-drop-created',{detail:{id:dropId,version:tx.version,targetAt,duration:tx.duration,createdAt,delay}}))}catch{}
+  try{document.dispatchEvent(new CustomEvent('peer-room-drop-created',{detail:{id:dropId,version:tx.version,targetAt,duration:tx.duration,createdAt,delay,hostDropReady:state.hostDropReady,guestDropReady:state.guestDropReady,dropStarted:state.dropStarted}}))}catch{}
   peerRoomPresentationSyncScheduleAt('dropStart',targetAt,()=>peerRoomRenderSyncStart(tx));
   animation.finished.then(()=>{
     if(active.finished)return;active.finished=true;const finishedAt=Date.now();if(peerRoomRenderSyncState.lastDrop?.id===dropId)peerRoomRenderSyncState.lastDrop={...peerRoomRenderSyncState.lastDrop,finishedAt};

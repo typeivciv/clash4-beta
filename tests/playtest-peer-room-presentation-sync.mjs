@@ -51,7 +51,7 @@ async function snapshot(page){
         dropAtHost:peerRoomRenderSyncEventState.current.dropAtHost,dropStarted:!!peerRoomRenderSyncEventState.current.dropStarted,
         hostCommitReady:!!peerRoomRenderSyncEventState.current.hostCommitReady,guestCommitReady:!!peerRoomRenderSyncEventState.current.guestCommitReady,
         eventsAtHost:peerRoomRenderSyncEventState.current.eventsAtHost
-      }:null,
+      }:__syncProbe.waapiDrops.at(-1)||null,
       sync:{synced:!!peerRoomPresentationSyncState.synced,offsetMs:peerRoomPresentationSyncState.offsetMs,bestRttMs:peerRoomPresentationSyncState.bestRttMs,lastSyncAt:peerRoomPresentationSyncState.lastSyncAt},
       lastPresentation:peerRoomPresentationSyncState.lastPresentation?{...peerRoomPresentationSyncState.lastPresentation}:null
     }
