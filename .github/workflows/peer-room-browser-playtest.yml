@@ -10,14 +10,16 @@ on:
       - 'src/js/39-peer-room-presentation.js'
       - 'src/js/40-peer-room-transaction.js'
       - 'src/js/41-peer-room-presentation-sync.js'
+      - 'src/js/42-peer-room-recovery-nav.js'
       - 'tests/playtest-peer-room-presentation-sync.mjs'
+      - 'tests/playtest-peer-room-recovery-nav.mjs'
       - '.github/workflows/peer-room-browser-playtest.yml'
   workflow_dispatch:
 
 jobs:
   real-browser-peer-room:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 14
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -36,13 +38,15 @@ jobs:
           for i in {1..20}; do curl -fsS http://127.0.0.1:8080/multiplayer-alpha.html >/dev/null && exit 0; sleep 0.5; done
           cat /tmp/clash4-http.log
           exit 1
-      - name: Chromium host + WebKit guest with asymmetric transport jitter
+      - name: WebKit guest reconnect + Back navigation
+        run: node tests/playtest-peer-room-recovery-nav.mjs
+      - name: Chromium host + WebKit guest presentation sync
         run: node tests/playtest-peer-room-presentation-sync.mjs
       - name: Upload visual evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: peer-room-presentation-sync-playtest
+          name: peer-room-browser-playtest
           path: |
             artifacts/
             /tmp/clash4-http.log

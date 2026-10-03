@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="description" content="Clash 4 mobile beta test build">
-<title>Clash 4 — Fog of War · Multiplayer Alpha 0.18.3</title>
+<title>Clash 4 — Fog of War · Multiplayer Alpha 0.20.6</title>
 
 
 
@@ -1321,6 +1321,9 @@ body.reducedMotion .end .postMatchSummaryCard::before{animation:none!important}
   .gameplayV3 .boardSection,.gameplayV3 .humanZone{width:min(100%,var(--board-width,920px))}
   .gameplayV3 .boardSection{justify-self:center}
   .gameplayV3 #fogRulesCard{display:none}
+  .gameplayV3 .aiStatusPanel{height:auto;min-height:52px}
+  .gameplayV3 .aiStatusPanel>.row{align-items:flex-start;flex-wrap:wrap}
+  .gameplayV3 .aiStatusMeta{flex-wrap:wrap;justify-content:flex-start}
   .gameplayV3 .fogSidebarExtras{gap:7px;margin-top:7px}
   .gameplayV3 .fogSideCard{padding:10px;border-radius:11px}
   .gameplayV3 .fogMiniGrid{gap:5px}
@@ -1477,7 +1480,7 @@ body.direct-chat-open{overscroll-behavior:none}
 <body>
 <div id="appRoot" class="app">
 <header>
-  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Arcade RC1 · Multiplayer Alpha 0.18.3</div></div>
+  <div class="fogBrand"><div class="fogWordmark">CLASH <span class="fogFour">4</span><span class="fogSub">Fog of War</span></div><div class="fogBuild">Arcade RC1 · Multiplayer Alpha 0.20.6</div></div>
   <div id="fogTurnPill" class="fogTurnPill neutral"><span class="fogTurnDot"></span><span id="fogTurnText">Setup</span></div>
   <div class="topActions">
     <div id="matchDifficultyBadge" class="matchDifficultyBadge" title="Difficulty is chosen before the match"><span>AI</span><strong id="matchDifficultyLabel">Normal</strong></div>
@@ -1611,13 +1614,13 @@ body.direct-chat-open{overscroll-behavior:none}
       <div class="homeTagline">Connect Four. Win the Clash.</div>
       <p class="homeLede">Build four in a row while Rock–Paper–Scissors combat, Decoys, and hidden enemy identities turn every column into a tactical gamble.</p>
       <div class="homeActions"><button id="homePlayButton" class="homePlay" type="button"><span>Solo Play</span><small>Vs AI · quick match</small></button><button id="homeDuelButton" class="homeDuel" type="button"><span>Multiplayer</span><small>Online · invite a friend · Pass &amp; Play</small></button><button id="homeCustomizeButton" class="homeCustomize" type="button"><span>Customize</span><small>Difficulty · world theme · player colors · tips</small></button><button id="homeRulesButton" class="homeSecondary" type="button">How to Play</button></div>
-      <div class="homeMeta"><span>Duel Modes Alpha · 0.18.3</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
+      <div class="homeMeta"><span>Duel Modes Alpha · 0.20.6</span><span>8 × 6</span><span>R/P/S + Decoy</span></div>
     </div>
     <div class="homeHero" aria-hidden="true"><div class="homeHeroGlow"></div><div class="heroBoard"><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">🪨</span></div><div class="heroHole"><span class="heroPiece ai ">📄</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"></div><div class="heroHole"><span class="heroPiece player ">✂️</span></div><div class="heroHole"><span class="heroPiece ai hidden">?</span></div><div class="heroHole"><span class="heroPiece player ">📄</span></div><div class="heroHole"><span class="heroPiece ai ">🪨</span></div><div class="heroHole"><span class="heroPiece player ">○</span></div><div class="heroHole"><span class="heroPiece ai ">✂️</span></div></div><div class="heroFog"></div></div>
   </section>
 
   <section id="duelLobbyPanel" class="introScreen duelLobbyScreen" aria-label="Multiplayer Alpha">
-  <div class="introTopline"><button id="duelBackButton" class="introBack" type="button">← Home</button><span class="introStepLabel">Multiplayer Alpha · 0.18.3</span></div>
+  <div class="introTopline"><button id="duelBackButton" class="introBack" type="button">← Home</button><span class="introStepLabel">Multiplayer Alpha · 0.20.6</span></div>
 
   <div class="alphaTesterNotice" role="note">
     <span class="alphaTesterPill">ALPHA TEST</span>
@@ -1716,7 +1719,7 @@ body.direct-chat-open{overscroll-behavior:none}
   </div>
 
   <div id="alphaTesterBar" class="alphaTesterBar" aria-label="Alpha tester tools">
-    <span>Multiplayer Alpha · 0.18.3</span>
+    <span>Multiplayer Alpha · 0.20.6</span>
     <div><button id="alphaConnectionHelp" type="button">Connection Help</button><button id="alphaCopyTestInfo" type="button">Copy Test Info</button><button id="alphaReportProblem" type="button">Report Problem</button></div>
   </div>
 
@@ -1805,7 +1808,7 @@ body.direct-chat-open{overscroll-behavior:none}
       </div>
     </div>
 <div class="helpFooter">
-      <span>Multiplayer Alpha 0.18.3 · The game remembers actions. You remember identities.</span>
+      <span>Multiplayer Alpha 0.20.6 · The game remembers actions. You remember identities.</span>
       <div class="helpFooterActions">
         <button id="betaFeedbackButton" class="betaFeedbackButton" type="button">Report Problem</button>
         <button id="helpGuideToggle">Turn On Guided Tips</button>
@@ -1825,7 +1828,7 @@ body.direct-chat-open{overscroll-behavior:none}
 <div id="betaFeedbackOverlay" class="betaFeedbackOverlay" aria-hidden="true">
   <div class="betaFeedbackCard" role="dialog" aria-modal="true" aria-labelledby="betaFeedbackTitle">
     <div class="betaFeedbackHead">
-      <div><div class="eyebrow">MULTIPLAYER ALPHA 0.18.3</div><h2 id="betaFeedbackTitle">Test Feedback</h2></div>
+      <div><div class="eyebrow">MULTIPLAYER ALPHA 0.20.6</div><h2 id="betaFeedbackTitle">Test Feedback</h2></div>
       <button id="betaFeedbackClose" class="betaFeedbackClose" type="button" aria-label="Close feedback">×</button>
     </div>
     <form id="betaFeedbackForm" class="betaFeedbackForm">
@@ -3935,7 +3938,7 @@ document.addEventListener('click',event=>{
 duelPostMatchEnsureVisual();
 
 'use strict';
-const ALPHA_TESTER_VERSION='0.18.3';
+const ALPHA_TESTER_VERSION='0.20.6';
 function alphaTesterEl(id){return document.getElementById(id)}
 function alphaTesterMode(){
   if(typeof matchMode!=='undefined'&&matchMode==='arcade')return'Arcade / Solo';
@@ -6547,7 +6550,7 @@ init();
 
 <script>
 (function(){
-  const BUILD='Multiplayer Alpha 0.18.3';
+  const BUILD='Multiplayer Alpha 0.20.6';
   const REPO_ISSUES='https://github.com/typeivciv/clash4-beta/issues/new';
   const $=id=>document.getElementById(id);
   const openBtn=$('betaFeedbackButton'), overlay=$('betaFeedbackOverlay'), closeBtn=$('betaFeedbackClose');
@@ -6583,7 +6586,7 @@ init();
   function issueTitle(){
     const type=$('betaIssueType').value;
     const detail=$('betaWhatHappened').value.trim().replace(/\s+/g,' ').slice(0,72);
-    return `[Multiplayer Alpha 0.18.3][${type}] ${detail||'Tester report'}`;
+    return `[Multiplayer Alpha 0.20.6][${type}] ${detail||'Tester report'}`;
   }
   function githubUrl(){
     const body=[
@@ -6628,7 +6631,7 @@ init();
   $('betaShareReport').addEventListener('click',async()=>{
     const text=report();
     if(navigator.share){
-      try{await navigator.share({title:'Clash 4 Multiplayer Alpha 0.18.3 Feedback',text});$('betaFeedbackStatus').textContent='Share sheet opened.'}catch(err){if(err&&err.name!=='AbortError')$('betaFeedbackStatus').textContent='Could not open the share sheet.'}
+      try{await navigator.share({title:'Clash 4 Multiplayer Alpha 0.20.6 Feedback',text});$('betaFeedbackStatus').textContent='Share sheet opened.'}catch(err){if(err&&err.name!=='AbortError')$('betaFeedbackStatus').textContent='Could not open the share sheet.'}
     }else{
       try{await navigator.clipboard.writeText(text);$('betaFeedbackStatus').textContent='Sharing is unavailable here, so the report was copied instead.'}
       catch{$('betaFeedbackStatus').textContent='Sharing is unavailable in this browser.'}
