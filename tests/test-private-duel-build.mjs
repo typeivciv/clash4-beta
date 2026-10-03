@@ -10,20 +10,20 @@ assert.ok(!publicIndex.includes('id="homeDuelButton"'),'public beta must not exp
 assert.equal(testerAlpha,alpha,'clean multiplayer-alpha.html tester entry must exactly match canonical Alpha build');
 
 for(const required of [
-  'Multiplayer Alpha 0.20.7',
+  'Multiplayer Alpha 0.20.8',
   '<span>Solo Play</span><small>Vs AI · quick match</small>',
   '<span>Multiplayer</span><small>Online · invite a friend · Pass &amp; Play</small>',
   '<span>Customize</span><small>Difficulty · world theme · player colors · tips</small>',
   '<div class="eyebrow">SOLO SETUP</div><h2 class="setupTitle">Customize Match</h2>',
   "beginRandomMatch('Solo Play',{useDefaults:true})",
-  'Multiplayer Alpha 0.20.7 · The game remembers actions. You remember identities.',
+  'Multiplayer Alpha 0.20.8 · The game remembers actions. You remember identities.',
   '<button id="betaFeedbackButton" class="betaFeedbackButton" type="button">Report Problem</button>',
-  'CLASH 4 MULTIPLAYER ALPHA FEEDBACK','Clash 4 Multiplayer Alpha 0.20.7 Feedback',
+  'CLASH 4 MULTIPLAYER ALPHA FEEDBACK','Clash 4 Multiplayer Alpha 0.20.8 Feedback',
   'Play With Someone','Create Duel','Hosted Room',
   'RTCPeerConnection',"DIRECT_PEER_JOIN_PARAM='c4peer'",'DIRECT_HOST_INVITE_TTL_MS=5*60_000','function directRetryNearbyConnection()',"copyBtn.textContent='Copy Link'","shareBtn.textContent='Share Link'",'DIRECT_ALPHA_TURN_SERVERS',
   "endText.textContent='YOU WIN'","endText.textContent='TRY AGAIN'","'Invite New Player'","'KOs · P1–P2'",'function passBuildFinishReplay(viewer)','function passRestartMatch()',
   "parentElement?.parentElement?.querySelector?.(':scope > span')",
-  "const ALPHA_TESTER_VERSION='0.20.7'","const EASY_LEARNING_STORAGE_KEY='clash4.easyLearning.v1'","const GAMEPLAY_FLOW_VERSION='0.16.8'","const LEARNER_UX_VERSION='0.16.6'",
+  "const ALPHA_TESTER_VERSION='0.20.8'","const EASY_LEARNING_STORAGE_KEY='clash4.easyLearning.v1'","const GAMEPLAY_FLOW_VERSION='0.16.8'","const LEARNER_UX_VERSION='0.16.6'",
   "const THEME_MUSIC_VERSION='0.18.0'","const THEME_STORAGE_KEY='clash4.theme.v1'","const MUSIC_STORAGE_KEY='clash4.music.v1'",
   "DEFAULT_THEME_ID='neon-forge'",'Neon Forge','Arcane Prism','Frost Command','Ember Siege','Verdant Cipher',
   "control.id='themeControl'",'id="musicToggle"','id="musicVolume"','function themeSet(','function themeMusicStart()','function themeMusicStinger(cue)',
@@ -77,4 +77,4 @@ assert.deepEqual(duplicates,[],`duplicate DOM ids: ${duplicates.join(', ')}`);
 const scripts=[...alpha.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]);
 assert.ok(scripts.length>=4,'expected dependencies plus generated application script');
 for(let i=0;i<scripts.length;i++){if(!scripts[i].trim())continue;try{new Function(scripts[i])}catch(error){throw new Error(`generated script ${i+1} failed syntax: ${error.message}`)}}
-console.log(`PASS generated Multiplayer Alpha 0.20.7 screen-consistency package (${ids.length} unique DOM ids, ${scripts.length} script blocks; clash symbols preserved)`);
+console.log(`PASS generated Multiplayer Alpha 0.20.8 screen-consistency package (${ids.length} unique DOM ids, ${scripts.length} script blocks; clash symbols preserved)`);

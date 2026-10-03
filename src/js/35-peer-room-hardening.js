@@ -20,7 +20,7 @@ if(typeof peerRoomKickSeat==='function'&&typeof peerRoomHostReleaseSeat==='funct
 function peerRoomLoadRenderSync(){
   if(typeof document==='undefined')return;
   if(document.querySelector('script[data-peer-room-render-sync]'))return;
-  const script=document.createElement('script');script.src='src/js/43-peer-room-render-sync.js?v=0.20.7';script.async=false;script.dataset.peerRoomRenderSync='script';document.head.append(script)
+  const script=document.createElement('script');script.src='src/js/43-peer-room-render-sync.js?v=0.20.8';script.async=false;script.dataset.peerRoomRenderSync='script';document.head.append(script)
 }
 function peerRoomLoadRecoveryNav(){
   if(typeof document==='undefined')return;
@@ -30,7 +30,7 @@ function peerRoomLoadRecoveryNav(){
     else existing.addEventListener('load',peerRoomLoadRenderSync,{once:true});
     return
   }
-  const script=document.createElement('script');script.src='src/js/42-peer-room-recovery-nav.js?v=0.20.7';script.async=false;script.dataset.peerRoomRecoveryNav='script';script.addEventListener('load',peerRoomLoadRenderSync,{once:true});document.head.append(script)
+  const script=document.createElement('script');script.src='src/js/42-peer-room-recovery-nav.js?v=0.20.8';script.async=false;script.dataset.peerRoomRecoveryNav='script';script.addEventListener('load',peerRoomLoadRenderSync,{once:true});document.head.append(script)
 }
 function peerRoomLoadPresentationSync(){
   if(typeof document==='undefined')return;
@@ -40,7 +40,7 @@ function peerRoomLoadPresentationSync(){
     else existing.addEventListener('load',peerRoomLoadRecoveryNav,{once:true});
     return
   }
-  const script=document.createElement('script');script.src='src/js/41-peer-room-presentation-sync.js?v=0.20.7';script.async=false;script.dataset.peerRoomPresentationSync='script';script.addEventListener('load',peerRoomLoadRecoveryNav,{once:true});document.head.append(script)
+  const script=document.createElement('script');script.src='src/js/41-peer-room-presentation-sync.js?v=0.20.8';script.async=false;script.dataset.peerRoomPresentationSync='script';script.addEventListener('load',peerRoomLoadRecoveryNav,{once:true});document.head.append(script)
 }
 function peerRoomLoadTransaction(){
   if(typeof document==='undefined')return;
@@ -50,7 +50,7 @@ function peerRoomLoadTransaction(){
     else existing.addEventListener('load',peerRoomLoadPresentationSync,{once:true});
     return
   }
-  const script=document.createElement('script');script.src='src/js/40-peer-room-transaction.js?v=0.20.7';script.async=false;script.dataset.peerRoomTransaction='script';script.addEventListener('load',peerRoomLoadPresentationSync,{once:true});document.head.append(script)
+  const script=document.createElement('script');script.src='src/js/40-peer-room-transaction.js?v=0.20.8';script.async=false;script.dataset.peerRoomTransaction='script';script.addEventListener('load',peerRoomLoadPresentationSync,{once:true});document.head.append(script)
 }
 function peerRoomLoadPresentation(){
   if(typeof document==='undefined')return;
@@ -63,7 +63,7 @@ function peerRoomLoadPresentation(){
     else existing.addEventListener('load',peerRoomLoadTransaction,{once:true});
     return
   }
-  const script=document.createElement('script');script.src='src/js/39-peer-room-presentation.js?v=0.20.7';script.async=false;script.dataset.peerRoomPresentation='script';script.addEventListener('load',peerRoomLoadTransaction,{once:true});document.head.append(script)
+  const script=document.createElement('script');script.src='src/js/39-peer-room-presentation.js?v=0.20.8';script.async=false;script.dataset.peerRoomPresentation='script';script.addEventListener('load',peerRoomLoadTransaction,{once:true});document.head.append(script)
 }
 function peerRoomLoadPolish(){
   if(typeof document==='undefined')return;
@@ -76,7 +76,7 @@ function peerRoomLoadPolish(){
     else existing.addEventListener('load',peerRoomLoadPresentation,{once:true});
     return
   }
-  const script=document.createElement('script');script.src='src/js/38-peer-room-polish.js?v=0.20.7';script.async=false;script.dataset.peerRoomPolish='script';script.addEventListener('load',peerRoomLoadPresentation,{once:true});document.head.append(script)
+  const script=document.createElement('script');script.src='src/js/38-peer-room-polish.js?v=0.20.8';script.async=false;script.dataset.peerRoomPolish='script';script.addEventListener('load',peerRoomLoadPresentation,{once:true});document.head.append(script)
 }
 function peerRoomLoadRuntimeBridge(){
   if(typeof document==='undefined')return;
@@ -86,7 +86,7 @@ function peerRoomLoadRuntimeBridge(){
     else existing.addEventListener('load',peerRoomLoadPolish,{once:true});
     return
   }
-  const script=document.createElement('script');script.src='src/js/37-peer-room-runtime.js?v=0.20.7';script.async=false;script.dataset.peerRoomRuntime='script';script.addEventListener('load',peerRoomLoadPolish,{once:true});document.head.append(script)
+  const script=document.createElement('script');script.src='src/js/37-peer-room-runtime.js?v=0.20.8';script.async=false;script.dataset.peerRoomRuntime='script';script.addEventListener('load',peerRoomLoadPolish,{once:true});document.head.append(script)
 }
 
 // 0.20 is deliberately layered after the proven 0.19 room transport so the existing
@@ -107,7 +107,7 @@ function peerRoomLoadPlayableMatch(){
     else existing.addEventListener('load',peerRoomLoadRuntimeBridge,{once:true});
     return
   }
-  const script=document.createElement('script');script.src='src/js/36-peer-room-match.js?v=0.20.7';script.async=false;script.dataset.peerRoomMatch='script';script.addEventListener('load',peerRoomLoadRuntimeBridge,{once:true});document.head.append(script)
+  const script=document.createElement('script');script.src='src/js/36-peer-room-match.js?v=0.20.8';script.async=false;script.dataset.peerRoomMatch='script';script.addEventListener('load',peerRoomLoadRuntimeBridge,{once:true});document.head.append(script)
 }
 if(typeof document!=='undefined')peerRoomLoadPlayableMatch();
 globalThis.peerRoomLoadPlayableMatch=peerRoomLoadPlayableMatch;

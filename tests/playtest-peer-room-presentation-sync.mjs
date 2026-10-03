@@ -1,7 +1,7 @@
 import { chromium, webkit } from 'playwright';
 import assert from 'node:assert/strict';
 
-const BASE='http://127.0.0.1:8080/multiplayer-alpha.html?playtest=sync0206';
+const BASE='http://127.0.0.1:8080/multiplayer-alpha.html?playtest=sync0208';
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const browsers=[];
 const COMBAT_CUES=new Set(['combat-win','combat-tie','decoy']);
@@ -9,13 +9,14 @@ const COMBAT_CUES=new Set(['combat-win','combat-tie','decoy']);
 async function waitRuntime(page){
   await page.waitForFunction(()=>globalThis.peerRoomFoundation&&globalThis.peerRoomMatch&&globalThis.peerRoomPresentationSync&&globalThis.peerRoomRenderSync,{timeout:20000});
   await page.evaluate(()=>{
-    globalThis.__syncProbe={drops:[],waapiDrops:[],waapiFinishes:[],events:[]};
+    globalThis.__syncProbe={drops:[],waapiDrops:[],waapiFinishes:[],events:[],aligned:[]};
     document.addEventListener('peer-room-drop-created',event=>{
       try{__syncProbe.waapiDrops.push({...event.detail,wall:Date.now(),seat:Number(peerRoom?.seat||0),visibility:document.visibilityState})}catch{}
     });
     document.addEventListener('peer-room-drop-finished',event=>{
       try{__syncProbe.waapiFinishes.push({...event.detail,wall:Date.now(),seat:Number(peerRoom?.seat||0),visibility:document.visibilityState})}catch{}
     });
+    document.addEventListener('peer-room-event-aligned',event=>__syncProbe.aligned.push({...event.detail}));
     const original=globalThis.emitFeedback;
     if(typeof original==='function')globalThis.emitFeedback=function(kind,...args){
       try{
@@ -43,7 +44,7 @@ async function snapshot(page){
     return{
       seat,move:s.moveNumber,turnSeat:physical(s.turn),busy:!!busy,handled:duelSession.handledVersion,visibility:document.visibilityState,
       occupancy:s.board.map(column=>column.map(piece=>physical(piece.owner))),heights:s.board.map(column=>column.length),
-      drops:[...__syncProbe.drops],waapiDrops:[...__syncProbe.waapiDrops],waapiFinishes:[...__syncProbe.waapiFinishes],events:[...__syncProbe.events],
+      drops:[...__syncProbe.drops],waapiDrops:[...__syncProbe.waapiDrops],waapiFinishes:[...__syncProbe.waapiFinishes],events:[...__syncProbe.events],aligned:[...__syncProbe.aligned],
       animation:active?{id:active.id,targetAt:active.targetAt,duration:active.duration,createdAt:active.createdAt,delay:active.delay,playState:animation?.playState||null,currentTime,progress,transform,translateY,opacity}:null,
       renderSync:peerRoomRenderSyncEventState?.current?{
         id:peerRoomRenderSyncEventState.current.id,version:peerRoomRenderSyncEventState.current.version,
@@ -100,6 +101,8 @@ async function installTransportJitter(page,role){
       let delay=0;
       if(role==='host'&&data?.kind==='room-match-payload')delay=110;
       if(role==='guest'&&data?.kind==='room-match-move')delay=70;
+      if(role==='host'&&data?.kind==='room-presentation-drop-go')delay=160;
+      if(role==='host'&&data?.kind==='room-presentation-events-go')delay=100;
       if(!delay)return original(target,data);
       setTimeout(()=>original(target,data),delay);return true
     };
@@ -119,6 +122,7 @@ try{
   const wk=await webkit.launch({headless:true});browsers.push(wk);
   const hostContext=await chrome.newContext({viewport:{width:412,height:915},deviceScaleFactor:2,isMobile:true,hasTouch:true});
   const guestContext=await wk.newContext({viewport:{width:390,height:844},deviceScaleFactor:3,isMobile:true,hasTouch:true});
+  await guestContext.addInitScript(()=>{const realNow=Date.now.bind(Date);Date.now=()=>realNow()+137});
   const host=await hostContext.newPage(),guest=await guestContext.newPage(),pageErrors=[];
   host.on('pageerror',error=>pageErrors.push(`HOST ${error.message}`));guest.on('pageerror',error=>pageErrors.push(`GUEST ${error.message}`));
 
@@ -129,7 +133,7 @@ try{
   await guest.waitForFunction(()=>peerRoomPresentationSyncState.synced&&Number.isFinite(peerRoomPresentationSyncState.bestRttMs),{timeout:7000});await sleep(250);
 
   const initialSync=await guest.evaluate(()=>({offset:peerRoomPresentationSyncState.offsetMs,rtt:peerRoomPresentationSyncState.bestRttMs,last:peerRoomPresentationSyncState.lastSyncAt,visibility:document.visibilityState}));
-  console.log('CLOCK SYNC',JSON.stringify(initialSync));assert.ok(initialSync.rtt<1500,'guest clock sync RTT is unusably high');
+  console.log('CLOCK SYNC',JSON.stringify(initialSync));assert.ok(initialSync.rtt<1500,'guest clock sync RTT is unusably high');assert.ok(Math.abs(initialSync.offset-137)<25,'different device wall clocks must synchronize');
   await installTransportJitter(host,'host');await installTransportJitter(guest,'guest');
 
   const start=host.locator('#peerRoomStartGame');await start.waitFor({state:'visible',timeout:5000});await start.tap();
@@ -146,16 +150,17 @@ try{
 
     await waitDropPair(host,guest,moveIndex);
     const dropHost=await snapshot(host),dropGuest=await snapshot(guest),hostDrop=dropHost.waapiDrops[moveIndex-1],guestDrop=dropGuest.waapiDrops[moveIndex-1];
-    const targetDelta=Math.abs(Number(hostDrop.targetAt)-Number(guestDrop.targetAt)),hostLead=Number(hostDrop.targetAt)-Number(hostDrop.createdAt),guestLead=Number(guestDrop.targetAt)-Number(guestDrop.createdAt);
+    const targetDelta=Math.abs(Number(hostDrop.targetAt)-(Number(guestDrop.targetAt)-dropGuest.sync.offsetMs)),hostLead=Number(hostDrop.targetAt)-Number(hostDrop.createdAt),guestLead=Number(guestDrop.targetAt)-Number(guestDrop.createdAt);
     console.log(`MOVE ${moveIndex} DROP SYNC`,JSON.stringify({hostTarget:hostDrop.targetAt,guestTarget:guestDrop.targetAt,targetDeltaMs:targetDelta,hostLeadMs:hostLead,guestLeadMs:guestLead,hostCreated:hostDrop.createdAt,guestCreated:guestDrop.createdAt,hostBarrier:dropHost.renderSync,guestBarrier:dropGuest.renderSync,hostPrepareCost:dropHost.lastPresentation?.prepareCostMs,guestPrepareCost:dropGuest.lastPresentation?.prepareCostMs,hostEngine:dropHost.lastPresentation?.animationEngine,guestEngine:dropGuest.lastPresentation?.animationEngine}));
     assert.ok(dropHost.renderSync?.hostDropReady&&dropHost.renderSync?.guestDropReady,`move ${moveIndex}: host started checker without both DROP READY signals`);
     assert.ok(dropHost.renderSync?.dropStarted,`move ${moveIndex}: host DROP GO did not start the prepared checker`);
     assert.ok(dropGuest.renderSync?.dropStarted,`move ${moveIndex}: guest created checker without receiving DROP GO`);
     assert.ok(targetDelta<=12,`move ${moveIndex}: WAAPI checker targets differ by ${targetDelta}ms`);
+    for(const drop of [hostDrop,guestDrop]){assert.equal(drop.effectDelay,0,'compositor delay must not add an extra frame');assert.ok(Math.abs(drop.animationStartTime-drop.timelineTarget)<=1,'actual compositor start must match the shared deadline')}
     assert.ok(hostLead>=20,`move ${moveIndex}: host did not receive enough animation lead (${hostLead}ms)`);
     assert.ok(guestLead>=20,`move ${moveIndex}: guest did not receive enough animation lead (${guestLead}ms)`);
 
-    const probeWait=Math.max(0,Math.min(Number(hostDrop.targetAt),Number(guestDrop.targetAt))+120-Date.now());if(probeWait)await sleep(probeWait);
+    const probeWait=Math.max(0,Number(hostDrop.targetAt)+120-Date.now());if(probeWait)await sleep(probeWait);
     const midHost=await snapshot(host),midGuest=await snapshot(guest);
     assertAnimationEvidence(midHost,moveIndex,`move ${moveIndex} host`);assertAnimationEvidence(midGuest,moveIndex,`move ${moveIndex} guest`);
 
@@ -166,17 +171,39 @@ try{
 
     const canonicalMove=beforeMove+1,hostCombat=afterHost.events.filter(event=>event.move===canonicalMove&&COMBAT_CUES.has(event.kind)),guestCombat=afterGuest.events.filter(event=>event.move===canonicalMove&&COMBAT_CUES.has(event.kind));
     assert.equal(hostCombat.length,guestCombat.length,`move ${moveIndex}: host/guest combat cue count mismatch`);
+    for(const sample of [afterHost,afterGuest])for(const cue of sample.aligned.filter(cue=>cue.version===sample.handled))assert.ok(cue.aligned>0,'combat visuals must have anchored compositor animations');
     for(let combatIndex=0;combatIndex<hostCombat.length;combatIndex++){
       assert.equal(hostCombat[combatIndex].kind,guestCombat[combatIndex].kind,`move ${moveIndex} combat ${combatIndex+1}: cue mismatch`);
-      const eventDelta=Math.abs(hostCombat[combatIndex].wall-guestCombat[combatIndex].wall);
+      const eventDelta=Math.abs(hostCombat[combatIndex].wall-(guestCombat[combatIndex].wall-afterGuest.sync.offsetMs));
       console.log(`MOVE ${moveIndex} COMBAT ${combatIndex+1} SYNC`,JSON.stringify({kind:hostCombat[combatIndex].kind,host:hostCombat[combatIndex].wall,guest:guestCombat[combatIndex].wall,deltaMs:eventDelta}));
       assert.ok(eventDelta<=90,`move ${moveIndex} combat ${combatIndex+1}: presentation started ${eventDelta}ms apart`);combatCount++
     }
   }
 
+  // Place a real winning move from a near-win fixture, then use the result buttons.
+  await host.evaluate(()=>{
+    const fixture=makeLocalDuelState(H);
+    for(let c=0;c<3;c++)fixture.board[c].push({owner:H,type:'rock',id:c+1});
+    for(let c=5;c<7;c++)fixture.board[c].push({owner:A,type:'rock',id:c-1});
+    fixture.inv.human.rock=4;fixture.inv.ai.rock=5;fixture.nextId=6;fixture.moveNumber=5;
+    peerRoomMatch.authority.state=fixture;peerRoomMatch.authority.version+=1;peerRoomMatchBroadcast([],'room-match-start');
+  });
+  for(const page of [host,guest])await page.waitForFunction(()=>s.moveNumber===5&&!busy&&s.board[3].length===0,{timeout:10000});
+  await host.locator('.choice[aria-label^="Rock,"]').tap();await host.locator('.cell.can[data-column="3"]').first().tap();
+  for(const page of [host,guest])await page.locator('#restartBottom').waitFor({state:'visible',timeout:15000});
+  const firstMatch=await host.evaluate(()=>peerRoomMatch.matchId);
+  for(const page of [host,guest])assert.equal(await page.locator('#restartBottom').textContent(),'Rematch','post-match Rematch must survive Lobby labeling');
+  await host.locator('#restartBottom').tap();
+  await host.waitForFunction(()=>document.getElementById('restartBottom').disabled&&document.getElementById('restartBottom').textContent==='Waiting…',{timeout:5000});
+  await guest.waitForFunction(()=>document.getElementById('restartBottom').textContent==='Accept Rematch',{timeout:5000});
+  await guest.locator('#restartBottom').tap();
+  for(const page of [host,guest])await page.waitForFunction(old=>peerRoomMatch.matchId!==old&&s.moveNumber===0&&duelSession.active&&!s.winner&&!s.draw,firstMatch,{timeout:10000});
+  assert.equal(await host.evaluate(()=>peerRoomMatch.matchId),await guest.evaluate(()=>peerRoomMatch.matchId),'Rematch must start the same fresh match on both players');
+  console.log('PASS shared-room result buttons: Rematch, Waiting, Accept Rematch, and fresh same-room match');
+
   assert.ok(combatCount>=2,'playtest should exercise at least two combat presentations');assert.deepEqual(pageErrors,[],'browser page errors occurred');
   await host.screenshot({path:'artifacts/peer-room-sync-host.png'});await guest.screenshot({path:'artifacts/peer-room-sync-guest.png'});
-  console.log(`PASS Peer Room 0.20.6 real-browser presentation sync: 6 touch moves, ${combatCount} matched combat cues, asymmetric 70/110ms transport jitter, explicit DROP READY barrier, WAAPI drops, and post-commit event barriers.`)
+  console.log(`PASS Peer Room 0.20.8 real-browser presentation sync: 6 touch moves, ${combatCount} matched combat cues, asymmetric 70/110ms transport jitter, explicit DROP READY barrier, WAAPI drops, and post-commit event barriers.`)
 } finally {
   for(const browser of browsers)await browser.close().catch(()=>{})
 }
