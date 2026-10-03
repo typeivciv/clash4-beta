@@ -1,8 +1,8 @@
 'use strict';
 const PEER_ROOM_RENDER_SYNC_VERSION='0.20.6';
 const PEER_ROOM_RENDER_SYNC_MIN_LEAD_MS=420;
-const PEER_ROOM_RENDER_SYNC_DROP_MIN_LEAD_MS=180;
-const PEER_ROOM_RENDER_SYNC_DROP_MAX_LEAD_MS=700;
+const PEER_ROOM_RENDER_SYNC_DROP_MIN_LEAD_MS=420;
+const PEER_ROOM_RENDER_SYNC_DROP_MAX_LEAD_MS=2400;
 const PEER_ROOM_RENDER_SYNC_EVENT_MIN_AFTER_DROP_MS=160;
 const PEER_ROOM_RENDER_SYNC_EVENT_ARM_LEAD_MS=1200;
 
@@ -49,7 +49,7 @@ function peerRoomRenderSyncLocalHostTime(hostAt){
 }
 function peerRoomRenderSyncDropLeadMs(conn){
   const rtt=Math.max(0,Number(conn?.__peerRoomPresentationRtt)||0),delivery=Math.max(0,Number(conn?.__peerRoomPresentationDeliveryMs)||0);
-  return Math.round(Math.max(PEER_ROOM_RENDER_SYNC_DROP_MIN_LEAD_MS,Math.min(PEER_ROOM_RENDER_SYNC_DROP_MAX_LEAD_MS,Math.max(rtt*.9+100,delivery*1.25+100))))
+  return Math.round(Math.max(PEER_ROOM_RENDER_SYNC_DROP_MIN_LEAD_MS,Math.min(PEER_ROOM_RENDER_SYNC_DROP_MAX_LEAD_MS,Math.max(rtt*.9+280,delivery*1.45+280))))
 }
 function peerRoomRenderSyncCancelEventSchedules(){
   try{for(const name of [...peerRoomPresentationSyncState.schedules.keys()])if(String(name).startsWith('renderEvent:'))peerRoomPresentationSyncCancelSchedule(name)}catch{}
