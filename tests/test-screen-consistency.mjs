@@ -49,9 +49,9 @@ assert.ok(!js.includes('location.reload('),'screen consistency must not paper ov
 assert.ok(!js.includes('fetch(')&&!js.includes('RTCPeerConnection'),'screen consistency must not change networking');
 assert.ok(!/ROWS\s*=|COLS\s*=/.test(js),'screen consistency must not redefine board geometry');
 
-assert.ok(tester.includes("const ALPHA_TESTER_VERSION='0.18.3'"),'tester diagnostics must match the 0.18.3 Alpha');
-for(const token of ['Multiplayer Alpha · 0.18.3'])assert.ok(lobby.includes(token),`lobby version drift: ${token}`);
+assert.ok(tester.includes("const ALPHA_TESTER_VERSION='0.20.6'"),'tester diagnostics must match the 0.20.6 Alpha');
+for(const token of ['Multiplayer Alpha · 0.20.6'])assert.ok(lobby.includes(token),`lobby version drift: ${token}`);
 assert.ok(!lobby.includes('Multiplayer Alpha · 0.17'),'lobby must not surface stale 0.17 copy');
 
 try{new Function(js)}catch(error){throw new Error(`screen consistency syntax failed: ${error.message}`)}
-console.log('PASS screen consistency 0.18.3: Home/Setup/Coin/Multiplayer focus, mode-aware Help, result focus, one tester modal, mobile Help geometry');
+console.log('PASS screen consistency 0.20.6: Home/Setup/Coin/Multiplayer focus, mode-aware Help, result focus, one tester modal, mobile Help geometry');

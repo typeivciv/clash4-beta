@@ -1,10 +1,10 @@
 'use strict';
 const PEER_ROOM_RENDER_SYNC_VERSION='0.20.6';
 const PEER_ROOM_RENDER_SYNC_MIN_LEAD_MS=420;
-const PEER_ROOM_RENDER_SYNC_DROP_MIN_LEAD_MS=180;
-const PEER_ROOM_RENDER_SYNC_DROP_MAX_LEAD_MS=700;
+const PEER_ROOM_RENDER_SYNC_DROP_MIN_LEAD_MS=420;
+const PEER_ROOM_RENDER_SYNC_DROP_MAX_LEAD_MS=2400;
 const PEER_ROOM_RENDER_SYNC_EVENT_MIN_AFTER_DROP_MS=160;
-const PEER_ROOM_RENDER_SYNC_EVENT_ARM_LEAD_MS=260;
+const PEER_ROOM_RENDER_SYNC_EVENT_ARM_LEAD_MS=1200;
 
 const peerRoomRenderSyncEventState={current:null};
 const peerRoomRenderSyncState={dropSequence:0,activeDrop:null,lastDrop:null};
@@ -49,7 +49,7 @@ function peerRoomRenderSyncLocalHostTime(hostAt){
 }
 function peerRoomRenderSyncDropLeadMs(conn){
   const rtt=Math.max(0,Number(conn?.__peerRoomPresentationRtt)||0),delivery=Math.max(0,Number(conn?.__peerRoomPresentationDeliveryMs)||0);
-  return Math.round(Math.max(PEER_ROOM_RENDER_SYNC_DROP_MIN_LEAD_MS,Math.min(PEER_ROOM_RENDER_SYNC_DROP_MAX_LEAD_MS,Math.max(rtt*.9+100,delivery*1.25+100))))
+  return Math.round(Math.max(PEER_ROOM_RENDER_SYNC_DROP_MIN_LEAD_MS,Math.min(PEER_ROOM_RENDER_SYNC_DROP_MAX_LEAD_MS,Math.max(rtt*.9+280,delivery*1.45+280))))
 }
 function peerRoomRenderSyncCancelEventSchedules(){
   try{for(const name of [...peerRoomPresentationSyncState.schedules.keys()])if(String(name).startsWith('renderEvent:'))peerRoomPresentationSyncCancelSchedule(name)}catch{}
@@ -71,7 +71,26 @@ function peerRoomRenderSyncCurrent(version=null){
 function peerRoomRenderSyncDispatchEvent(state,event,column){
   if(!state||state.complete||peerRoomRenderSyncEventState.current!==state||!state.committed)return;
   if(!peerRoomPresentationSyncActive()){peerRoomRenderSyncFinishEvents(state);return}
-  activePresentation={event,column:presentationColumn(event,column)};render();try{emitFeedback(feedbackCueForEvent(event))}catch{};showEvent(event)
+  activePresentation={event,column:presentationColumn(event,column)};
+  // The canonical board was rendered at commit. Update only presentation classes
+  // here; rebuilding every checker and inventory button at the shared deadline
+  // can delay WebKit's combat cue by hundreds of milliseconds.
+  const eventColumn=activePresentation.column;
+  const special={ 'cooldown-earned':'specialLock',fortified:'specialFortified','critical-defense':'specialCritical',clashmate:'specialClashmate' }[event.kind];
+  const outcome=event.o==='lose'?'combatLose':event.o==='tie'?'combatTie':'combatWin';
+  const classes=['combatColumn','combatTop','combatLose','combatTie','combatWin','specialColumn','specialTop','specialLock','specialFortified','specialCritical','specialClashmate'];
+  const cells=board.querySelectorAll('.cell[data-column]');
+  for(let i=0;i<cells.length;i++){
+    const cell=cells[i];cell.classList.remove(...classes);
+    if(Number(cell.dataset.column)!==eventColumn)continue;
+    if(event.kind==='combat'||special){
+      cell.classList.remove('lastMove','lastMoveHuman','lastMoveAi','lastMoveHumanTop','lastMoveAiTop');
+      if(event.kind==='combat'){cell.classList.add('combatColumn',outcome);if(i<COLS)cell.classList.add('combatTop')}
+      else{cell.classList.add('specialColumn',special);if(i<COLS)cell.classList.add('specialTop')}
+    }
+  }
+  try{renderMobileContext({reviewMode:false,legal:new Set(legalCols(H)),critical:new Set()})}catch{}
+  try{emitFeedback(feedbackCueForEvent(event))}catch{};showEvent(event)
 }
 function peerRoomRenderSyncFinishEvents(state){
   if(!state||state.complete||peerRoomRenderSyncEventState.current!==state||!state.committed)return;
@@ -91,8 +110,12 @@ function peerRoomRenderSyncArmEvents(state,eventsAtHost){
 function peerRoomRenderSyncMaybeStartHostEvents(){
   const state=peerRoomRenderSyncCurrent();
   if(peerRoom?.role!=='host'||!state||state.complete||state.scheduled||!state.queue.length||!state.hostCommitReady||!state.guestCommitReady)return false;
-  const eventsAtHost=Date.now()+PEER_ROOM_RENDER_SYNC_EVENT_ARM_LEAD_MS;state.eventsAtHost=eventsAtHost;
-  const conn=peerRoom.connections?.get?.(2);if(conn?.open)peerRoomSend(conn,{kind:'room-presentation-events-go',protocol:PEER_ROOM_PROTOCOL,syncProtocol:PEER_ROOM_PRESENTATION_SYNC_PROTOCOL,id:state.id,version:state.version,eventsAtHost});
+  const conn=peerRoom.connections?.get?.(2);
+  // Commit-ready is received after both boards finish rendering. Allow the GO
+  // packet the measured delivery budget plus a mobile scheduling margin.
+  const lead=Math.max(PEER_ROOM_RENDER_SYNC_EVENT_ARM_LEAD_MS,peerRoomPresentationSyncReceiptLeadMs(conn));
+  const eventsAtHost=Date.now()+lead;state.eventsAtHost=eventsAtHost;
+  if(conn?.open)peerRoomSend(conn,{kind:'room-presentation-events-go',protocol:PEER_ROOM_PROTOCOL,syncProtocol:PEER_ROOM_PRESENTATION_SYNC_PROTOCOL,id:state.id,version:state.version,eventsAtHost});
   return peerRoomRenderSyncArmEvents(state,eventsAtHost)
 }
 function peerRoomRenderSyncSignalCommitReady(state){
@@ -118,7 +141,7 @@ function peerRoomRenderSyncCreateDropAnimation(state,dropAtHost){
   const active={id:dropId,version:tx.version,targetAt,duration:tx.duration,createdAt,delay,animation,ghost,finished:false};peerRoomRenderSyncState.activeDrop=active;
   peerRoomRenderSyncState.lastDrop={id:dropId,version:tx.version,targetAt,duration:tx.duration,createdAt,delay,finishedAt:null};
   peerRoomPresentationSyncState.lastPresentation={...peerRoomPresentationSyncState.lastPresentation,targetAt,dropAtHost:Number(dropAtHost),animationEngine:'waapi',waapiCreatedAt:createdAt,waapiDelayMs:delay,commitTargetAt:targetAt+tx.duration};
-  try{document.dispatchEvent(new CustomEvent('peer-room-drop-created',{detail:{id:dropId,version:tx.version,targetAt,duration:tx.duration,createdAt,delay}}))}catch{}
+  try{document.dispatchEvent(new CustomEvent('peer-room-drop-created',{detail:{id:dropId,version:tx.version,targetAt,duration:tx.duration,createdAt,delay,hostDropReady:state.hostDropReady,guestDropReady:state.guestDropReady,dropStarted:state.dropStarted}}))}catch{}
   peerRoomPresentationSyncScheduleAt('dropStart',targetAt,()=>peerRoomRenderSyncStart(tx));
   animation.finished.then(()=>{
     if(active.finished)return;active.finished=true;const finishedAt=Date.now();if(peerRoomRenderSyncState.lastDrop?.id===dropId)peerRoomRenderSyncState.lastDrop={...peerRoomRenderSyncState.lastDrop,finishedAt};

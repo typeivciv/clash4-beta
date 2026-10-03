@@ -40,6 +40,19 @@ try{
   assert.equal(await visible(host,'#peerRoomMatchLobbyButton'),true,'live host match needs a Back/Lobby control');
   assert.equal(await visible(guest,'#peerRoomMatchLobbyButton'),true,'live guest match needs a Back/Lobby control');
 
+  for(const [label,page] of [['host',host],['guest',guest]]){
+    const geometry=await page.evaluate(()=>{
+      const board=document.getElementById('board').getBoundingClientRect();
+      return {width:innerWidth,height:innerHeight,scrollWidth:document.documentElement.scrollWidth,
+        board:{left:board.left,right:board.right,top:board.top,bottom:board.bottom,width:board.width,height:board.height}};
+    });
+    assert.ok(geometry.scrollWidth<=geometry.width+1,`${label}: mobile page overflows horizontally`);
+    assert.ok(geometry.board.width>0&&geometry.board.height>0,`${label}: mobile board is hidden`);
+    assert.ok(geometry.board.left>=-1&&geometry.board.right<=geometry.width+1,`${label}: mobile board is clipped horizontally`);
+    assert.ok(geometry.board.top>=-1&&geometry.board.bottom<=geometry.height+1,`${label}: mobile board is clipped vertically`);
+    await page.screenshot({path:`artifacts/peer-room-mobile-match-${label}.png`});
+  }
+
   await guest.locator('#peerRoomMatchLobbyButton').tap();
   await host.waitForFunction(()=>peerRoomMatch.phase==='lobby',{timeout:10000});
   await guest.waitForFunction(()=>peerRoomMatch.phase==='lobby',{timeout:10000});
