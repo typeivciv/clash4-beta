@@ -224,7 +224,8 @@ if(typeof duelPostMatchActionControls==='function'){
   duelPostMatchActionControls=function(){
     const out=duelPostMatchActionControlsBeforePeerRoom();
     if(peerRoom?.active&&peerRoomMatch.phase==='active'){
-      for(const button of [restartBottom,reviewRestart,sidebarRematch,homeBottom,reviewHome,sidebarHome]){if(!button)continue;button.textContent='Return to Lobby';button.disabled=false;button.setAttribute('aria-label','Return to Peer Room lobby');button.title='Return to the connected Peer Room lobby'}
+      // Rematch labels and vote state belong to the post-match transaction layer.
+      for(const button of [homeBottom,reviewHome,sidebarHome]){if(!button)continue;button.textContent='Return to Lobby';button.disabled=false;button.setAttribute('aria-label','Return to Peer Room lobby');button.title='Return to the connected Peer Room lobby'}
     }
     return out
   };

@@ -1,7 +1,7 @@
 'use strict';
-const PEER_ROOM_RENDER_SYNC_VERSION='0.20.6';
+const PEER_ROOM_RENDER_SYNC_VERSION='0.20.8';
 const PEER_ROOM_RENDER_SYNC_MIN_LEAD_MS=420;
-const PEER_ROOM_RENDER_SYNC_DROP_MIN_LEAD_MS=420;
+const PEER_ROOM_RENDER_SYNC_DROP_MIN_LEAD_MS=700;
 const PEER_ROOM_RENDER_SYNC_DROP_MAX_LEAD_MS=2400;
 const PEER_ROOM_RENDER_SYNC_EVENT_MIN_AFTER_DROP_MS=160;
 const PEER_ROOM_RENDER_SYNC_EVENT_ARM_LEAD_MS=1200;
@@ -68,9 +68,18 @@ function peerRoomRenderSyncCurrent(version=null){
   if(version!==null&&Number(state.version)!==Number(version))return null;
   return state
 }
-function peerRoomRenderSyncDispatchEvent(state,event,column){
+// The default document timeline shares performance.now()'s time origin.
+// Explicit startTime avoids a different pending-play frame on each browser.
+function peerRoomRenderSyncTimelineTarget(localAt){return performance.now()+(Number(localAt)-Date.now())}
+function peerRoomRenderSyncAnimations(){
+  const animations=[];
+  for(const root of [board,overlay])try{animations.push(...root.getAnimations({subtree:true}))}catch{}
+  return animations
+}
+function peerRoomRenderSyncDispatchEvent(state,event,column,targetAt=Date.now()){
   if(!state||state.complete||peerRoomRenderSyncEventState.current!==state||!state.committed)return;
   if(!peerRoomPresentationSyncActive()){peerRoomRenderSyncFinishEvents(state);return}
+  const previousAnimations=new Set(peerRoomRenderSyncAnimations()),timelineTarget=peerRoomRenderSyncTimelineTarget(targetAt);
   activePresentation={event,column:presentationColumn(event,column)};
   // The canonical board was rendered at commit. Update only presentation classes
   // here; rebuilding every checker and inventory button at the shared deadline
@@ -90,7 +99,10 @@ function peerRoomRenderSyncDispatchEvent(state,event,column){
     }
   }
   try{renderMobileContext({reviewMode:false,legal:new Set(legalCols(H)),critical:new Set()})}catch{}
-  try{emitFeedback(feedbackCueForEvent(event))}catch{};showEvent(event)
+  try{emitFeedback(feedbackCueForEvent(event))}catch{};showEvent(event);
+  let aligned=0;
+  for(const animation of peerRoomRenderSyncAnimations())if(!previousAnimations.has(animation))try{animation.startTime=timelineTarget;aligned++}catch{}
+  try{document.dispatchEvent(new CustomEvent('peer-room-event-aligned',{detail:{version:state.version,targetAt,timelineTarget,aligned,wall:Date.now()}}))}catch{}
 }
 function peerRoomRenderSyncFinishEvents(state){
   if(!state||state.complete||peerRoomRenderSyncEventState.current!==state||!state.committed)return;
@@ -103,7 +115,7 @@ function peerRoomRenderSyncArmEvents(state,eventsAtHost){
   state.eventsAtHost=hostAt;state.scheduled=true;let offset=0;
   for(let i=0;i<state.queue.length;i++){
     const event=state.queue[i],target=peerRoomRenderSyncLocalHostTime(hostAt+offset),duration=Math.max(1,Number(eventDuration(event))||1);
-    peerRoomPresentationSyncScheduleAt(`renderEvent:${state.version}:${i}`,target,()=>peerRoomRenderSyncDispatchEvent(state,event,state.column));offset+=duration
+    peerRoomPresentationSyncScheduleAt(`renderEvent:${state.version}:${i}`,target,()=>peerRoomRenderSyncDispatchEvent(state,event,state.column,target));offset+=duration
   }
   peerRoomPresentationSyncScheduleAt(`renderEvent:${state.version}:end`,peerRoomRenderSyncLocalHostTime(hostAt+offset),()=>peerRoomRenderSyncFinishEvents(state));return true
 }
@@ -128,7 +140,7 @@ function peerRoomRenderSyncSignalCommitReady(state){
 function peerRoomRenderSyncDistance(ghost){try{return getComputedStyle(ghost).getPropertyValue('--drop-distance').trim()||'-420%'}catch{return'-420%'}}
 function peerRoomRenderSyncCreateDropAnimation(state,dropAtHost){
   const tx=state?.tx,ghost=tx?.preparedGhost;if(!tx||!ghost?.isConnected||typeof ghost.animate!=='function')return null;
-  const targetAt=peerRoomRenderSyncLocalHostTime(dropAtHost),createdAt=Date.now(),delay=Math.max(0,targetAt-createdAt),distance=peerRoomRenderSyncDistance(ghost),dropId=`prd_${tx.version}_${++peerRoomRenderSyncState.dropSequence}`;
+  const targetAt=peerRoomRenderSyncLocalHostTime(dropAtHost),timelineTarget=peerRoomRenderSyncTimelineTarget(targetAt),createdAt=Date.now(),delay=Math.max(0,targetAt-createdAt),distance=peerRoomRenderSyncDistance(ghost),dropId=`prd_${tx.version}_${++peerRoomRenderSyncState.dropSequence}`;
   state.dropAtHost=Number(dropAtHost);state.dropStarted=true;state.presentation.presentAtHost=Number(dropAtHost);tx.presentation.presentAtHost=Number(dropAtHost);
   ghost.dataset.peerRoomSyncTarget=String(targetAt);ghost.dataset.peerRoomSyncDropId=dropId;ghost.classList.add('peerRoomWaapiDrop');document.body.classList.remove('peer-room-sync-prepared');
   const animation=ghost.animate([
@@ -137,11 +149,12 @@ function peerRoomRenderSyncCreateDropAnimation(state,dropAtHost){
     {offset:.68,transform:'translateY(7%) scale(1.025)',filter:'brightness(1.02)',opacity:1},
     {offset:.84,transform:'translateY(-3%) scale(.995)',filter:'none',opacity:1},
     {offset:1,transform:'translateY(0) scale(1)',filter:'none',opacity:1}
-  ],{duration:tx.duration,delay,easing:'cubic-bezier(.18,.78,.25,1.04)',fill:'both'});
-  const active={id:dropId,version:tx.version,targetAt,duration:tx.duration,createdAt,delay,animation,ghost,finished:false};peerRoomRenderSyncState.activeDrop=active;
+  ],{duration:tx.duration,delay:0,easing:'cubic-bezier(.18,.78,.25,1.04)',fill:'both'});
+  animation.startTime=timelineTarget;
+  const active={id:dropId,version:tx.version,targetAt,timelineTarget,duration:tx.duration,createdAt,delay,animation,ghost,finished:false};peerRoomRenderSyncState.activeDrop=active;
   peerRoomRenderSyncState.lastDrop={id:dropId,version:tx.version,targetAt,duration:tx.duration,createdAt,delay,finishedAt:null};
   peerRoomPresentationSyncState.lastPresentation={...peerRoomPresentationSyncState.lastPresentation,targetAt,dropAtHost:Number(dropAtHost),animationEngine:'waapi',waapiCreatedAt:createdAt,waapiDelayMs:delay,commitTargetAt:targetAt+tx.duration};
-  try{document.dispatchEvent(new CustomEvent('peer-room-drop-created',{detail:{id:dropId,version:tx.version,targetAt,duration:tx.duration,createdAt,delay,hostDropReady:state.hostDropReady,guestDropReady:state.guestDropReady,dropStarted:state.dropStarted}}))}catch{}
+  try{document.dispatchEvent(new CustomEvent('peer-room-drop-created',{detail:{id:dropId,version:tx.version,targetAt,timelineTarget,animationStartTime:animation.startTime,effectDelay:animation.effect.getTiming().delay,duration:tx.duration,createdAt,delay,hostDropReady:state.hostDropReady,guestDropReady:state.guestDropReady,dropStarted:state.dropStarted}}))}catch{}
   peerRoomPresentationSyncScheduleAt('dropStart',targetAt,()=>peerRoomRenderSyncStart(tx));
   animation.finished.then(()=>{
     if(active.finished)return;active.finished=true;const finishedAt=Date.now();if(peerRoomRenderSyncState.lastDrop?.id===dropId)peerRoomRenderSyncState.lastDrop={...peerRoomRenderSyncState.lastDrop,finishedAt};
@@ -158,7 +171,7 @@ function peerRoomRenderSyncStartPreparedDrop(state,dropAtHost){
 }
 function peerRoomRenderSyncMaybeStartHostDrop(){
   const state=peerRoomRenderSyncCurrent();if(peerRoom?.role!=='host'||!state||state.dropStarted||!state.hostDropReady||!state.guestDropReady)return false;
-  const conn=peerRoom.connections?.get?.(2),dropAtHost=Date.now()+peerRoomRenderSyncDropLeadMs(conn);state.dropAtHost=dropAtHost;
+  const conn=peerRoom.connections?.get?.(2),sentAt=Date.now(),dropAtHost=sentAt+peerRoomRenderSyncDropLeadMs(conn);state.dropAtHost=dropAtHost;state.dropGoSentAt=sentAt;
   if(conn?.open)peerRoomSend(conn,{kind:'room-presentation-drop-go',protocol:PEER_ROOM_PROTOCOL,syncProtocol:PEER_ROOM_PRESENTATION_SYNC_PROTOCOL,id:state.id,version:state.version,dropAtHost,duration:state.tx.duration});
   return peerRoomRenderSyncStartPreparedDrop(state,dropAtHost)
 }
@@ -207,6 +220,10 @@ globalThis.duelFinishNetworkPresentation=duelFinishNetworkPresentation;
 
 const peerRoomHostMessageBeforeRenderSync=peerRoomHostMessage;
 peerRoomHostMessage=function(conn,data){
+  if(data?.protocol===PEER_ROOM_PROTOCOL&&data?.syncProtocol===PEER_ROOM_PRESENTATION_SYNC_PROTOCOL&&data?.kind==='room-presentation-drop-received'){
+    if(Number(conn?.__peerRoomSeat)!==2)return;const state=peerRoomRenderSyncCurrent(Number(data.version));if(!state||String(data.id||'')!==state.id||!Number.isFinite(state.dropGoSentAt))return;
+    const receipt=Number(data.estimatedHostReceivedAt);if(Number.isFinite(receipt)){const delivery=Math.max(0,Math.min(4000,receipt-state.dropGoSentAt));conn.__peerRoomPresentationDeliveryMs=Math.max(Number(conn.__peerRoomPresentationDeliveryMs)||0,delivery)}return
+  }
   if(data?.protocol===PEER_ROOM_PROTOCOL&&data?.syncProtocol===PEER_ROOM_PRESENTATION_SYNC_PROTOCOL&&data?.kind==='room-presentation-drop-ready'){
     if(Number(conn?.__peerRoomSeat)!==2)return;const state=peerRoomRenderSyncCurrent(Number(data.version));if(!state||String(data.id||'')!==state.id)return;state.guestDropReady=true;state.guestDropReadyAt=Number(data.preparedAtGuest)||Date.now();peerRoomRenderSyncMaybeStartHostDrop();return
   }
@@ -220,7 +237,7 @@ globalThis.peerRoomHostMessage=peerRoomHostMessage;
 const peerRoomGuestMessageBeforeRenderSync=peerRoomGuestMessage;
 peerRoomGuestMessage=function(data){
   if(data?.protocol===PEER_ROOM_PROTOCOL&&data?.syncProtocol===PEER_ROOM_PRESENTATION_SYNC_PROTOCOL&&data?.kind==='room-presentation-drop-go'){
-    const state=peerRoomRenderSyncCurrent(Number(data.version));if(!state||String(data.id||'')!==state.id)return;peerRoomRenderSyncStartPreparedDrop(state,Number(data.dropAtHost));return
+    const state=peerRoomRenderSyncCurrent(Number(data.version));if(!state||String(data.id||'')!==state.id)return;peerRoomRenderSyncStartPreparedDrop(state,Number(data.dropAtHost));if(peerRoom.conn?.open)peerRoomSend(peerRoom.conn,{kind:'room-presentation-drop-received',protocol:PEER_ROOM_PROTOCOL,syncProtocol:PEER_ROOM_PRESENTATION_SYNC_PROTOCOL,id:state.id,version:state.version,estimatedHostReceivedAt:peerRoomPresentationSyncEstimateHostReceipt(Date.now())});return
   }
   if(data?.protocol===PEER_ROOM_PROTOCOL&&data?.syncProtocol===PEER_ROOM_PRESENTATION_SYNC_PROTOCOL&&data?.kind==='room-presentation-events-go'){
     const state=peerRoomRenderSyncCurrent(Number(data.version));if(!state||String(data.id||'')!==state.id)return;peerRoomRenderSyncArmEvents(state,Number(data.eventsAtHost));return
