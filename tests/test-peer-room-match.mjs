@@ -26,7 +26,7 @@ for(const token of [
 
 for(const token of [
   "link.href='src/styles/68-peer-room-match.css'",
-  "script.src='src/js/36-peer-room-match.js'",
+  "script.src='src/js/36-peer-room-match.js?v=0.20.7'",
   'peerRoomLoadPlayableMatch()'
 ])assert.ok(hardening.includes(token),`Peer Room 0.20 loader missing: ${token}`);
 

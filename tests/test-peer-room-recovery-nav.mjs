@@ -5,7 +5,7 @@ import vm from 'node:vm';
 const src=fs.readFileSync('src/js/42-peer-room-recovery-nav.js','utf8');
 const loader=fs.readFileSync('src/js/35-peer-room-hardening.js','utf8');
 for(const token of [
-  "PEER_ROOM_RECOVERY_NAV_VERSION='0.20.6'",
+  "PEER_ROOM_RECOVERY_NAV_VERSION='0.20.7'",
   'peerRoomRecoveryObserveConnection',
   'peerRoomRecoveryFailConnection',
   'peerRoomRecoveryCreateGuestPeer',
@@ -17,8 +17,8 @@ for(const token of [
   "'duelLeaveButton'",
   'peerRoomMatchRequestLobby'
 ])assert.ok(src.includes(token),`missing recovery/navigation contract: ${token}`);
-assert.ok(loader.includes("src/js/42-peer-room-recovery-nav.js"),'0.20.6 must load after presentation sync');
-assert.ok(loader.includes("addEventListener('load',peerRoomLoadRecoveryNav"),'0.20.6 must wait for 0.20.5');
+assert.ok(loader.includes("src/js/42-peer-room-recovery-nav.js"),'0.20.7 must load after presentation sync');
+assert.ok(loader.includes("addEventListener('load',peerRoomLoadRecoveryNav"),'0.20.7 must wait for 0.20.5');
 for(const forbidden of ['s.board=','peerRoomMatch.authority.state=','applyLocalDuelMove(','resolveRaw('])assert.ok(!src.includes(forbidden),`recovery layer must not mutate canonical gameplay: ${forbidden}`);
 
 function emitter(target={}){const handlers=new Map();target.on=(name,fn)=>{if(!handlers.has(name))handlers.set(name,[]);handlers.get(name).push(fn);return target};target.emit=(name,...args)=>{for(const fn of handlers.get(name)||[])fn(...args)};return target}
@@ -56,4 +56,22 @@ pendingReconnect[0].fn();assert.equal(made.length,1,'automatic recovery must cre
 const second=made[0];second.open=true;second.emit('open');second.emit('data',{protocol:1,kind:'room-welcome',seat:2});
 assert.equal(context.peerRoomRecoveryState.attempt,0,'successful room welcome must reset retry backoff');assert.equal(context.peerRoomRecoveryState.connecting,false);assert.equal(retryButton.hidden,true,'retry action hides after recovery');
 
-console.log('PASS Peer Room 0.20.6 recovery/nav: stale WebRTC attempts are retired, retries are single-flight, welcome resets recovery, manual retry is exposed, and Back routing stays outside canonical gameplay');
+// A live ordinary duel must leave the session, not merely hide its overlay.
+let returned=0;context.duelSession={active:true};context.duelReturnToModeHub=options=>{assert.equal(options.notify,true);returned++;context.duelSession.active=false};
+context.c4BackAction();assert.equal(returned,1,'regular multiplayer Lobby must tear down the active network session');
+assert.ok(src.includes('position:static;flex:0 0 auto;'),'Lobby belongs in the toolbar');
+
+// Connect before the extension chain loads, then replace the handler as those layers do.
+const foundation=fs.readFileSync('src/js/34-peer-room-foundation.js','utf8');
+const inbox={globalThis:null,peerRoom:{conn:null,intentionalClose:false},PEER_ROOM_PROTOCOL:1,peerRoomGuestMessage(){throw Error('early packet reached incomplete runtime')},peerRoomMatchRenderLobby(){},peerRoomStatus(){},peerRoomSend(){},peerRoomScheduleReconnect(){}};inbox.globalThis=inbox;
+vm.createContext(inbox);
+vm.runInContext(foundation.slice(foundation.indexOf('globalThis.peerRoom=peerRoom;'),foundation.indexOf('function peerRoomEl('))+foundation.slice(foundation.indexOf('function peerRoomGuestBind('),foundation.indexOf('function peerRoomGuestConnect(')),inbox);
+const cold=makeConn();inbox.peerRoomGuestBind(cold);
+cold.emit('data',{protocol:1,kind:'room-welcome',seat:2});cold.emit('data',{protocol:1,kind:'room-match-start',version:1});
+const received=[];inbox.peerRoomGuestMessage=data=>received.push(data.kind);
+inbox.peerRoomGameplayLoaded();assert.deepEqual(received,['room-welcome','room-match-start'],'cold invite packets replay in arrival order into the final handler');
+inbox.peerRoomGuestMessage=data=>received.push('latest:'+data.kind);cold.emit('data',{protocol:1,kind:'room-match-payload'});
+assert.equal(received.at(-1),'latest:room-match-payload','existing connections resolve handler replacements at delivery time');
+inbox.peerRoom.conn=makeConn();cold.emit('data',{protocol:1,kind:'room-match-start'});assert.equal(received.length,3,'retired connection packets cannot enter the new match');
+
+console.log('PASS Peer Room 0.20.7 recovery/nav: stale WebRTC attempts are retired, retries are single-flight, welcome resets recovery, manual retry is exposed, and Back routing stays outside canonical gameplay');

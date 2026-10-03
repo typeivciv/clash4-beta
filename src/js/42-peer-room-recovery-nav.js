@@ -1,5 +1,5 @@
 'use strict';
-const PEER_ROOM_RECOVERY_NAV_VERSION='0.20.6';
+const PEER_ROOM_RECOVERY_NAV_VERSION='0.20.7';
 const PEER_ROOM_RECOVERY_CONNECT_TIMEOUT_MS=18000;
 const PEER_ROOM_RECOVERY_MAX_BACKOFF_MS=4200;
 
@@ -125,12 +125,13 @@ function c4BackNative(){return [...document.querySelectorAll('#duelBackButton,#d
 function c4BackOnHome(){const active=document.querySelector('.introScreen.active');return !!(active&&(active.classList.contains('gameHome')||/home/i.test(active.id||'')))}
 function c4BackEnsure(){
   if(typeof document==='undefined')return null;let button=document.getElementById('c4UniversalBack');if(button)return button;
-  button=document.createElement('button');button.id='c4UniversalBack';button.className='c4UniversalBack';button.type='button';button.textContent='← Back';button.setAttribute('aria-label','Go back');button.addEventListener('click',c4BackAction);document.body.append(button);return button
+  button=document.createElement('button');button.id='c4UniversalBack';button.className='c4UniversalBack';button.type='button';button.textContent='← Back';button.setAttribute('aria-label','Go back');button.addEventListener('click',c4BackAction);(document.querySelector('.topActions')||document.body).append(button);return button
 }
 function c4BackAction(){
   const modal=document.getElementById('alphaTesterModal');if(modal&&!modal.hidden){document.getElementById('alphaTesterClose')?.click();return}
   const help=document.querySelector('.helpOverlay.show');if(help){document.querySelector('.helpClose')?.click();return}
   if(globalThis.peerRoomMatch?.phase==='active'&&document.body.classList.contains('peer-room-match-active')){globalThis.peerRoomMatchRequestLobby?.();return}
+  if(typeof duelSession!=='undefined'&&duelSession.active&&typeof duelReturnToModeHub==='function'){duelReturnToModeHub({notify:true});return}
   const waiting=document.getElementById('duelWaitingPanel');if(c4BackVisible(waiting)){document.getElementById('duelLeaveButton')?.click();return}
   for(const id of ['peerRoomBack','duelDirectBack','duelOnlineBack','duelBackButton']){const el=document.getElementById(id);if(c4BackVisible(el)){el.click();return}}
   for(const id of ['homeBottom','reviewHome','sidebarHome']){const el=document.getElementById(id);if(c4BackVisible(el)){el.click();return}}
@@ -138,11 +139,11 @@ function c4BackAction(){
   try{if(typeof globalThis.setIntroScreen==='function'){globalThis.setIntroScreen('home');return}}catch{}
   try{if(history.length>1)history.back()}catch{}
 }
-function c4BackSync(){const button=c4BackEnsure();if(!button)return;button.hidden=!!c4BackNative()||c4BackOnHome()}
+function c4BackSync(){const button=c4BackEnsure();if(!button)return;const top=document.querySelector('.topActions');if(top&&button.parentElement!==top)top.append(button);const playing=typeof duelSession!=='undefined'&&duelSession.active;button.textContent=playing?'← Lobby':'← Back';button.setAttribute('aria-label',playing?'Back to multiplayer lobby':'Go back');const hidden=!!c4BackNative()||c4BackOnHome();if(button.hidden!==hidden)button.hidden=hidden}
 function c4BackInstallStyle(){
   if(document.querySelector('style[data-c4-back-recovery]'))return;const style=document.createElement('style');style.dataset.c4BackRecovery='1';style.textContent=`
   .peerRoomRetryConnection{width:100%;margin:8px 0 2px;min-height:44px}
-  .c4UniversalBack{position:fixed;z-index:120;left:max(10px,env(safe-area-inset-left));top:max(10px,env(safe-area-inset-top));min-height:42px;padding:8px 12px;border:1px solid #40516b;border-radius:11px;background:rgba(12,20,33,.94);color:#eef4ff;font:800 12px/1 Inter,system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28);backdrop-filter:blur(8px)}
+  .c4UniversalBack{position:static;flex:0 0 auto;min-height:42px;padding:8px 12px;border:1px solid #40516b;border-radius:11px;background:rgba(12,20,33,.94);color:#eef4ff;font:800 12px/1 Inter,system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28);backdrop-filter:blur(8px)}
   .c4UniversalBack[hidden]{display:none!important}@media(pointer:coarse){.c4UniversalBack{min-height:44px;min-width:76px}}`;
   document.head.append(style)
 }
