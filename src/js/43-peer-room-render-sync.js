@@ -4,7 +4,7 @@ const PEER_ROOM_RENDER_SYNC_MIN_LEAD_MS=420;
 const PEER_ROOM_RENDER_SYNC_DROP_MIN_LEAD_MS=180;
 const PEER_ROOM_RENDER_SYNC_DROP_MAX_LEAD_MS=700;
 const PEER_ROOM_RENDER_SYNC_EVENT_MIN_AFTER_DROP_MS=160;
-const PEER_ROOM_RENDER_SYNC_EVENT_ARM_LEAD_MS=260;
+const PEER_ROOM_RENDER_SYNC_EVENT_ARM_LEAD_MS=1200;
 
 const peerRoomRenderSyncEventState={current:null};
 const peerRoomRenderSyncState={dropSequence:0,activeDrop:null,lastDrop:null};
@@ -91,8 +91,12 @@ function peerRoomRenderSyncArmEvents(state,eventsAtHost){
 function peerRoomRenderSyncMaybeStartHostEvents(){
   const state=peerRoomRenderSyncCurrent();
   if(peerRoom?.role!=='host'||!state||state.complete||state.scheduled||!state.queue.length||!state.hostCommitReady||!state.guestCommitReady)return false;
-  const eventsAtHost=Date.now()+PEER_ROOM_RENDER_SYNC_EVENT_ARM_LEAD_MS;state.eventsAtHost=eventsAtHost;
-  const conn=peerRoom.connections?.get?.(2);if(conn?.open)peerRoomSend(conn,{kind:'room-presentation-events-go',protocol:PEER_ROOM_PROTOCOL,syncProtocol:PEER_ROOM_PRESENTATION_SYNC_PROTOCOL,id:state.id,version:state.version,eventsAtHost});
+  const conn=peerRoom.connections?.get?.(2);
+  // Commit-ready is received after both boards finish rendering. Allow the GO
+  // packet the measured delivery budget plus a mobile scheduling margin.
+  const lead=Math.max(PEER_ROOM_RENDER_SYNC_EVENT_ARM_LEAD_MS,peerRoomPresentationSyncReceiptLeadMs(conn));
+  const eventsAtHost=Date.now()+lead;state.eventsAtHost=eventsAtHost;
+  if(conn?.open)peerRoomSend(conn,{kind:'room-presentation-events-go',protocol:PEER_ROOM_PROTOCOL,syncProtocol:PEER_ROOM_PRESENTATION_SYNC_PROTOCOL,id:state.id,version:state.version,eventsAtHost});
   return peerRoomRenderSyncArmEvents(state,eventsAtHost)
 }
 function peerRoomRenderSyncSignalCommitReady(state){
