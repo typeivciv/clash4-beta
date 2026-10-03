@@ -81,7 +81,7 @@ function peerRoomMatchRenderLobby(){
   }
   if(badge)badge.textContent='LOBBY';if(view)view.hidden=true;
   if(peerRoom?.role==='host'){
-    const ready=peerRoomMatchSeat2Online();if(start){start.hidden=false;start.disabled=!ready;start.textContent=ready?'Start Shared Match':'Waiting for Player 2'}
+    const ready=peerRoomMatchSeat2Online()&&globalThis.peerRoomGameplayReady!==false;if(start){start.hidden=false;start.disabled=!ready;start.textContent=globalThis.peerRoomGameplayReady===false?'Loading shared match…':ready?'Start Shared Match':'Waiting for Player 2'}
     if(copy)copy.textContent=ready?'Player 2 is connected. Start the shared Clash 4 match when ready.':'Connect Player 2 to enable the shared game.';
     if(role)role.textContent='You are Player 1 · Players 3–4 join as spectators.'
   }else{
@@ -113,7 +113,7 @@ function peerRoomMatchEnterPayload(payload,matchId,seat=peerRoom?.seat){
 function peerRoomMatchViewLive(){if(!peerRoomMatch.lastPayload)return;peerRoomMatch.watching=true;peerRoomMatchEnterPayload(peerRoomMatch.lastPayload,peerRoomMatch.matchId,peerRoom.seat)}
 
 function peerRoomMatchStart(){
-  if(peerRoom?.role!=='host'||peerRoomMatch.phase==='active'||!peerRoomMatchSeat2Online())return;
+  if(globalThis.peerRoomGameplayReady===false||peerRoom?.role!=='host'||peerRoomMatch.phase==='active'||!peerRoomMatchSeat2Online())return;
   peerRoomMatch.matchId=`prm_${peerRoomRandom(12)}`;peerRoomMatch.phase='active';peerRoomMatch.watching=true;peerRoomMatch.authority={state:makeLocalDuelState(randomDuelStarter()),version:1};peerRoomMatch.lastPayload=null;
   peerRoomStatus('Starting shared Clash 4 match…','ok');peerRoomMatchBroadcast([],'room-match-start')
 }

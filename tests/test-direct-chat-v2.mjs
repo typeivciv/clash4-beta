@@ -28,7 +28,7 @@ for(const token of [
   "directChatEl('directChatInput')?.blur()",
   'function directChatV2LoadPeerRoomFoundation()',
   "link.href='src/styles/67-peer-room-foundation.css'",
-  "script.src='src/js/34-peer-room-foundation.js'",
+  "script.src='src/js/34-peer-room-foundation.js?v=0.20.7'",
   'globalThis.directChatV2='
 ])assert.ok(js.includes(token),`Universal Chat v2 JS missing ${token}`);
 

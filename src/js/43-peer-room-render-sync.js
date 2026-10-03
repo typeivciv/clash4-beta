@@ -235,3 +235,6 @@ globalThis.peerRoomTransactionClearVisual=peerRoomTransactionClearVisual;if(glob
 
 peerRoomRenderSyncInstallStyle();
 globalThis.peerRoomRenderSync={version:PEER_ROOM_RENDER_SYNC_VERSION,prepare:peerRoomRenderSyncPrepare,start:peerRoomRenderSyncStart,clear:peerRoomRenderSyncClearPrepared,eventState:peerRoomRenderSyncEventState,state:peerRoomRenderSyncState,eventTarget:peerRoomRenderSyncEventTarget,armEvents:peerRoomRenderSyncArmEvents};
+
+// Dispatch cold-invite packets only after all gameplay handlers are installed.
+if(typeof peerRoomGameplayLoaded==='function')peerRoomGameplayLoaded();

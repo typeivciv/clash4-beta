@@ -17,6 +17,21 @@ let peerRoom={
 };
 
 globalThis.peerRoom=peerRoom;
+// Invite auto-join can connect before the asynchronous gameplay extensions load.
+globalThis.peerRoomGameplayReady=false;
+let peerRoomPendingMessages=[];
+function peerRoomReceiveGuest(conn,data){
+  if(conn!==peerRoom.conn||peerRoom.intentionalClose)return;
+  if(!data||typeof data!=='object'||data.protocol!==PEER_ROOM_PROTOCOL)return;
+  if(!globalThis.peerRoomGameplayReady){peerRoomPendingMessages.push({conn,data});return}
+  peerRoomGuestMessage(data)
+}
+function peerRoomGameplayLoaded(){
+  globalThis.peerRoomGameplayReady=true;
+  const pending=peerRoomPendingMessages;peerRoomPendingMessages=[];
+  for(const {conn,data} of pending)peerRoomReceiveGuest(conn,data);
+  if(typeof peerRoomMatchRenderLobby==='function')peerRoomMatchRenderLobby()
+}
 function peerRoomEl(id){return document.getElementById(id)}
 function peerRoomRandom(length=10){const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';const bytes=new Uint8Array(length);try{crypto.getRandomValues(bytes)}catch{for(let i=0;i<length;i++)bytes[i]=Math.floor(Math.random()*256)}return Array.from(bytes,b=>alphabet[b%alphabet.length]).join('')}
 function peerRoomNormalizeText(value){return String(value??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,PEER_ROOM_CHAT_CHARS)}
@@ -185,7 +200,7 @@ function peerRoomRestoreHost(snapshot){
 function peerRoomGuestBind(conn){
   peerRoom.conn=conn;
   conn.on('open',()=>{peerRoom.active=true;peerRoomStatus('Connected to host. Claiming your seat…');peerRoomSend(conn,{kind:'room-join',protocol:PEER_ROOM_PROTOCOL,clientKey:peerRoom.clientKey})});
-  conn.on('data',peerRoomGuestMessage);
+  conn.on('data',data=>peerRoomReceiveGuest(conn,data));
   conn.on('close',()=>{if(peerRoom.intentionalClose)return;peerRoom.active=false;peerRoomStatus('Connection interrupted. Reconnecting to the host…','warn');peerRoomScheduleReconnect()});
   conn.on('error',()=>{if(!peerRoom.intentionalClose){peerRoomStatus('WebRTC connection error. Retrying…','warn');peerRoomScheduleReconnect()}})
 }
@@ -218,6 +233,7 @@ async function peerRoomShareInvite(){const link=peerRoomInviteLink();if(navigato
 async function peerRoomCopyDiagnostics(){const lines=[`Clash 4 Peer Room ${PEER_ROOM_VERSION}`,`Role: ${peerRoom.role||'none'}`,`Seat: ${peerRoom.seat||'none'}`,`Room: ${peerRoom.roomId||'none'}`,`Host peer: ${peerRoom.hostId||'none'}`,`Active: ${peerRoom.active}`,`Seats: ${peerRoom.seats.map(s=>`${s.seat}:${s.connected?'online':s.reserved?'reserved':'open'}`).join(', ')}`,`Projection version: ${peerRoom.projectionVersion}`];try{await navigator.clipboard.writeText(lines.join('\n'));peerRoomStatus('Room diagnostics copied.','ok')}catch{peerRoomStatus(lines.join(' · '))}}
 
 function peerRoomShutdown({notify=false,clearPersistence=false}={}){
+  peerRoomPendingMessages=[];
   peerRoom.intentionalClose=true;if(peerRoom.reconnectTimer)clearTimeout(peerRoom.reconnectTimer);peerRoom.reconnectTimer=null;
   if(peerRoom.role==='host'&&notify)peerRoomBroadcast({kind:'room-ended',protocol:PEER_ROOM_PROTOCOL});
   if(peerRoom.role==='guest'&&notify&&peerRoom.conn?.open)peerRoomSend(peerRoom.conn,{kind:'room-leave',protocol:PEER_ROOM_PROTOCOL});

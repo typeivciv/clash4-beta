@@ -3,6 +3,8 @@ name: Peer Room Browser Playtest
 on:
   pull_request:
     paths:
+      - 'src/js/34-peer-room-foundation.js'
+      - 'src/js/43-peer-room-render-sync.js'
       - 'src/js/35-peer-room-hardening.js'
       - 'src/js/36-peer-room-match.js'
       - 'src/js/37-peer-room-runtime.js'

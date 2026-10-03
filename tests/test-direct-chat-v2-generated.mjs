@@ -14,7 +14,7 @@ for(const token of [
   '.direct-chat-input-focused .directChatV2.has-draft .directChatQuickRow{display:none}',
   'function directChatV2LoadPeerRoomFoundation()',
   "link.href='src/styles/67-peer-room-foundation.css'",
-  "script.src='src/js/34-peer-room-foundation.js'",
+  "script.src='src/js/34-peer-room-foundation.js?v=0.20.7'",
   'viewport-fit=cover,interactive-widget=resizes-content'
 ])assert.ok(alpha.includes(token),`generated Alpha missing Universal Chat/Peer Room loader token: ${token}`);
 
