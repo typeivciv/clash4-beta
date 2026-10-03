@@ -1,7 +1,7 @@
 'use strict';
 const PEER_ROOM_RENDER_SYNC_VERSION='0.20.8';
 const PEER_ROOM_RENDER_SYNC_MIN_LEAD_MS=420;
-const PEER_ROOM_RENDER_SYNC_DROP_MIN_LEAD_MS=420;
+const PEER_ROOM_RENDER_SYNC_DROP_MIN_LEAD_MS=700;
 const PEER_ROOM_RENDER_SYNC_DROP_MAX_LEAD_MS=2400;
 const PEER_ROOM_RENDER_SYNC_EVENT_MIN_AFTER_DROP_MS=160;
 const PEER_ROOM_RENDER_SYNC_EVENT_ARM_LEAD_MS=1200;
@@ -171,7 +171,7 @@ function peerRoomRenderSyncStartPreparedDrop(state,dropAtHost){
 }
 function peerRoomRenderSyncMaybeStartHostDrop(){
   const state=peerRoomRenderSyncCurrent();if(peerRoom?.role!=='host'||!state||state.dropStarted||!state.hostDropReady||!state.guestDropReady)return false;
-  const conn=peerRoom.connections?.get?.(2),dropAtHost=Date.now()+peerRoomRenderSyncDropLeadMs(conn);state.dropAtHost=dropAtHost;
+  const conn=peerRoom.connections?.get?.(2),sentAt=Date.now(),dropAtHost=sentAt+peerRoomRenderSyncDropLeadMs(conn);state.dropAtHost=dropAtHost;state.dropGoSentAt=sentAt;
   if(conn?.open)peerRoomSend(conn,{kind:'room-presentation-drop-go',protocol:PEER_ROOM_PROTOCOL,syncProtocol:PEER_ROOM_PRESENTATION_SYNC_PROTOCOL,id:state.id,version:state.version,dropAtHost,duration:state.tx.duration});
   return peerRoomRenderSyncStartPreparedDrop(state,dropAtHost)
 }
@@ -220,6 +220,10 @@ globalThis.duelFinishNetworkPresentation=duelFinishNetworkPresentation;
 
 const peerRoomHostMessageBeforeRenderSync=peerRoomHostMessage;
 peerRoomHostMessage=function(conn,data){
+  if(data?.protocol===PEER_ROOM_PROTOCOL&&data?.syncProtocol===PEER_ROOM_PRESENTATION_SYNC_PROTOCOL&&data?.kind==='room-presentation-drop-received'){
+    if(Number(conn?.__peerRoomSeat)!==2)return;const state=peerRoomRenderSyncCurrent(Number(data.version));if(!state||String(data.id||'')!==state.id||!Number.isFinite(state.dropGoSentAt))return;
+    const receipt=Number(data.estimatedHostReceivedAt);if(Number.isFinite(receipt)){const delivery=Math.max(0,Math.min(4000,receipt-state.dropGoSentAt));conn.__peerRoomPresentationDeliveryMs=Math.max(Number(conn.__peerRoomPresentationDeliveryMs)||0,delivery)}return
+  }
   if(data?.protocol===PEER_ROOM_PROTOCOL&&data?.syncProtocol===PEER_ROOM_PRESENTATION_SYNC_PROTOCOL&&data?.kind==='room-presentation-drop-ready'){
     if(Number(conn?.__peerRoomSeat)!==2)return;const state=peerRoomRenderSyncCurrent(Number(data.version));if(!state||String(data.id||'')!==state.id)return;state.guestDropReady=true;state.guestDropReadyAt=Number(data.preparedAtGuest)||Date.now();peerRoomRenderSyncMaybeStartHostDrop();return
   }
@@ -233,7 +237,7 @@ globalThis.peerRoomHostMessage=peerRoomHostMessage;
 const peerRoomGuestMessageBeforeRenderSync=peerRoomGuestMessage;
 peerRoomGuestMessage=function(data){
   if(data?.protocol===PEER_ROOM_PROTOCOL&&data?.syncProtocol===PEER_ROOM_PRESENTATION_SYNC_PROTOCOL&&data?.kind==='room-presentation-drop-go'){
-    const state=peerRoomRenderSyncCurrent(Number(data.version));if(!state||String(data.id||'')!==state.id)return;peerRoomRenderSyncStartPreparedDrop(state,Number(data.dropAtHost));return
+    const state=peerRoomRenderSyncCurrent(Number(data.version));if(!state||String(data.id||'')!==state.id)return;peerRoomRenderSyncStartPreparedDrop(state,Number(data.dropAtHost));if(peerRoom.conn?.open)peerRoomSend(peerRoom.conn,{kind:'room-presentation-drop-received',protocol:PEER_ROOM_PROTOCOL,syncProtocol:PEER_ROOM_PRESENTATION_SYNC_PROTOCOL,id:state.id,version:state.version,estimatedHostReceivedAt:peerRoomPresentationSyncEstimateHostReceipt(Date.now())});return
   }
   if(data?.protocol===PEER_ROOM_PROTOCOL&&data?.syncProtocol===PEER_ROOM_PRESENTATION_SYNC_PROTOCOL&&data?.kind==='room-presentation-events-go'){
     const state=peerRoomRenderSyncCurrent(Number(data.version));if(!state||String(data.id||'')!==state.id)return;peerRoomRenderSyncArmEvents(state,Number(data.eventsAtHost));return
