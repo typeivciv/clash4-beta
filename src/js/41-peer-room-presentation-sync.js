@@ -62,9 +62,8 @@ function peerRoomPresentationSyncLocalEventAnchor(meta){
   return peerRoomPresentationSyncLocalTarget({...meta,presentAtHost:Number(meta?.presentAtHost||Date.now())+duration+PEER_ROOM_PRESENTATION_EVENT_GAP_MS})
 }
 
-// WebKit can occasionally delay a setTimeout even while the page is visible. Peer Room
-// presentation uses a short requestAnimationFrame clock so checker commit and every combat
-// frame are driven by the same absolute host timeline instead of accumulating local timer drift.
+// Race the frame clock and timer against one absolute deadline. Either browser
+// clock may stall; the first due callback cancels both handles and fires once.
 function peerRoomPresentationSyncCancelSchedule(name){
   const record=peerRoomPresentationSyncState.schedules.get(name);if(!record)return;
   record.cancelled=true;
@@ -77,13 +76,22 @@ function peerRoomPresentationSyncScheduleAt(name,targetAt,fn){
   peerRoomPresentationSyncCancelSchedule(name);
   const target=Number(targetAt),record={targetAt:Number.isFinite(target)?target:Date.now(),raf:null,timer:null,cancelled:false};
   peerRoomPresentationSyncState.schedules.set(name,record);
-  const tick=()=>{
-    if(record.cancelled||peerRoomPresentationSyncState.schedules.get(name)!==record)return;
-    if(Date.now()+1>=record.targetAt){peerRoomPresentationSyncState.schedules.delete(name);fn();return}
-    if(typeof requestAnimationFrame==='function')record.raf=requestAnimationFrame(tick);
-    else record.timer=setTimeout(tick,Math.min(16,Math.max(1,record.targetAt-Date.now())))
+  const fireIfDue=()=>{
+    if(record.cancelled||peerRoomPresentationSyncState.schedules.get(name)!==record)return true;
+    if(Date.now()+1<record.targetAt)return false;
+    peerRoomPresentationSyncCancelSchedule(name);fn();return true
   };
-  tick();return record
+  const timerTick=()=>{
+    record.timer=null;
+    if(!fireIfDue())record.timer=setTimeout(timerTick,Math.max(1,record.targetAt-Date.now()))
+  };
+  const frameTick=()=>{
+    record.raf=null;
+    if(!fireIfDue())record.raf=requestAnimationFrame(frameTick)
+  };
+  record.timer=setTimeout(timerTick,Math.max(0,record.targetAt-Date.now()));
+  if(typeof requestAnimationFrame==='function')record.raf=requestAnimationFrame(frameTick);
+  return record
 }
 
 function peerRoomPresentationSyncSendPing(){
