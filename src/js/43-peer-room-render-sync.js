@@ -71,7 +71,26 @@ function peerRoomRenderSyncCurrent(version=null){
 function peerRoomRenderSyncDispatchEvent(state,event,column){
   if(!state||state.complete||peerRoomRenderSyncEventState.current!==state||!state.committed)return;
   if(!peerRoomPresentationSyncActive()){peerRoomRenderSyncFinishEvents(state);return}
-  activePresentation={event,column:presentationColumn(event,column)};render();try{emitFeedback(feedbackCueForEvent(event))}catch{};showEvent(event)
+  activePresentation={event,column:presentationColumn(event,column)};
+  // The canonical board was rendered at commit. Update only presentation classes
+  // here; rebuilding every checker and inventory button at the shared deadline
+  // can delay WebKit's combat cue by hundreds of milliseconds.
+  const eventColumn=activePresentation.column;
+  const special={ 'cooldown-earned':'specialLock',fortified:'specialFortified','critical-defense':'specialCritical',clashmate:'specialClashmate' }[event.kind];
+  const outcome=event.o==='lose'?'combatLose':event.o==='tie'?'combatTie':'combatWin';
+  const classes=['combatColumn','combatTop','combatLose','combatTie','combatWin','specialColumn','specialTop','specialLock','specialFortified','specialCritical','specialClashmate'];
+  const cells=board.querySelectorAll('.cell[data-column]');
+  for(let i=0;i<cells.length;i++){
+    const cell=cells[i];cell.classList.remove(...classes);
+    if(Number(cell.dataset.column)!==eventColumn)continue;
+    if(event.kind==='combat'||special){
+      cell.classList.remove('lastMove','lastMoveHuman','lastMoveAi','lastMoveHumanTop','lastMoveAiTop');
+      if(event.kind==='combat'){cell.classList.add('combatColumn',outcome);if(i<COLS)cell.classList.add('combatTop')}
+      else{cell.classList.add('specialColumn',special);if(i<COLS)cell.classList.add('specialTop')}
+    }
+  }
+  try{renderMobileContext({reviewMode:false,legal:new Set(legalCols(H)),critical:new Set()})}catch{}
+  try{emitFeedback(feedbackCueForEvent(event))}catch{};showEvent(event)
 }
 function peerRoomRenderSyncFinishEvents(state){
   if(!state||state.complete||peerRoomRenderSyncEventState.current!==state||!state.committed)return;
