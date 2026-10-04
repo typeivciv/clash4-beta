@@ -1,8 +1,11 @@
 import { chromium, webkit } from 'playwright';
 import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
 
 const BASE='http://127.0.0.1:8080/multiplayer-alpha.html?playtest=recovery0206';
 const browsers=[];
+const tracked=[];
+let stage='startup';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
 async function waitRuntime(page){await page.waitForFunction(()=>globalThis.peerRoomFoundation&&globalThis.peerRoomRecoveryNav&&globalThis.peerRoomMatchApi,{timeout:20000})}
@@ -14,6 +17,7 @@ try{
   const hostCtx=await chrome.newContext({viewport:{width:412,height:915},deviceScaleFactor:2,isMobile:true,hasTouch:true});
   const guestCtx=await wk.newContext({viewport:{width:390,height:844},deviceScaleFactor:3,isMobile:true,hasTouch:true});
   const host=await hostCtx.newPage(),guest=await guestCtx.newPage();
+  tracked.push(['host',host],['guest',guest]);
   const errors=[];host.on('pageerror',e=>errors.push(`HOST ${e.message}`));guest.on('pageerror',e=>errors.push(`GUEST ${e.message}`));
 
   await host.goto(BASE,{waitUntil:'domcontentloaded'});await waitRuntime(host);
@@ -39,18 +43,25 @@ try{
 
   const spectators=[];
   for(const seat of [3,4]){
+    stage=`join Player ${seat}`;
     const context=await chrome.newContext({viewport:{width:412,height:915},isMobile:true,hasTouch:true});
     const page=await context.newPage();page.on('pageerror',e=>errors.push(`P${seat} ${e.message}`));
+    tracked.push([`P${seat}`,page]);
     await page.goto(invite,{waitUntil:'domcontentloaded'});await waitRuntime(page);
     await page.waitForFunction(seat=>globalThis.peerRoomGameplayReady&&peerRoom.active&&peerRoom.seat===seat,seat,{timeout:20000});spectators.push(page);
   }
 
   const originalSeat=await guest.evaluate(()=>peerRoom.seat);
-  await guest.evaluate(()=>peerRoom.conn?.close());
+  stage='recover Player 2';
+  await guest.evaluate(()=>{globalThis.retiredPeerRoomConn=peerRoom.conn;peerRoom.conn?.close()});
   await guest.waitForFunction(seat=>peerRoom.active&&peerRoom.conn?.open&&peerRoom.seat===seat,originalSeat,{timeout:30000});
   await host.waitForFunction(()=>peerRoom.seats.some(s=>s.seat===2&&s.connected),{timeout:10000});
   const recovery=await guest.evaluate(()=>({seat:peerRoom.seat,attempt:peerRoomRecoveryState.attempt,connecting:peerRoomRecoveryState.connecting,retryHidden:document.getElementById('peerRoomRetryConnection')?.hidden}));
   assert.equal(recovery.seat,2,'guest must reclaim Player 2');assert.equal(recovery.attempt,0,'recovery backoff must reset after welcome');assert.equal(recovery.connecting,false);assert.equal(recovery.retryHidden,true,'manual retry hides after recovery');
+  await guest.evaluate(()=>{retiredPeerRoomConn.emit('close');retiredPeerRoomConn.emit('error',{type:'webrtc'})});
+  assert.equal(await guest.evaluate(()=>peerRoom.active&&peerRoom.conn.open&&peerRoomRecoveryState.attempt===0&&document.getElementById('peerRoomRetryConnection').hidden),true,'late retired callbacks must preserve the recovered live guest');
+  const report=await guest.evaluate(()=>alphaTesterInfo());
+  assert.ok(report.includes('Mode: 2–4 Player Room')&&report.includes('"remoteTypes"')&&report.includes('"route"'),'phone test info includes correct room mode, candidates and selected route');
 
   const start=host.locator('#peerRoomStartGame');await start.waitFor({state:'visible',timeout:5000});await start.tap();
   await host.waitForFunction(()=>peerRoomMatch.phase==='active'&&duelSession.active,{timeout:10000});
@@ -81,6 +92,7 @@ try{
   // Independent regular Direct Duel: the toolbar action must actually leave the match.
   const regularHostCtx=await chrome.newContext({viewport:{width:412,height:915},isMobile:true,hasTouch:true}),regularGuestCtx=await wk.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
   const regularHost=await regularHostCtx.newPage(),regularGuest=await regularGuestCtx.newPage();
+  stage='regular Direct Duel';tracked.push(['direct-host',regularHost],['direct-guest',regularGuest]);
   for(const page of [regularHost,regularGuest])page.on('pageerror',e=>errors.push(`DIRECT ${e.message}`));
   await regularHost.goto(BASE,{waitUntil:'domcontentloaded'});await waitRuntime(regularHost);
   await regularHost.evaluate(()=>{openDuelHub();directCreateNearby()});
@@ -103,4 +115,16 @@ try{
 
   await host.screenshot({path:'artifacts/peer-room-recovery-host.png'});await guest.screenshot({path:'artifacts/peer-room-recovery-guest.png'});
   console.log('PASS Peer Room 0.20.6 real-browser recovery/nav: WebKit guest reconnects to the same seat after DataConnection close, retry state resets, and Back controls remain available in lobby and live match.');
+} catch(error){
+  const evidence={stage,error:String(error),pages:[]};
+  for(const [label,page] of tracked){
+    if(page.isClosed())continue;
+    try{
+      const state=await page.evaluate(async()=>({status:document.getElementById('peerRoomStatus')?.textContent,role:globalThis.peerRoom?.role,active:globalThis.peerRoom?.active,seat:globalThis.peerRoom?.seat,seats:globalThis.peerRoom?.seats?.map(s=>({seat:s.seat,connected:s.connected,reserved:s.reserved})),connecting:globalThis.peerRoomRecoveryState?.connecting,attempt:globalThis.peerRoomRecoveryState?.attempt,report:await globalThis.alphaTesterInfo?.()}));
+      evidence.pages.push({label,...state});await page.screenshot({path:`artifacts/recovery-failure-${label}.png`});
+    }catch(reportError){evidence.pages.push({label,reportError:String(reportError)})}
+  }
+  await fs.writeFile('artifacts/recovery-failure.json',JSON.stringify(evidence,null,2));
+  console.log('RECOVERY FAILURE EVIDENCE',JSON.stringify(evidence));
+  throw error;
 } finally {for(const browser of browsers)await browser.close().catch(()=>{})}

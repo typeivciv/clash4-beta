@@ -155,6 +155,7 @@ jobs:
           node-version: 20
       - name: Syntax checks
         run: |
+          node --check src/js/46-connection-diagnostics.js
           node --check server/direct-signal-store.mjs
           node --check server/duel-server.mjs
           node --check src/js/10-rules.js
@@ -208,6 +209,10 @@ jobs:
           node --check tests/test-peer-room-presentation-sync.mjs
           node --check tests/test-peer-room-recovery-nav.mjs
           python3 -m py_compile tools/build_private_duel_alpha.py tools/build_duel_modes_alpha.py
+      - name: Retired Direct callbacks and connection evidence
+        run: |
+          node tests/test-direct-retry-isolation.mjs
+          node tests/test-direct-connection-diagnostics.mjs
       - name: Client ordering contract
         run: node tests/test-duel-client-contract.mjs
       - name: Server update-history integration

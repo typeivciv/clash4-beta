@@ -35,6 +35,7 @@ async function directAlphaRouteKind(conn){
 async function directAlphaReportRoute(conn){
   await new Promise(resolve=>setTimeout(resolve,250));
   const kind=await directAlphaRouteKind(conn);
+  if(directPeerSession.conn!==conn||!directPeerSession.opened)return;
   if(kind==='relay'){
     directConnectionBadge('online','Connected · relay fallback');
     directSetStatus('Connected through encrypted TURN relay because a direct phone-to-phone route was unavailable.')

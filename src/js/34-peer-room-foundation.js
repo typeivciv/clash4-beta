@@ -154,9 +154,10 @@ function peerRoomHostAssign(conn,clientKey){
   peerRoomBroadcastState();peerRoomStatus(`Player ${seat} connected.`,'ok');return seat
 }
 function peerRoomHostBind(conn){
+  globalThis.c4ConnectionDiagnostics?.observe(conn,'2–4 Player Room','host');
   conn.on('open',()=>peerRoomStatus('Peer connected. Assigning a seat…'));
   conn.on('data',data=>peerRoomHostMessage(conn,data));
-  conn.on('close',()=>{const seat=conn.__peerRoomSeat;if(!seat)return;if(peerRoom.connections.get(seat)===conn)peerRoom.connections.delete(seat);const record=peerRoom.seats.find(s=>s.seat===seat);if(record)record.connected=false;peerRoomBroadcastState();peerRoomStatus(`Player ${seat} disconnected. Their seat is reserved for reconnect.`,'warn')});
+  conn.on('close',()=>{const seat=conn.__peerRoomSeat;if(!seat||peerRoom.connections.get(seat)!==conn)return;peerRoom.connections.delete(seat);const record=peerRoom.seats.find(s=>s.seat===seat);if(record)record.connected=false;peerRoomBroadcastState();peerRoomStatus(`Player ${seat} disconnected. Their seat is reserved for reconnect.`,'warn')});
   conn.on('error',()=>peerRoomStatus('A guest WebRTC connection reported an error.','warn'))
 }
 function peerRoomHostMessage(conn,data){
@@ -198,11 +199,12 @@ function peerRoomRestoreHost(snapshot){
 }
 
 function peerRoomGuestBind(conn){
+  globalThis.c4ConnectionDiagnostics?.observe(conn,'2–4 Player Room','guest');
   peerRoom.conn=conn;
-  conn.on('open',()=>{peerRoom.active=true;peerRoomStatus('Connected to host. Claiming your seat…');peerRoomSend(conn,{kind:'room-join',protocol:PEER_ROOM_PROTOCOL,clientKey:peerRoom.clientKey})});
+  conn.on('open',()=>{if(conn!==peerRoom.conn||peerRoom.intentionalClose)return;peerRoom.active=true;peerRoomStatus('Connected to host. Claiming your seat…');peerRoomSend(conn,{kind:'room-join',protocol:PEER_ROOM_PROTOCOL,clientKey:peerRoom.clientKey})});
   conn.on('data',data=>peerRoomReceiveGuest(conn,data));
-  conn.on('close',()=>{if(peerRoom.intentionalClose)return;peerRoom.active=false;peerRoomStatus('Connection interrupted. Reconnecting to the host…','warn');peerRoomScheduleReconnect()});
-  conn.on('error',()=>{if(!peerRoom.intentionalClose){peerRoomStatus('WebRTC connection error. Retrying…','warn');peerRoomScheduleReconnect()}})
+  conn.on('close',()=>{if(conn!==peerRoom.conn||peerRoom.intentionalClose)return;peerRoom.active=false;peerRoomStatus('Connection interrupted. Reconnecting to the host…','warn');peerRoomScheduleReconnect()});
+  conn.on('error',()=>{if(conn===peerRoom.conn&&!peerRoom.intentionalClose){peerRoomStatus('WebRTC connection error. Retrying…','warn');peerRoomScheduleReconnect()}})
 }
 function peerRoomGuestConnect(){
   if(peerRoom.intentionalClose||peerRoom.role!=='guest'||!peerRoom.hostId||!peerRoom.peer)return;
@@ -230,7 +232,7 @@ function peerRoomJoin(hostId){
 function peerRoomSubmitChat(event){event?.preventDefault?.();const input=peerRoomEl('peerRoomChatInput');if(!input)return;const text=peerRoomNormalizeText(input.value);if(!text)return;input.value='';const id=`rmsg_${peerRoomRandom(12)}`;if(peerRoom.role==='host')peerRoomHostAppendChat(1,text,id);else if(peerRoom.role==='guest'&&peerRoom.conn?.open)peerRoomSend(peerRoom.conn,{kind:'room-chat-submit',protocol:PEER_ROOM_PROTOCOL,id,text})}
 async function peerRoomCopyInvite(){const link=peerRoomInviteLink();try{await navigator.clipboard.writeText(link);peerRoomStatus('Invite link copied.','ok')}catch{const field=peerRoomEl('peerRoomInviteLink');field?.focus();field?.select();peerRoomStatus('Select and copy the invite link.','warn')}}
 async function peerRoomShareInvite(){const link=peerRoomInviteLink();if(navigator.share){try{await navigator.share({title:'Clash 4 Peer Room',text:'Join my Clash 4 Peer Room',url:link});return}catch{}}await peerRoomCopyInvite()}
-async function peerRoomCopyDiagnostics(){const lines=[`Clash 4 Peer Room ${PEER_ROOM_VERSION}`,`Role: ${peerRoom.role||'none'}`,`Seat: ${peerRoom.seat||'none'}`,`Room: ${peerRoom.roomId||'none'}`,`Host peer: ${peerRoom.hostId||'none'}`,`Active: ${peerRoom.active}`,`Seats: ${peerRoom.seats.map(s=>`${s.seat}:${s.connected?'online':s.reserved?'reserved':'open'}`).join(', ')}`,`Projection version: ${peerRoom.projectionVersion}`];try{await navigator.clipboard.writeText(lines.join('\n'));peerRoomStatus('Room diagnostics copied.','ok')}catch{peerRoomStatus(lines.join(' · '))}}
+async function peerRoomCopyDiagnostics(){const text=await alphaTesterInfo();await alphaTesterCopy(text,'Room connection details copied.')}
 
 function peerRoomShutdown({notify=false,clearPersistence=false}={}){
   peerRoomPendingMessages=[];
