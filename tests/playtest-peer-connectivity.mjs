@@ -7,9 +7,17 @@ for(const [name,engine] of [['chromium',chromium],['webkit',webkit]]){
     const page=await browser.newPage();
     await page.goto(BASE,{waitUntil:'domcontentloaded'});
     await page.waitForFunction(()=>globalThis.peerRoomGameplayReady,{timeout:25000});
-    for(const url of ['turn:openrelay.metered.ca:80','turn:openrelay.metered.ca:443?transport=tcp','turns:openrelay.metered.ca:443?transport=tcp']){
+    for(const url of ['turn:openrelay.metered.ca:80','turn:openrelay.metered.ca:443?transport=tcp','turns:openrelay.metered.ca:443?transport=tcp','turn:staticauth.openrelay.metered.ca:443?transport=tcp','turns:staticauth.openrelay.metered.ca:443?transport=tcp']){
       const sample=await page.evaluate(async url=>{
-        const pc=new RTCPeerConnection({iceServers:[{urls:url,username:'openrelayproject',credential:'openrelayproject'}],iceTransportPolicy:'relay'});
+        let username='openrelayproject',credential='openrelayproject';
+        if(url.includes('staticauth.')){
+          // Provider-published public static-auth test service, not an account key.
+          username=String(Math.floor(Date.now()/1000)+86400);
+          const key=await crypto.subtle.importKey('raw',new TextEncoder().encode('openrelayprojectsecret'),{name:'HMAC',hash:'SHA-1'},false,['sign']);
+          const digest=new Uint8Array(await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(username)));
+          credential=btoa(String.fromCharCode(...digest));
+        }
+        const pc=new RTCPeerConnection({iceServers:[{urls:url,username,credential}],iceTransportPolicy:'relay'});
         const candidates=[],errors=[];pc.onicecandidate=e=>{if(e.candidate)candidates.push({type:e.candidate.type,protocol:e.candidate.protocol})};
         pc.onicecandidateerror=e=>errors.push({code:e.errorCode,text:e.errorText,url:e.url});
         const done=new Promise(resolve=>{const timer=setTimeout(resolve,12000);pc.onicegatheringstatechange=()=>{if(pc.iceGatheringState==='complete'){clearTimeout(timer);resolve()}}});
