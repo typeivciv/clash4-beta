@@ -3,6 +3,9 @@ name: Peer Room Browser Playtest
 on:
   pull_request:
     paths:
+      - 'src/js/44-drop-rendering.js'
+      - 'tests/playtest-drop-paint.mjs'
+      - 'tools/build_duel_modes_alpha.py'
       - 'src/js/34-peer-room-foundation.js'
       - 'src/js/43-peer-room-render-sync.js'
       - 'src/js/35-peer-room-hardening.js'
@@ -29,7 +32,7 @@ jobs:
           node-version: 20
       - name: Install browser playtest runtime
         run: |
-          npm install --no-save playwright@1.55.0
+          npm install --no-save playwright@1.55.0 pngjs@7.0.0
           npx playwright install --with-deps chromium webkit
       - name: Build and serve current Alpha
         run: |
@@ -40,6 +43,8 @@ jobs:
           for i in {1..20}; do curl -fsS http://127.0.0.1:8080/multiplayer-alpha.html >/dev/null && exit 0; sleep 0.5; done
           cat /tmp/clash4-http.log
           exit 1
+      - name: Actual drop paint in Chromium and WebKit, both multiplayer modes
+        run: node tests/playtest-drop-paint.mjs
       - name: WebKit guest reconnect + Back navigation
         run: node tests/playtest-peer-room-recovery-nav.mjs
       - name: Chromium host + WebKit guest presentation sync
