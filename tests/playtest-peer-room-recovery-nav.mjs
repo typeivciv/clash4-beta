@@ -46,11 +46,15 @@ try{
   }
 
   const originalSeat=await guest.evaluate(()=>peerRoom.seat);
-  await guest.evaluate(()=>peerRoom.conn?.close());
+  await guest.evaluate(()=>{globalThis.retiredPeerRoomConn=peerRoom.conn;peerRoom.conn?.close()});
   await guest.waitForFunction(seat=>peerRoom.active&&peerRoom.conn?.open&&peerRoom.seat===seat,originalSeat,{timeout:30000});
   await host.waitForFunction(()=>peerRoom.seats.some(s=>s.seat===2&&s.connected),{timeout:10000});
   const recovery=await guest.evaluate(()=>({seat:peerRoom.seat,attempt:peerRoomRecoveryState.attempt,connecting:peerRoomRecoveryState.connecting,retryHidden:document.getElementById('peerRoomRetryConnection')?.hidden}));
   assert.equal(recovery.seat,2,'guest must reclaim Player 2');assert.equal(recovery.attempt,0,'recovery backoff must reset after welcome');assert.equal(recovery.connecting,false);assert.equal(recovery.retryHidden,true,'manual retry hides after recovery');
+  await guest.evaluate(()=>{retiredPeerRoomConn.emit('close');retiredPeerRoomConn.emit('error',{type:'webrtc'})});
+  assert.equal(await guest.evaluate(()=>peerRoom.active&&peerRoom.conn.open&&peerRoomRecoveryState.attempt===0&&document.getElementById('peerRoomRetryConnection').hidden),true,'late retired callbacks must preserve the recovered live guest');
+  const report=await guest.evaluate(()=>alphaTesterInfo());
+  assert.ok(report.includes('Mode: 2–4 Player Room')&&report.includes('"remoteTypes"')&&report.includes('"route"'),'phone test info includes correct room mode, candidates and selected route');
 
   const start=host.locator('#peerRoomStartGame');await start.waitFor({state:'visible',timeout:5000});await start.tap();
   await host.waitForFunction(()=>peerRoomMatch.phase==='active'&&duelSession.active,{timeout:10000});

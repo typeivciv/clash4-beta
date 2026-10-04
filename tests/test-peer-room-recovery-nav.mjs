@@ -55,6 +55,10 @@ const made=[];const peer=emitter({open:true,disconnected:false,destroyed:false,c
 pendingReconnect[0].fn();assert.equal(made.length,1,'automatic recovery must create one new DataConnection');context.peerRoomGuestConnect();assert.equal(made.length,1,'single-flight guard must prevent parallel WebRTC dials');
 const second=made[0];second.open=true;second.emit('open');second.emit('data',{protocol:1,kind:'room-welcome',seat:2});
 assert.equal(context.peerRoomRecoveryState.attempt,0,'successful room welcome must reset retry backoff');assert.equal(context.peerRoomRecoveryState.connecting,false);assert.equal(retryButton.hidden,true,'retry action hides after recovery');
+first.peerConnection.iceConnectionState='failed';first.peerConnection.emit('iceconnectionstatechange');first.emit('error',{type:'webrtc'});first.emit('close');
+assert.equal(context.peerRoomRecoveryState.attempt,0,'retired ICE errors must not increase retry backoff');
+assert.equal(context.peerRoom.conn,second,'retired close must not clear the new guest connection');
+assert.equal(retryButton.hidden,true,'retired close must not expose retry on a connected guest');
 
 // A live ordinary duel must leave the session, not merely hide its overlay.
 let returned=0;context.duelSession={active:true};context.duelReturnToModeHub=options=>{assert.equal(options.notify,true);returned++;context.duelSession.active=false};
@@ -73,5 +77,15 @@ inbox.peerRoomGameplayLoaded();assert.deepEqual(received,['room-welcome','room-m
 inbox.peerRoomGuestMessage=data=>received.push('latest:'+data.kind);cold.emit('data',{protocol:1,kind:'room-match-payload'});
 assert.equal(received.at(-1),'latest:room-match-payload','existing connections resolve handler replacements at delivery time');
 inbox.peerRoom.conn=makeConn();cold.emit('data',{protocol:1,kind:'room-match-start'});assert.equal(received.length,3,'retired connection packets cannot enter the new match');
+inbox.peerRoom.active=true;cold.emit('close');cold.emit('error');
+assert.equal(inbox.peerRoom.active,true,'retired foundation callbacks cannot mark the replacement inactive');
+
+// On the host, a delayed close from a replaced seat must not mark its new connection offline.
+const hostRoom={connections:new Map(),seats:[{seat:2,connected:true}]};
+const hostCtx={globalThis:null,peerRoom:hostRoom,peerRoomStatus(){},peerRoomBroadcastState(){},peerRoomHostMessage(){}};hostCtx.globalThis=hostCtx;vm.createContext(hostCtx);
+vm.runInContext(foundation.slice(foundation.indexOf('function peerRoomHostBind('),foundation.indexOf('function peerRoomHostMessage(')),hostCtx);
+const oldHostConn=makeConn();oldHostConn.__peerRoomSeat=2;hostCtx.peerRoomHostBind(oldHostConn);
+hostRoom.connections.set(2,makeConn());oldHostConn.emit('close');
+assert.equal(hostRoom.seats[0].connected,true,'late old close must preserve the replacement seat online');
 
 console.log('PASS Peer Room 0.20.7 recovery/nav: stale WebRTC attempts are retired, retries are single-flight, welcome resets recovery, manual retry is exposed, and Back routing stays outside canonical gameplay');

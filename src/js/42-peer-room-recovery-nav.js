@@ -34,19 +34,20 @@ function peerRoomRecoveryObserveConnection(conn){
   if(!conn||conn.__peerRoomRecoveryObserved)return conn;conn.__peerRoomRecoveryObserved=true;peerRoomRecoveryState.lastConn=conn;
   const pc=conn.peerConnection;
   const sample=()=>{
+    if(conn!==peerRoom.conn||peerRoom.intentionalClose)return;
     if(!pc)return;peerRoomRecoveryState.lastIce=pc.iceConnectionState||peerRoomRecoveryState.lastIce;peerRoomRecoveryState.lastConnection=pc.connectionState||peerRoomRecoveryState.lastConnection;
     if(pc.iceConnectionState==='failed'||pc.connectionState==='failed')peerRoomRecoveryFailConnection(conn,{type:'webrtc',message:'WebRTC route failed.'},'route-failed')
   };
   pc?.addEventListener?.('iceconnectionstatechange',sample);pc?.addEventListener?.('connectionstatechange',sample);sample();
-  conn.on?.('open',()=>{peerRoomRecoveryState.connecting=false;peerRoomRecoveryClearAttemptTimer();peerRoomRecoveryShowRetry(false)});
-  conn.on?.('data',data=>{if(data?.protocol===PEER_ROOM_PROTOCOL&&data?.kind==='room-welcome')peerRoomRecoveryResetSuccess()});
+  conn.on?.('open',()=>{if(conn!==peerRoom.conn||peerRoom.intentionalClose)return;peerRoomRecoveryState.connecting=false;peerRoomRecoveryClearAttemptTimer();peerRoomRecoveryShowRetry(false)});
+  conn.on?.('data',data=>{if(conn===peerRoom.conn&&!peerRoom.intentionalClose&&data?.protocol===PEER_ROOM_PROTOCOL&&data?.kind==='room-welcome')peerRoomRecoveryResetSuccess()});
   conn.on?.('error',error=>peerRoomRecoveryFailConnection(conn,error,'data-error'));
-  conn.on?.('close',()=>{if(peerRoom.intentionalClose||peerRoom.role!=='guest')return;peerRoomRecoveryState.connecting=false;if(peerRoom.conn===conn)peerRoom.conn=null;peerRoomRecoveryShowRetry(true)});
+  conn.on?.('close',()=>{if(conn!==peerRoom.conn||peerRoom.intentionalClose||peerRoom.role!=='guest')return;peerRoomRecoveryState.connecting=false;peerRoom.conn=null;peerRoomRecoveryShowRetry(true)});
   return conn
 }
 function peerRoomRecoveryFailConnection(conn,error,reason='error'){
   if(peerRoom.intentionalClose||peerRoom.role!=='guest')return;
-  if(conn&&peerRoom.conn&&conn!==peerRoom.conn)return;
+  if(conn&&conn!==peerRoom.conn)return;
   peerRoomRecoveryState.lastError=String(error?.type||error?.message||reason);peerRoomRecoveryState.attempt=Math.min(99,peerRoomRecoveryState.attempt+1);peerRoomRecoveryState.connecting=false;
   peerRoomRecoveryReleaseConn(conn,{close:true});peerRoom.active=false;peerRoomRecoveryShowRetry(true);
   peerRoomRecoverySetStatus(`WebRTC connection interrupted (${peerRoomRecoveryRouteText()}). Retrying automatically…`,'warn');peerRoomScheduleReconnect()
@@ -71,7 +72,7 @@ function peerRoomRecoveryDial(peer){
   peerRoomRecoverySetStatus(peerRoomRecoveryState.attempt?`Retry ${peerRoomRecoveryState.attempt} · finding the host…`:'Finding the host…');
   try{
     const conn=peer.connect(peerRoom.hostId,{reliable:true,serialization:'json',metadata:{protocol:PEER_ROOM_PROTOCOL,clientKey:peerRoom.clientKey}});peerRoom.conn=conn;peerRoomGuestBind(conn);peerRoomRecoveryObserveConnection(conn);
-    peerRoomRecoveryClearAttemptTimer();peerRoomRecoveryState.attemptTimer=setTimeout(()=>{if(generation!==peerRoomRecoveryState.generation||conn.open||peerRoom.intentionalClose)return;peerRoomRecoveryFailConnection(conn,{type:'timeout',message:'Connection attempt timed out.'},'timeout')},PEER_ROOM_RECOVERY_CONNECT_TIMEOUT_MS)
+    peerRoomRecoveryClearAttemptTimer();peerRoomRecoveryState.attemptTimer=setTimeout(()=>{if(generation!==peerRoomRecoveryState.generation||conn!==peerRoom.conn||conn.open||peerRoom.intentionalClose)return;peerRoomRecoveryFailConnection(conn,{type:'timeout',message:'Connection attempt timed out.'},'timeout')},PEER_ROOM_RECOVERY_CONNECT_TIMEOUT_MS)
   }catch(error){peerRoomRecoveryState.connecting=false;peerRoomRecoveryFailConnection(null,error,'dial-error')}
 }
 

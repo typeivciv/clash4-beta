@@ -16,10 +16,11 @@ try{
 }catch{}
 
 function directPeerReset(){
-  if(directPeerSession.timer)clearTimeout(directPeerSession.timer);
-  try{directPeerSession.conn?.close()}catch{}
-  try{directPeerSession.peer?.destroy()}catch{}
-  directPeerSession={peer:null,conn:null,role:null,opened:false,deadline:0,timer:null,lastIce:'new',lastConnection:'new'}
+  const previous=directPeerSession;
+  directPeerSession={peer:null,conn:null,role:null,opened:false,deadline:0,timer:null,lastIce:'new',lastConnection:'new'};
+  if(previous.timer)clearTimeout(previous.timer);
+  try{previous.conn?.close()}catch{}
+  try{previous.peer?.destroy()}catch{}
 }
 function directNearbyManualUi(show){
   const label=directEl('duelDirectSignal')?.closest('.duelSignalLabel'),actions=directEl('duelDirectCopy')?.parentElement,accept=directEl('duelDirectAcceptRow');
@@ -77,24 +78,28 @@ function directReleaseFailedConnection(conn,{close=false}={}){
 function directHostInviteStillLive(){return directPeerSession.role==='host'&&!!directPeerSession.peer&&!directPeerSession.opened&&Date.now()<directPeerSession.deadline}
 function directPeerTimeoutForRole(role){return role==='host'?DIRECT_HOST_INVITE_TTL_MS:DIRECT_PEER_ATTEMPT_TIMEOUT_MS}
 function directPeerChannelAdapter(conn){
+  const session=directPeerSession,isCurrent=()=>session===directPeerSession&&session.conn===conn;
   const channel={readyState:'connecting',onopen:null,onmessage:null,onclose:null,onerror:null,__peerJsConn:conn,
     send(value){conn.send(value)},close(){try{conn.close()}catch{}}};
-  conn.on('open',()=>{channel.readyState='open';directPeerSession.opened=true;if(directPeerSession.timer)clearTimeout(directPeerSession.timer);directRecoveryActions();directNearbyRetryPeerId='';channel.onopen?.();
+  conn.on('open',()=>{if(!isCurrent())return;channel.readyState='open';directPeerSession.opened=true;if(directPeerSession.timer)clearTimeout(directPeerSession.timer);directRecoveryActions();directNearbyRetryPeerId='';channel.onopen?.();
     // Existing P2P connections stay alive after PeerJS signaling disconnects.
     try{directPeerSession.peer?.disconnect()}catch{}
   });
-  conn.on('data',data=>channel.onmessage?.({data:typeof data==='string'?data:JSON.stringify(data)}));
+  conn.on('data',data=>{if(isCurrent())channel.onmessage?.({data:typeof data==='string'?data:JSON.stringify(data)})});
   conn.on('close',()=>{
+    if(!isCurrent())return;
     const wasOpened=directPeerSession.opened,role=directPeerSession.role;channel.readyState='closed';
     if(!wasOpened){directReleaseFailedConnection(conn);directShowRecoveryForRole(role);if(role==='host'&&directHostInviteStillLive())directSetStatus('That connection attempt failed, but this QR/link is still active. Player 2 can change networks and tap Retry Connection — no new invite is required.',{error:true})}
     channel.onclose?.()
   });
-  conn.on('error',error=>channel.onerror?.(error));
+  conn.on('error',error=>{if(isCurrent())channel.onerror?.(error)});
   return channel
 }
 function directObservePeerConnection(conn){
+  globalThis.c4ConnectionDiagnostics?.observe(conn,'Direct Duel',directPeerSession.role);
   const pc=conn?.peerConnection;if(!pc)return;
   const update=()=>{
+    if(directPeerSession.conn!==conn)return;
     directPeerSession.lastIce=pc.iceConnectionState||directPeerSession.lastIce;
     directPeerSession.lastConnection=pc.connectionState||directPeerSession.lastConnection;
     if(directPeerSession.opened)return;
@@ -122,6 +127,7 @@ function directBindPeerJsConnection(conn){
   const channel=directPeerChannelAdapter(conn);directBindChannel(channel);
   // Replace the core's deliberately generic channel error with actionable Direct diagnostics.
   channel.onerror=error=>{
+    if(directPeerSession.conn!==conn)return;
     const role=directPeerSession.role;directConnectionBadge('error','Direct route failed');directReleaseFailedConnection(conn,{close:true});directShowRecoveryForRole(role);
     directSetStatus(role==='host'&&directHostInviteStillLive()?'The connection attempt failed, but this invite remains active. Player 2 can retry it after changing networks.':directPeerErrorMessage(error),{error:true})
   };
@@ -139,10 +145,12 @@ function directCreatePeer(role){
   const timeout=directPeerTimeoutForRole(role),peer=new Peer(undefined,{debug:0,config:DIRECT_RTC_CONFIG});
   directPeerSession.peer=peer;directPeerSession.deadline=Date.now()+timeout;
   peer.on('error',error=>{
+    if(directPeerSession.peer!==peer)return;
     if(directPeerSession.opened)return;
     const failedRole=directPeerSession.role;directConnectionBadge('error','Pairing failed');directSetStatus(directPeerErrorMessage(error),{error:true});directShowRecoveryForRole(failedRole)
   });
   peer.on('disconnected',()=>{
+    if(directPeerSession.peer!==peer)return;
     if(directPeerSession.opened)return;
     const interruptedRole=directPeerSession.role;directConnectionBadge('offline','Pairing interrupted');
     directSetStatus(interruptedRole==='guest'?'Pairing was interrupted. Change networks if needed, then tap Retry Connection.':'Pairing broker was interrupted. If this invite no longer accepts retries, refresh it.',{error:true});directShowRecoveryForRole(interruptedRole)
@@ -167,8 +175,9 @@ async function directCreateNearby(){
   directNearbyStage({title:'Preparing one-scan invite…',copy:'Player 2 can scan one QR or open the same invite link. No return QR or service URL is required.',status:'Connecting to the temporary pairing broker…',showQr:false});
   try{
     const peer=directCreatePeer('host');
-    peer.on('connection',conn=>directBindPeerJsConnection(conn));
+    peer.on('connection',conn=>{if(directPeerSession.peer===peer)directBindPeerJsConnection(conn);else try{conn.close()}catch{}});
     peer.on('open',id=>{
+      if(directPeerSession.peer!==peer)return;
       const link=directNearbyJoinLink(id),qr=directEl('duelDirectQr'),field=directEl('duelDirectSignal');
       if(field)field.value=link;if(qr){qr.hidden=false;directRenderQr(link)}
       directNearbyStage({title:'Player 2 · Scan or open link',copy:'This invite stays active for 5 minutes. Player 2 can scan the QR or open the shared link. If a network blocks the first attempt, switch networks and retry the same invite — no resend is required.',status:'Waiting for Player 2 · invite active for 5 minutes…',showQr:true});
@@ -195,6 +204,7 @@ async function directJoinNearbyFromPeerId(hostPeerId){
   try{
     const peer=directCreatePeer('guest');
     peer.on('open',()=>{
+      if(directPeerSession.peer!==peer)return;
       directSetStatus('Pairing broker connected. Finding Player 1…');
       const conn=peer.connect(hostPeerId,{reliable:true,serialization:'json'});directBindPeerJsConnection(conn)
     })
