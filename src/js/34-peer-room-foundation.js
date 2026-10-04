@@ -19,8 +19,9 @@ let peerRoom={
 globalThis.peerRoom=peerRoom;
 let peerRoomNetworkGeneration=0;
 async function peerRoomPrepareNetwork(){
-  const generation=peerRoomNetworkGeneration;peerRoom.networkPending=true;
+  const generation=peerRoomNetworkGeneration;peerRoom.networkPending=true;peerRoom.networkError='';
   try{if(typeof c4PreparePeerNetwork==='function')await c4PreparePeerNetwork()}
+  catch(error){if(generation===peerRoomNetworkGeneration)peerRoom.networkError=error.message;throw error}
   finally{if(generation===peerRoomNetworkGeneration)peerRoom.networkPending=false}
 }
 // Invite auto-join can connect before the asynchronous gameplay extensions load.
@@ -250,6 +251,7 @@ async function peerRoomCopyDiagnostics(){const lines=[`Clash 4 Peer Room ${PEER_
 function peerRoomShutdown({notify=false,clearPersistence=false}={}){
   peerRoomNetworkGeneration++;
   peerRoom.networkPending=false;
+  peerRoom.networkError='';
   peerRoomPendingMessages=[];
   peerRoom.intentionalClose=true;if(peerRoom.reconnectTimer)clearTimeout(peerRoom.reconnectTimer);peerRoom.reconnectTimer=null;
   if(peerRoom.role==='host'&&notify)peerRoomBroadcast({kind:'room-ended',protocol:PEER_ROOM_PROTOCOL});
