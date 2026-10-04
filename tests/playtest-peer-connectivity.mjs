@@ -7,7 +7,7 @@ for(const [name,engine] of [['chromium',chromium],['webkit',webkit]]){
     const page=await browser.newPage();
     await page.goto(BASE,{waitUntil:'domcontentloaded'});
     await page.waitForFunction(()=>globalThis.peerRoomGameplayReady,{timeout:25000});
-    for(const url of ['turn:openrelay.metered.ca:80','turn:openrelay.metered.ca:443?transport=tcp','turns:openrelay.metered.ca:443?transport=tcp','turn:staticauth.openrelay.metered.ca:443?transport=tcp','turns:staticauth.openrelay.metered.ca:443?transport=tcp']){
+    await Promise.all(['runtime-config','turn:openrelay.metered.ca:80','turn:openrelay.metered.ca:443','turn:openrelay.metered.ca:443?transport=tcp','turns:openrelay.metered.ca:443?transport=tcp','turn:staticauth.openrelay.metered.ca:80','turn:staticauth.openrelay.metered.ca:443?transport=tcp','turns:staticauth.openrelay.metered.ca:443?transport=tcp'].map(async url=>{
       const sample=await page.evaluate(async url=>{
         let username='openrelayproject',credential='openrelayproject';
         if(url.includes('staticauth.')){
@@ -17,13 +17,14 @@ for(const [name,engine] of [['chromium',chromium],['webkit',webkit]]){
           const digest=new Uint8Array(await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(username)));
           credential=btoa(String.fromCharCode(...digest));
         }
-        const pc=new RTCPeerConnection({iceServers:[{urls:url,username,credential}],iceTransportPolicy:'relay'});
+        const iceServers=url==='runtime-config'?DIRECT_RTC_CONFIG.iceServers:[{urls:url,username,credential}];
+        const pc=new RTCPeerConnection({iceServers,iceTransportPolicy:'relay'});
         const candidates=[],errors=[];pc.onicecandidate=e=>{if(e.candidate)candidates.push({type:e.candidate.type,protocol:e.candidate.protocol})};
         pc.onicecandidateerror=e=>errors.push({code:e.errorCode,text:e.errorText,url:e.url});
         const done=new Promise(resolve=>{const timer=setTimeout(resolve,12000);pc.onicegatheringstatechange=()=>{if(pc.iceGatheringState==='complete'){clearTimeout(timer);resolve()}}});
         pc.createDataChannel('relay-probe');await pc.setLocalDescription(await pc.createOffer());await done;const gathering=pc.iceGatheringState;pc.close();return {candidates,errors,gathering}
       },url);
       console.log('RELAY_PROBE',name,url,JSON.stringify(sample));
-    }
+    }));
   }finally{await browser.close()}
 }
