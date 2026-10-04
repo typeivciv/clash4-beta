@@ -1,0 +1,30 @@
+name: Multiplayer Connectivity
+on:
+  pull_request:
+    paths:
+      - 'tests/playtest-peer-connectivity.mjs'
+      - 'src/js/19-duel-nearby-qr.js'
+      - 'src/js/20-duel-turn-alpha.js'
+      - '.github/workflows/multiplayer-connectivity.yml'
+  workflow_dispatch:
+jobs:
+  connection-paths:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install browsers
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium webkit
+      - name: Serve Alpha
+        run: |
+          python3 tools/build_duel_modes_alpha.py
+          python3 -m http.server 8080 --bind 127.0.0.1 > /tmp/clash4-http.log 2>&1 &
+          for i in {1..20}; do curl -fsS http://127.0.0.1:8080/multiplayer-alpha.html >/dev/null && exit 0; sleep 0.5; done
+          exit 1
+      - name: Check relay candidates in both browser engines
+        run: node tests/playtest-peer-connectivity.mjs
