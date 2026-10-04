@@ -88,6 +88,7 @@ globalThis.peerRoomScheduleReconnect=peerRoomScheduleReconnect;
 
 peerRoomGuestConnect=function(){
   if(peerRoom.intentionalClose||peerRoom.role!=='guest'||!peerRoom.hostId)return;
+  if(peerRoom.networkPending){peerRoomScheduleReconnect(350);return}
   if(peerRoom.conn?.open){peerRoomRecoveryResetSuccess();return}
   if(peerRoomRecoveryState.connecting)return;
   let peer=peerRoom.peer;

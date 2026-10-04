@@ -22,6 +22,7 @@ DIRECT_CHAT=ROOT/'src/js/31-direct-chat.js'
 IOS_CHAT_KEYBOARD=ROOT/'src/js/32-ios-chat-keyboard.js'
 DIRECT_CHAT_V2=ROOT/'src/js/33-direct-chat-v2.js'
 DROP_RENDERING=ROOT/'src/js/44-drop-rendering.js'
+PEER_NETWORK=ROOT/'src/js/45-peer-network.js'
 TURN_CSS=ROOT/'src/styles/51-duel-turn-alpha.css'
 DUEL_COLORS_CSS=ROOT/'src/styles/52-duel-colors-share.css'
 DUEL_POSTMATCH_CSS=ROOT/'src/styles/53-duel-postmatch.css'
@@ -127,6 +128,7 @@ direct_chat=DIRECT_CHAT.read_text(encoding='utf-8').rstrip()+'\n\n'
 ios_chat_keyboard=IOS_CHAT_KEYBOARD.read_text(encoding='utf-8').rstrip()+'\n\n'
 direct_chat_v2=DIRECT_CHAT_V2.read_text(encoding='utf-8').rstrip()+'\n\n'
 drop_rendering=DROP_RENDERING.read_text(encoding='utf-8').rstrip()+'\n\n'
+peer_network=PEER_NETWORK.read_text(encoding='utf-8').rstrip()+'\n\n'
 if 'function directCreateNearby()' in html:raise SystemExit('Nearby PeerJS module already present; refusing duplicate injection')
 if 'DIRECT_ALPHA_TURN_SERVERS' in html:raise SystemExit('Alpha TURN module already present; refusing duplicate injection')
 if 'let duelSeatColors=' in html:raise SystemExit('Duel color/share module already present; refusing duplicate injection')
@@ -142,7 +144,7 @@ if 'SCREEN_CONSISTENCY_VERSION' in html:raise SystemExit('screen consistency mod
 if 'DIRECT_CHAT_VERSION' in html:raise SystemExit('Direct chat module already present; refusing duplicate injection')
 if 'IOS_CHAT_KEYBOARD_VERSION' in html:raise SystemExit('mobile chat keyboard module already present; refusing duplicate injection')
 if 'DIRECT_CHAT_V2_VERSION' in html:raise SystemExit('Direct chat v2 module already present; refusing duplicate injection')
-html=html.replace(anchor,drop_rendering+nearby+turn+colors+postmatch+tester+easy+flow+learner+theme_music+gameplay_v3+ui_consistency+screen_consistency+direct_chat+ios_chat_keyboard+direct_chat_v2+anchor,1)
+html=html.replace(anchor,drop_rendering+peer_network+nearby+turn+colors+postmatch+tester+easy+flow+learner+theme_music+gameplay_v3+ui_consistency+screen_consistency+direct_chat+ios_chat_keyboard+direct_chat_v2+anchor,1)
 OUT.write_text(html,encoding='utf-8')
 TESTER_OUT.write_text(html,encoding='utf-8')
 print(f'Built Multiplayer Alpha {VERSION} with Direct Duel P2P chat, Universal Chat v2, mobile keyboard handling, five world themes, world-reactive events, Gameplay UI v3, consistency repairs, and procedural music into {OUT.name} and {TESTER_OUT.name}')

@@ -5,6 +5,9 @@ on:
       - 'tests/playtest-peer-connectivity.mjs'
       - 'src/js/19-duel-nearby-qr.js'
       - 'src/js/20-duel-turn-alpha.js'
+      - 'src/js/45-peer-network.js'
+      - 'src/js/34-peer-room-foundation.js'
+      - 'multiplayer-network.json'
       - '.github/workflows/multiplayer-connectivity.yml'
   workflow_dispatch:
 jobs:
@@ -21,7 +24,17 @@ jobs:
           npm install --no-save playwright@1.55.0
           npx playwright install --with-deps chromium webkit
       - name: Serve Alpha
+        env:
+          C4_RELAY_CONFIG: ${{ secrets.C4_RELAY_CONFIG }}
         run: |
+          node tests/test-peer-network.mjs
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          config = os.environ.get('C4_RELAY_CONFIG', '')
+          if config:
+              Path('multiplayer-network.json').write_text(config)
+          PY
           python3 tools/build_duel_modes_alpha.py
           python3 -m http.server 8080 --bind 127.0.0.1 > /tmp/clash4-http.log 2>&1 &
           for i in {1..20}; do curl -fsS http://127.0.0.1:8080/multiplayer-alpha.html >/dev/null && exit 0; sleep 0.5; done

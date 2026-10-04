@@ -3396,6 +3396,50 @@ globalThis.renderBoardGrid=renderBoardGrid;
 c4DropInstallStyle();
 globalThis.c4DropRendering={version:DROP_RENDERING_VERSION,lift:c4DropLiftGhost};
 
+'use strict';
+// Shared network setup for Direct Duel and 2–4-player rooms. Provider API keys
+// belong in a server-side credential endpoint; this file reads browser ICE credentials.
+let c4PeerNetworkLoad=null,c4PeerNetworkLoadedAt=0,c4PeerNetworkServers=[];
+const c4PeerNetworkState={source:'legacy',error:''};
+function c4PeerNetworkValidate(servers){
+  if(!Array.isArray(servers)||servers.length>12)throw new Error('Invalid relay configuration.');
+  return servers.map(server=>{
+    const urls=Array.isArray(server?.urls)?server.urls:[server?.urls];
+    if(!urls.length||urls.length>8||urls.some(url=>typeof url!=='string'||!/^turns?:[^\s]+$/i.test(url)))throw new Error('Relay configuration must contain TURN addresses.');
+    if(typeof server.username!=='string'||!server.username||typeof server.credential!=='string'||!server.credential)throw new Error('Relay credentials are missing.');
+    return {urls:[...urls],username:server.username,credential:server.credential}
+  })
+}
+async function c4PreparePeerNetwork(){
+  if(c4PeerNetworkLoadedAt&&Date.now()-c4PeerNetworkLoadedAt<300000)return;
+  if(c4PeerNetworkLoad)return c4PeerNetworkLoad;
+  c4PeerNetworkLoad=(async()=>{
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),4000);
+    try{
+      const options={cache:'no-store',credentials:'omit',signal:controller.signal};
+      const response=await fetch('multiplayer-network.json',options);
+      if(!response.ok)throw new Error('Network configuration could not load.');
+      const config=await response.json();let servers=config.iceServers||[];
+      if(config.credentialEndpoint){
+        const endpoint=new URL(config.credentialEndpoint,location.href);
+        if(endpoint.protocol!=='https:')throw new Error('Relay credential endpoint must use HTTPS.');
+        const credentials=await fetch(endpoint.href,options);
+        if(!credentials.ok)throw new Error('Relay credentials could not load.');
+        const body=await credentials.json();servers=Array.isArray(body)?body:body.iceServers;
+      }
+      const next=c4PeerNetworkValidate(servers);
+      DIRECT_RTC_CONFIG.iceServers=DIRECT_RTC_CONFIG.iceServers.filter(server=>!c4PeerNetworkServers.includes(server));
+      c4PeerNetworkServers=next;DIRECT_RTC_CONFIG.iceServers.push(...next);
+      c4PeerNetworkState.source=next.length?'configured':'legacy';c4PeerNetworkState.error='';c4PeerNetworkLoadedAt=Date.now()
+    }catch(error){
+      c4PeerNetworkState.error=error?.message||'Network configuration unavailable.';
+      throw new Error(c4PeerNetworkState.error)
+    }finally{clearTimeout(timer);c4PeerNetworkLoad=null}
+  })();
+  return c4PeerNetworkLoad
+}
+globalThis.c4PeerNetwork={state:c4PeerNetworkState,prepare:c4PreparePeerNetwork};
+
 // Direct Duel one-scan UX using PeerJS Cloud only for connection brokering.
 // The QR carries the host peer ID in a Clash 4 HTTPS deep link. After the WebRTC data
 // connection opens, PeerJS signaling is disconnected and gameplay remains peer-to-peer.
@@ -3451,7 +3495,7 @@ function directPeerErrorMessage(error){
   if(type==='peer-unavailable')return 'Player 1’s invite is no longer available. Player 1 should refresh the Direct invite and send the new QR or link.';
   if(type==='network'||type==='server-error'||type==='socket-error'||type==='socket-closed')return 'Could not reach the temporary Direct pairing broker. Check internet access, then retry or refresh the invite.';
   if(type==='browser-incompatible')return 'This browser does not support the WebRTC features needed for Direct Duel.';
-  if(type==='webrtc')return directPeerRouteFailureMessage();
+  if(type==='webrtc'||type==='negotiation-failed')return directPeerRouteFailureMessage();
   return error?.message||'Direct pairing failed before a connection could open.'
 }
 function directPeerRouteFailureMessage(){
@@ -3562,8 +3606,11 @@ globalThis.directClosePeer=directClosePeer;
 
 async function directCreateNearby(){
   directOpenPanel();directRecoveryActions();directNearbyRetryPeerId='';directPeerReset();directDuel.pairing='nearby';
+  const pending=directPeerSession;
   directNearbyStage({title:'Preparing one-scan invite…',copy:'Player 2 can scan one QR or open the same invite link. No return QR or service URL is required.',status:'Connecting to the temporary pairing broker…',showQr:false});
   try{
+    if(typeof c4PreparePeerNetwork==='function')await c4PreparePeerNetwork();
+    if(pending!==directPeerSession)return;
     const peer=directCreatePeer('host');
     peer.on('connection',conn=>directBindPeerJsConnection(conn));
     peer.on('open',id=>{
@@ -3573,7 +3620,7 @@ async function directCreateNearby(){
       directRefreshInviteUi(true);
       if(!globalThis.QRCode)directNearbyManualUi(true)
     })
-  }catch(e){directConnectionBadge('error','Pairing failed');directSetStatus(directPeerErrorMessage(e),{error:true});directPeerReset();directRefreshInviteUi(true)}
+  }catch(e){if(pending!==directPeerSession)return;directConnectionBadge('error','Pairing failed');directSetStatus(directPeerErrorMessage(e),{error:true});directPeerReset();directRefreshInviteUi(true)}
 }
 globalThis.directCreateNearby=directCreateNearby;
 function directRefreshNearbyInvite(){
@@ -3589,14 +3636,17 @@ async function directJoinNearbyFromPeerId(hostPeerId){
   // guest retry target. Save this invite only after that cleanup so Player 2 can
   // recover from ICE/network failure without rescanning the QR or reopening the link.
   directOpenPanel();directNearbyRetryPeerId=hostPeerId;directRecoveryActions();directPeerReset();
+  const pending=directPeerSession;
   directNearbyStage({title:'Joining Player 1…',copy:'Clash 4 is connecting directly to Player 1. If you change networks, you can retry this same invite without rescanning while Player 1’s 5-minute invite remains active.',status:'Opening the peer-to-peer connection…',showQr:false});
   try{
+    if(typeof c4PreparePeerNetwork==='function')await c4PreparePeerNetwork();
+    if(pending!==directPeerSession)return;
     const peer=directCreatePeer('guest');
     peer.on('open',()=>{
       directSetStatus('Pairing broker connected. Finding Player 1…');
       const conn=peer.connect(hostPeerId,{reliable:true,serialization:'json'});directBindPeerJsConnection(conn)
     })
-  }catch(e){directConnectionBadge('error','Pairing failed');directSetStatus(directPeerErrorMessage(e),{error:true});directPeerReset();directRetryConnectionUi(true)}
+  }catch(e){if(pending!==directPeerSession)return;directConnectionBadge('error','Pairing failed');directSetStatus(directPeerErrorMessage(e),{error:true});directPeerReset();directRetryConnectionUi(true)}
 }
 function directRetryNearbyConnection(){
   if(directDuel?.active||!directNearbyRetryPeerId)return;
