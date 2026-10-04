@@ -1,0 +1,41 @@
+name: Release Pairing Comparison
+on:
+  pull_request:
+    paths:
+      - 'tests/playtest-release-pairing.mjs'
+      - '.github/workflows/release-pairing-comparison.yml'
+  workflow_dispatch:
+jobs:
+  released-builds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install browsers
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium webkit
+      - name: Serve exact released files
+        run: |
+          mkdir -p artifacts/releases/{0.20.6,0.20.8,0.20.9}
+          git archive 5260e69 | tar -x -C artifacts/releases/0.20.6
+          git archive 68d67e3 | tar -x -C artifacts/releases/0.20.8
+          git archive b45e0ac | tar -x -C artifacts/releases/0.20.9
+          python3 -m http.server 8080 --bind 127.0.0.1 > /tmp/clash4-release-http.log 2>&1 &
+          for i in {1..20}; do curl -fsS http://127.0.0.1:8080/artifacts/releases/0.20.9/multiplayer-alpha.html >/dev/null && exit 0; sleep 0.5; done
+          exit 1
+      - name: Compare unchanged pairing across released versions
+        run: node tests/playtest-release-pairing.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-pairing-comparison
+          path: |
+            artifacts/release-*.png
+            artifacts/release-pairing.json
+            /tmp/clash4-release-http.log
