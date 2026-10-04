@@ -52,6 +52,8 @@ assert.equal(retryButton.hidden,false,'manual Retry Connection must be exposed a
 
 // Retry uses one fresh/open peer and does not create parallel dials while connecting.
 const made=[];const peer=emitter({open:true,disconnected:false,destroyed:false,connect(){const conn=makeConn();made.push(conn);return conn},reconnect(){}});context.peerRoom.peer=peer;
+context.peerRoom.networkPending=true;context.peerRoomGuestConnect();assert.equal(made.length,0,'recovery cannot bypass pending relay configuration');context.peerRoom.networkPending=false;
+context.peerRoom.networkError='credential endpoint unavailable';context.peerRoomGuestConnect();assert.equal(made.length,0,'recovery cannot bypass failed relay configuration');context.peerRoom.networkError='';
 pendingReconnect[0].fn();assert.equal(made.length,1,'automatic recovery must create one new DataConnection');context.peerRoomGuestConnect();assert.equal(made.length,1,'single-flight guard must prevent parallel WebRTC dials');
 const second=made[0];second.open=true;second.emit('open');second.emit('data',{protocol:1,kind:'room-welcome',seat:2});
 assert.equal(context.peerRoomRecoveryState.attempt,0,'successful room welcome must reset retry backoff');assert.equal(context.peerRoomRecoveryState.connecting,false);assert.equal(retryButton.hidden,true,'retry action hides after recovery');

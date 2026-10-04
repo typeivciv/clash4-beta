@@ -88,6 +88,8 @@ globalThis.peerRoomScheduleReconnect=peerRoomScheduleReconnect;
 
 peerRoomGuestConnect=function(){
   if(peerRoom.intentionalClose||peerRoom.role!=='guest'||!peerRoom.hostId)return;
+  if(peerRoom.networkPending){peerRoomScheduleReconnect(350);return}
+  if(peerRoom.networkError){peerRoomRecoveryShowRetry(true);return}
   if(peerRoom.conn?.open){peerRoomRecoveryResetSuccess();return}
   if(peerRoomRecoveryState.connecting)return;
   let peer=peerRoom.peer;
@@ -101,6 +103,7 @@ globalThis.peerRoomGuestConnect=peerRoomGuestConnect;
 
 function peerRoomRecoveryRetryNow({freshPeer=false}={}){
   if(peerRoom.intentionalClose||peerRoom.role!=='guest')return false;
+  if(peerRoom.networkError){peerRoomJoin(peerRoom.hostId);return true}
   if(peerRoom.reconnectTimer)clearTimeout(peerRoom.reconnectTimer);peerRoom.reconnectTimer=null;peerRoomRecoveryClearAttemptTimer();peerRoomRecoveryState.connecting=false;
   if(peerRoom.conn){try{peerRoom.conn.close()}catch{};peerRoom.conn=null}
   if(freshPeer||peerRoomRecoveryState.attempt>=2)peerRoomRecoveryCreateGuestPeer();
