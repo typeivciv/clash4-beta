@@ -66,7 +66,9 @@ function summarize(raw,scenario){
 }
 try{
   const chrome=await chromium.launch({headless:true}),wk=await webkit.launch({headless:true});browsers.push(chrome,wk);
-  for(const mode of ['direct','peer'])for(const appleHost of [false,true]){
+  const modes=process.env.CAPTURE_MODE?[process.env.CAPTURE_MODE]:['peer','direct'];
+  const hosts=process.env.CAPTURE_HOST?[process.env.CAPTURE_HOST==='webkit']:[false,true];
+  for(const mode of modes)for(const appleHost of hosts){
     const contexts=await Promise.all([appleHost?wk:chrome,appleHost?chrome:wk].map(browser=>browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:2})));
     const [host,guest]=await Promise.all(contexts.map(context=>context.newPage()));pages.push(host,guest);
     const errors=[];for(const page of [host,guest])page.on('pageerror',e=>errors.push(e.message));
@@ -76,7 +78,16 @@ try{
     const invite=await host.evaluate(mode=>mode==='peer'?peerRoomInviteLink():document.getElementById('duelDirectSignal').value,mode);
     await guest.goto(invite,{waitUntil:'domcontentloaded'});await runtime(guest);
     if(mode==='peer'){await guest.waitForFunction(()=>peerRoom.active&&peerRoom.seat===2,{timeout:30000});await host.locator('#peerRoomStartGame').tap()}
-    else{for(const page of [host,guest])await page.locator('#duelReadyButton').waitFor({state:'visible',timeout:30000});await host.locator('#duelReadyButton').tap();await guest.locator('#duelReadyButton').tap()}
+    else{
+      const ready=()=>Promise.all([host,guest].map(page=>page.locator('#duelReadyButton').waitFor({state:'visible',timeout:25000})));
+      try{await ready()}catch(error){
+        console.log('SETUP RETRY',mode,appleHost?'webkit-host':'webkit-guest',String(error));
+        // Retry the same valid invite using the shipped recovery action. Capture
+        // measurement begins only after both clients have joined successfully.
+        await guest.evaluate(()=>directRetryNearbyConnection());await ready()
+      }
+      await host.locator('#duelReadyButton').tap();await guest.locator('#duelReadyButton').tap()
+    }
     for(const page of [host,guest]){await page.waitForFunction(()=>duelSession.active,{timeout:12000});await probe(page)}
     for(let index=0;index<cases.length;index++){
       const scenario=cases[index],label=`${mode}-${appleHost?'webkit-host':'webkit-guest'}-${scenario.name}`;
@@ -99,7 +110,7 @@ try{
     }
     assert.deepEqual(errors,[],'no browser errors');for(const context of contexts)await context.close()
   }
-  console.log('PASS 24 fixture-backed capture simulations: both modes, Chromium/WebKit host and guest, real UI moves; capture timing recorded without changing production code');
+  console.log(`PASS ${results.length} fixture-backed capture simulations: Chromium/WebKit host and guest, real UI moves; capture timing recorded without changing production code`);
 }catch(error){
   console.log('CAPTURE FAILURE',String(error));
   for(let i=0;i<pages.length;i++)if(!pages[i].isClosed())try{console.log('PAGE',i,await pages[i].evaluate(async()=>({move:s.moveNumber,busy,turn:s.turn,report:await alphaTesterInfo()})))}catch{}

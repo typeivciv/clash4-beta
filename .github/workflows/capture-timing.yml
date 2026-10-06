@@ -9,6 +9,11 @@ jobs:
   capture-timing:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [direct, peer]
+        host: [chromium, webkit]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -26,9 +31,12 @@ jobs:
           for i in {1..20}; do curl -fsS http://127.0.0.1:8080/multiplayer-alpha.html >/dev/null && exit 0; sleep 0.5; done
           exit 1
       - name: Measure actual capture disappearance
+        env:
+          CAPTURE_MODE: ${{ matrix.mode }}
+          CAPTURE_HOST: ${{ matrix.host }}
         run: node tests/playtest-capture-timing.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: capture-timing-evidence
+          name: capture-timing-evidence-${{ matrix.mode }}-${{ matrix.host }}-host
           path: artifacts/
