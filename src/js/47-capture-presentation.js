@@ -17,7 +17,12 @@ function c4CapturePrepare(before,after,events,column){
   if(!first?.atk||!Number.isInteger(column)||!before?.board?.[column])return;
   const board=before.board.map(col=>col.map(piece=>({...piece})));
   if(board[column].length>=ROWS)return;
-  board[column].push({...first.atk});
+  const incoming={...first.atk};
+  // A combat event can reveal more than the board projection (in particular,
+  // spectators see neither player's private pieces). Respect the projected
+  // last move when staging the incoming checker before its combat cue.
+  if(after.lastMove&&after.lastMove.owner===incoming.owner&&after.lastMove.type===null)incoming.type=null;
+  board[column].push(incoming);
   c4CaptureState={board,column,moveNumber:after.moveNumber,pending:null,resolved:new Set()}
 }
 function c4CaptureRedraw(state){
