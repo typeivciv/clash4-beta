@@ -93,4 +93,16 @@ for(const clear of ['clearPresentationTimers','duelClearActiveSession','c4Captur
   c.c4CapturePrepare({board:c.rules.projectBoardForViewer(before.board,'ai')},result.state,events,3);
   assert.equal(c.c4CapturePresentation.board[3].at(-1).type,null,'decoy privacy projection must survive staging')
 }
-console.log(`PASS capture presentation: ${count} canonical fixture/viewer/clock combinations, per-clash removal, final boards, cancellation, callback races and decoy privacy`);
+// A spectator's board hides both players, even if the first combat event carries
+// a Player 1 identity. It must remain masked throughout the pre-cue staging.
+{
+  const h=harness(),c=h.context,before=c.rules.makeLocalDuelState('human');before.nextId=200;
+  before.board[3]=[{owner:'ai',type:'decoy',id:100}];
+  const result=c.rules.resolveRaw(before,'human','rock',3);
+  const projectedBefore={board:before.board.map(col=>col.map(p=>({...p,type:null})))};
+  const projectedAfter={...result.state,lastMove:{...result.state.lastMove,type:null}};
+  c.c4CapturePrepare(projectedBefore,projectedAfter,c.rules.projectEventsForViewer(result.events,'human'),3);
+  for(const piece of c.c4CapturePresentation.board[3])assert.equal(piece.type,null,'spectator staging must not expose either player identity');
+  assert.equal(result.state.lastMove.type,'rock','masking must not modify authority')
+}
+console.log(`PASS capture presentation: ${count} canonical fixture/viewer/clock combinations, per-clash removal, final boards, cancellation, callback races, decoy and spectator privacy`);
