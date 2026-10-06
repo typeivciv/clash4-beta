@@ -22,6 +22,7 @@ DIRECT_CHAT=ROOT/'src/js/31-direct-chat.js'
 IOS_CHAT_KEYBOARD=ROOT/'src/js/32-ios-chat-keyboard.js'
 DIRECT_CHAT_V2=ROOT/'src/js/33-direct-chat-v2.js'
 DROP_RENDERING=ROOT/'src/js/44-drop-rendering.js'
+CAPTURE_PRESENTATION=ROOT/'src/js/47-capture-presentation.js'
 CONNECTION_DIAGNOSTICS=ROOT/'src/js/46-connection-diagnostics.js'
 TURN_CSS=ROOT/'src/styles/51-duel-turn-alpha.css'
 DUEL_COLORS_CSS=ROOT/'src/styles/52-duel-colors-share.css'
@@ -39,7 +40,7 @@ SCREEN_CONSISTENCY_CSS=ROOT/'src/styles/63-screen-consistency.css'
 DIRECT_CHAT_CSS=ROOT/'src/styles/64-direct-chat.css'
 IOS_CHAT_KEYBOARD_CSS=ROOT/'src/styles/65-ios-chat-keyboard.css'
 DIRECT_CHAT_V2_CSS=ROOT/'src/styles/66-direct-chat-v2.css'
-VERSION='0.20.10'
+VERSION='0.20.11'
 
 runpy.run_path(str(BASE_BUILDER),run_name='__main__')
 html=OUT.read_text(encoding='utf-8')
@@ -97,6 +98,9 @@ replace_once("title:'Clash 4 Mobile Beta Feedback'",f"title:'Clash 4 Multiplayer
 unsafe_icon="(p.owner===H||finalReveal)?M[p.type][1]:'?'"
 safe_icon="(p.owner===H||finalReveal)?(M[p.type]?.[1]||'?'):'?'"
 replace_once(unsafe_icon,safe_icon,'terminal piece fallback')
+replace_once("showEvent(e);scheduleTimer('event',next,eventDuration(e))",
+             "showEvent(e);if(typeof c4CaptureCue==='function')c4CaptureCue(e);scheduleTimer('event',next,eventDuration(e))",
+             'per-clash capture resolution')
 
 # Apply the saved world theme before paint. Legacy theme ids migrate without changing player colors.
 early_theme="""<script>
@@ -128,6 +132,7 @@ direct_chat=DIRECT_CHAT.read_text(encoding='utf-8').rstrip()+'\n\n'
 ios_chat_keyboard=IOS_CHAT_KEYBOARD.read_text(encoding='utf-8').rstrip()+'\n\n'
 direct_chat_v2=DIRECT_CHAT_V2.read_text(encoding='utf-8').rstrip()+'\n\n'
 drop_rendering=DROP_RENDERING.read_text(encoding='utf-8').rstrip()+'\n\n'
+capture_presentation=CAPTURE_PRESENTATION.read_text(encoding='utf-8').rstrip()+'\n\n'
 if 'function directCreateNearby()' in html:raise SystemExit('Nearby PeerJS module already present; refusing duplicate injection')
 if 'DIRECT_ALPHA_TURN_SERVERS' in html:raise SystemExit('Alpha TURN module already present; refusing duplicate injection')
 if 'let duelSeatColors=' in html:raise SystemExit('Duel color/share module already present; refusing duplicate injection')
@@ -143,7 +148,7 @@ if 'SCREEN_CONSISTENCY_VERSION' in html:raise SystemExit('screen consistency mod
 if 'DIRECT_CHAT_VERSION' in html:raise SystemExit('Direct chat module already present; refusing duplicate injection')
 if 'IOS_CHAT_KEYBOARD_VERSION' in html:raise SystemExit('mobile chat keyboard module already present; refusing duplicate injection')
 if 'DIRECT_CHAT_V2_VERSION' in html:raise SystemExit('Direct chat v2 module already present; refusing duplicate injection')
-html=html.replace(anchor,drop_rendering+nearby+turn+colors+postmatch+tester+easy+flow+learner+theme_music+gameplay_v3+ui_consistency+screen_consistency+direct_chat+ios_chat_keyboard+direct_chat_v2+anchor,1)
+html=html.replace(anchor,drop_rendering+capture_presentation+nearby+turn+colors+postmatch+tester+easy+flow+learner+theme_music+gameplay_v3+ui_consistency+screen_consistency+direct_chat+ios_chat_keyboard+direct_chat_v2+anchor,1)
 OUT.write_text(html,encoding='utf-8')
 TESTER_OUT.write_text(html,encoding='utf-8')
 print(f'Built Multiplayer Alpha {VERSION} with Direct Duel P2P chat, Universal Chat v2, mobile keyboard handling, five world themes, world-reactive events, Gameplay UI v3, consistency repairs, and procedural music into {OUT.name} and {TESTER_OUT.name}')

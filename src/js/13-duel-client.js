@@ -142,6 +142,7 @@ function nextDeferredDuelPayload(){
 }
 function duelFinishNetworkPresentation(events,column){
   const done=()=>{
+    if(typeof c4CaptureFinish==='function')c4CaptureFinish();
     busy=false;
     const deferred=nextDeferredDuelPayload();
     if(deferred){duelAcceptActivePayload(deferred);return}
@@ -153,6 +154,7 @@ function duelFinishNetworkPresentation(events,column){
 function duelApplyActiveUpdate(p){
   if(p.version<=duelSession.handledVersion)return;
   const before=cloneState(s),after=duelProjectedStateToUi(p.state),events=(p.events||[]).map(duelMapEvent),lm=after.lastMove;
+  if(typeof c4CapturePrepare==='function')c4CapturePrepare(duelSession.pendingLocal?.before||before,after,events,lm?.column);
   s=after;duelSession.handledVersion=p.version;addEventsToStats(events);
   if(lm){publicMoveHistory.push(publicMoveLog(lm.owner,events));if(publicMoveHistory.length>24)publicMoveHistory.shift()}
   recentInteractions.push({before,after:cloneState(after),events:events.map(e=>({...e})),owner:lm?.owner??A,type:lm?.type??null,column:lm?.column??0,moveNumber:after.moveNumber});if(recentInteractions.length>2)recentInteractions.shift();

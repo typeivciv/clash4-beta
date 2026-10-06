@@ -2,6 +2,12 @@ name: Capture Timing Simulation
 on:
   pull_request:
     paths:
+      - 'src/js/47-capture-presentation.js'
+      - 'src/js/13-duel-client.js'
+      - 'src/js/40-peer-room-transaction.js'
+      - 'src/js/43-peer-room-render-sync.js'
+      - 'tools/build_duel_modes_alpha.py'
+      - 'tests/test-capture-presentation.mjs'
       - 'tests/playtest-capture-timing.mjs'
       - '.github/workflows/capture-timing.yml'
   workflow_dispatch:
@@ -19,6 +25,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Capture order, cancellation and privacy
+        run: node tests/test-capture-presentation.mjs
       - name: Install browsers
         run: |
           npm install --no-save playwright@1.55.0
