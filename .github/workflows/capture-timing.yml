@@ -1,0 +1,42 @@
+name: Capture Timing Simulation
+on:
+  pull_request:
+    paths:
+      - 'tests/playtest-capture-timing.mjs'
+      - '.github/workflows/capture-timing.yml'
+  workflow_dispatch:
+jobs:
+  capture-timing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [direct, peer]
+        host: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install browsers
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium webkit
+      - name: Build and serve
+        run: |
+          python3 tools/build_duel_modes_alpha.py
+          mkdir -p artifacts
+          python3 -m http.server 8080 --bind 127.0.0.1 > /tmp/capture-http.log 2>&1 &
+          for i in {1..20}; do curl -fsS http://127.0.0.1:8080/multiplayer-alpha.html >/dev/null && exit 0; sleep 0.5; done
+          exit 1
+      - name: Measure actual capture disappearance
+        env:
+          CAPTURE_MODE: ${{ matrix.mode }}
+          CAPTURE_HOST: ${{ matrix.host }}
+        run: node tests/playtest-capture-timing.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: capture-timing-evidence-${{ matrix.mode }}-${{ matrix.host }}-host
+          path: artifacts/
