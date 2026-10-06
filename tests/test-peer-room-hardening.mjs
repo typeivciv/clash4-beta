@@ -7,7 +7,7 @@ const hardening=fs.readFileSync('src/js/35-peer-room-hardening.js','utf8');
 
 for(const token of [
   'function directChatV2LoadPeerRoomHardening()',
-  "script.src='src/js/35-peer-room-hardening.js?v=0.20.10'",
+  "script.src='src/js/35-peer-room-hardening.js?v=0.20.11'",
   "script.addEventListener('load',directChatV2LoadPeerRoomHardening,{once:true})"
 ])assert.ok(loader.includes(token),`Peer Room loader missing hardening token: ${token}`);
 

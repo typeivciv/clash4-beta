@@ -11,6 +11,7 @@ function peerRoomTransactionActive(){
 function peerRoomTransactionNow(){return globalThis.performance?.now?.()??Date.now()}
 function peerRoomTransactionDropMs(){return Math.max(1,Number(globalThis.TIMING?.drop)||220)}
 function peerRoomTransactionClearVisual(){
+  if(typeof c4CaptureFinish==='function')c4CaptureFinish();
   try{clearTimer('peerRoomMoveTransaction')}catch{}
   try{clearTimer('peerRoomOptimisticDrop')}catch{}
   dropPresentation=null;
@@ -44,6 +45,7 @@ function peerRoomTransactionRecord(before,after,events,lm){
 }
 function peerRoomTransactionCommit(tx){
   if(peerRoomTransactionState.activeVersion!==tx.version)return;
+  if(typeof c4CapturePrepare==='function')c4CapturePrepare(tx.before,tx.after,tx.events,tx.lm?.column);
   peerRoomTransactionState.activeVersion=0;
   dropPresentation=null;
   s=tx.after;

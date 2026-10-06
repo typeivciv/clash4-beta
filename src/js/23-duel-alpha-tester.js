@@ -1,5 +1,5 @@
 'use strict';
-const ALPHA_TESTER_VERSION='0.20.10';
+const ALPHA_TESTER_VERSION='0.20.11';
 function alphaTesterEl(id){return document.getElementById(id)}
 function alphaTesterMode(){
   if(globalThis.peerRoom?.role)return'2–4 Player Room';

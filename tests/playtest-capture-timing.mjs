@@ -20,8 +20,9 @@ async function probe(page){
     const grid=renderBoardGrid;
     renderBoardGrid=function(args){
       const out=grid(args),cells=board.querySelectorAll('.cell');
+      const viewBoard=!dropPresentation&&globalThis.c4CapturePresentation?.board||args.viewBoard;
       for(let i=0;i<cells.length;i++){
-        const piece=args.viewBoard[Number(cells[i].dataset.column)]?.[ROWS-1-Math.floor(i/COLS)];
+        const piece=viewBoard[Number(cells[i].dataset.column)]?.[ROWS-1-Math.floor(i/COLS)];
         const disc=cells[i].querySelector('.disc:not(.justDropped)');if(piece&&disc)disc.dataset.probeId=String(piece.id)
       }
       if(__captureProbe.active)__captureProbe.renders.push({at:performance.now(),ids:ids(),drop:!!dropPresentation});
@@ -29,6 +30,12 @@ async function probe(page){
     };
     const event=showEvent;
     showEvent=function(e){const out=event(e);if(__captureProbe.active)__captureProbe.cues.push({at:performance.now(),wall:Date.now(),kind:e.kind,outcome:e.o,atk:e.atk?.id,def:e.def?.id,duration:eventDuration(e),ids:ids(),captureHold:gameplayFlowCaptureHoldMs(e)});return out};
+    const captureCue=c4CaptureCue;
+    c4CaptureCue=function(e,targetAt){
+      const out=captureCue(e,targetAt),cue=__captureProbe.cues.at(-1);
+      if(__captureProbe.active&&cue?.kind===e.kind)cue.scheduledStartMs=performance.now()+((targetAt??Date.now())-Date.now());
+      return out
+    };
     const tick=()=>{
       if(__captureProbe.active){
         const frame={at:performance.now(),ids:ids(),drop:!!dropPresentation,combat:activePresentation?.event?.kind==='combat',outcome:activePresentation?.event?.o,overlay:overlay.classList.contains('show')};
@@ -58,9 +65,15 @@ function summarize(raw,scenario){
   assert.deepEqual(combats.map(c=>c.outcome),scenario.outcomes,'simulation must exercise the intended canonical combat outcomes');
   const captures=combats.filter(c=>c.outcome!=='tie').map(c=>{
     const victim=c.outcome==='win'?c.def:c.atk;
-    const firstDrop=raw.frames.find(f=>f.drop);
-    const firstAbsent=victim===200?(firstDrop?raw.frames.find(f=>f.at>=firstDrop.at&&!f.ids.includes(victim)&&!f.drop):null):raw.frames.find(f=>!f.ids.includes(victim)&&!f.drop);
-    return {victim,outcome:c.outcome,combatStartMs:c.at,combatEndMs:c.at+c.duration,boardAbsentMs:firstAbsent?.at??null,absentRelativeToCombatStartMs:firstAbsent?Math.round(firstAbsent.at-c.at):null,absentRelativeToCombatEndMs:firstAbsent?Math.round(firstAbsent.at-c.at-c.duration):null,presentAtCue:c.ids.includes(victim),incomingCheckerNeverShownOnBoard:victim===200&&!firstDrop,captureHoldMs:c.captureHold}
+    const firstShown=raw.frames.find(f=>f.ids.includes(victim)&&!f.drop);
+    const firstAbsent=firstShown?raw.frames.find(f=>f.at>=firstShown.at&&!f.ids.includes(victim)&&!f.drop):null;
+    const firstDomAbsent=raw.renders.find(f=>f.at>=c.at&&!f.drop&&!f.ids.includes(victim));
+    const scheduledEnd=(c.scheduledStartMs??c.at)+c.duration;
+    assert.ok(c.ids.includes(victim),`losing piece ${victim} must remain on the board when its own clash starts`);
+    assert.ok(firstAbsent,`losing piece ${victim} must disappear after its clash`);
+    assert.ok(firstDomAbsent&&firstDomAbsent.at>=scheduledEnd-12,`losing piece ${victim} was removed before its scheduled clash resolved`);
+    assert.ok(firstAbsent.at<=scheduledEnd+1000,`losing piece ${victim} did not disappear promptly after resolution`);
+    return {victim,outcome:c.outcome,combatStartMs:c.at,combatEndMs:c.at+c.duration,scheduledCombatEndMs:scheduledEnd,boardAbsentMs:firstAbsent.at,absentRelativeToCombatStartMs:Math.round(firstAbsent.at-c.at),absentRelativeToCombatEndMs:Math.round(firstAbsent.at-c.at-c.duration),absentRelativeToScheduledEndMs:Math.round(firstDomAbsent.at-scheduledEnd),presentAtCue:c.ids.includes(victim),incomingCheckerNeverShownOnBoard:victim===200&&!firstShown,captureHoldMs:c.captureHold}
   });
   return {captures,combats:combats.length,finalIds:raw.frames.at(-1)?.ids,timingBasis:'performance.now; board absence sampled on animation frames'}
 }
@@ -103,14 +116,15 @@ try{
       const raw=await Promise.all([host,guest].map(page=>page.evaluate(()=>{__captureProbe.active=false;return __captureProbe})));
       const summary=raw.map((r,i)=>({role:i===0?'host':'guest',engine:(i===0?appleHost:!appleHost)?'webkit':'chromium',...summarize(r,scenario)}));
       assert.deepEqual(summary[0].finalIds,summary[1].finalIds,'both boards finish with the same surviving pieces');
-      if(scenario.outcomes.every(o=>o==='tie'))assert.equal(summary[0].finalIds.length,scenario.defenders.length+1,'ties and decoys preserve both pieces');
+      const expected=scenario.outcomes.every(o=>o==='tie')?[100,200]:scenario.outcomes.at(-1)==='lose'?[100]:[200];
+      assert.deepEqual(summary[0].finalIds,expected,'correct surviving pieces after the presentation');
       const result={label,mode,scenario:scenario.name,mover:index%2===0?'host':'guest',summary,raw};results.push(result);
       await fs.writeFile(`artifacts/${label}.json`,JSON.stringify(result,null,2));
       console.log('CAPTURE TIMING',JSON.stringify({label,summary}))
     }
     assert.deepEqual(errors,[],'no browser errors');for(const context of contexts)await context.close()
   }
-  console.log(`PASS ${results.length} fixture-backed capture simulations: Chromium/WebKit host and guest, real UI moves; capture timing recorded without changing production code`);
+  console.log(`PASS ${results.length} capture simulations: each loser present at its own cue, removed at scheduled resolution; correct final boards, ties and decoys preserved`);
 }catch(error){
   console.log('CAPTURE FAILURE',String(error));
   for(let i=0;i<pages.length;i++)if(!pages[i].isClosed())try{console.log('PAGE',i,await pages[i].evaluate(async()=>({move:s.moveNumber,busy,turn:s.turn,report:await alphaTesterInfo()})))}catch{}

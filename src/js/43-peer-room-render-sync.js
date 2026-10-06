@@ -81,7 +81,7 @@ function peerRoomRenderSyncDispatchEvent(state,event,column,targetAt=Date.now())
   if(!peerRoomPresentationSyncActive()){peerRoomRenderSyncFinishEvents(state);return}
   const previousAnimations=new Set(peerRoomRenderSyncAnimations()),timelineTarget=peerRoomRenderSyncTimelineTarget(targetAt);
   activePresentation={event,column:presentationColumn(event,column)};
-  // The canonical board was rendered at commit. Update only presentation classes
+  // The staged board was rendered at commit. Update only presentation classes
   // here; rebuilding every checker and inventory button at the shared deadline
   // can delay WebKit's combat cue by hundreds of milliseconds.
   const eventColumn=activePresentation.column;
@@ -100,6 +100,7 @@ function peerRoomRenderSyncDispatchEvent(state,event,column,targetAt=Date.now())
   }
   try{renderMobileContext({reviewMode:false,legal:new Set(legalCols(H)),critical:new Set()})}catch{}
   try{emitFeedback(feedbackCueForEvent(event))}catch{};showEvent(event);
+  if(typeof c4CaptureCue==='function')c4CaptureCue(event,targetAt);
   let aligned=0;
   for(const animation of peerRoomRenderSyncAnimations())if(!previousAnimations.has(animation))try{animation.startTime=timelineTarget;aligned++}catch{}
   try{document.dispatchEvent(new CustomEvent('peer-room-event-aligned',{detail:{version:state.version,targetAt,timelineTarget,aligned,wall:Date.now()}}))}catch{}
