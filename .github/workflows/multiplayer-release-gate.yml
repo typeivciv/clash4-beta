@@ -37,13 +37,17 @@ jobs:
         if: ${{ inputs.live_url == '' }}
         run: |
           sudo apt-get install -y coturn
+          # Use the runner's private interface. Browsers may reject loopback ICE
+          # candidates even when a TURN allocation on localhost succeeds.
+          relay_ip="$(ip -4 route get 1.1.1.1 | awk '{for(i=1;i<NF;i++) if($i=="src") print $(i+1)}')"
+          test -n "$relay_ip"
           relay_secret="$(openssl rand -hex 32)"
           relay_config="$(mktemp)"
           chmod 600 "$relay_config"
           cat > "$relay_config" <<EOF_CONFIG
-          listening-ip=127.0.0.1
-          relay-ip=127.0.0.1
-          listening-port=3478
+          listening-ip=$relay_ip
+          relay-ip=$relay_ip
+          listening-port=34790
           min-port=49000
           max-port=49100
           realm=clash4-ci
@@ -52,17 +56,19 @@ jobs:
           no-tls
           no-dtls
           no-cli
-          allow-loopback-peers
+          total-quota=100
           EOF_CONFIG
           turnserver -c "$relay_config" > /tmp/clash4-turn.log 2>&1 &
-          TURN_SHARED_SECRET="$relay_secret" TURN_URLS='turn:127.0.0.1:3478?transport=tcp' node server/duel-server.mjs > /tmp/clash4-hosted.log 2>&1 &
+          relay_pid=$!
+          TURN_SHARED_SECRET="$relay_secret" TURN_URLS="turn:$relay_ip:34790?transport=tcp" node server/duel-server.mjs > /tmp/clash4-hosted.log 2>&1 &
           cat > multiplayer-network.json <<'EOF_CONFIG'
           {"hostedServer":"http://127.0.0.1:8787","relayCredentialEndpoint":"http://127.0.0.1:8787/api/ice"}
           EOF_CONFIG
           python3 tools/build_duel_modes_alpha.py
           python3 -m http.server 8080 --bind 127.0.0.1 > /tmp/clash4-http.log 2>&1 &
           for i in {1..20}; do
-            if curl -fsS http://127.0.0.1:8787/api/health >/dev/null && curl -fsS http://127.0.0.1:8080/multiplayer-alpha.html >/dev/null; then exit 0; fi
+            kill -0 "$relay_pid"
+            if ss -ltn | grep -q ":34790 " && curl -fsS http://127.0.0.1:8787/api/health >/dev/null && curl -fsS http://127.0.0.1:8080/multiplayer-alpha.html >/dev/null; then exit 0; fi
             sleep 0.5
           done
           exit 1

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 const BASE=process.env.C4_TARGET||'http://127.0.0.1:8080/multiplayer-alpha.html';
 const hostName=process.env.C4_HOST||'chromium';
-const browsers={},contexts=[],failures=[];
+const browsers={},contexts=[],pages=[],failures=[];
 const wait=(p,fn,arg=null,timeout=30000)=>p.waitForFunction(fn,arg,{timeout});
 async function client(engine,relay=true){
   const context=await browsers[engine].newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
@@ -14,7 +14,7 @@ async function client(engine,relay=true){
       constructor(config){super({...config,iceTransportPolicy:'relay',iceCandidatePoolSize:0})}
     };
   });
-  return context.newPage()
+  const page=await context.newPage();pages.push(page);return page
 }
 async function load(page,url=BASE){
   await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000});
@@ -92,8 +92,20 @@ async function hosted(){
 try{
   browsers.chromium=await chromium.launch();browsers.webkit=await webkit.launch();
   for(const [name,run] of [['direct',()=>online('direct')],['room',()=>online('room')],...(hostName==='chromium'?[['manual',()=>online('manual')],['hosted',hosted]]:[])]){
-    try{await run()}catch(error){failures.push(name);console.error('FAIL',name,String(error.message).split('\n').slice(0,8).join('\n'))}
-    finally{await Promise.all(contexts.splice(0).map(c=>c.close().catch(()=>{})))}
+    try{await run()}catch(error){
+      failures.push(name);console.error('FAIL',name,String(error.message).split('\n').slice(0,8).join('\n'));
+      for(const page of pages){
+        const evidence=await page.evaluate(async()=>{
+          const report=globalThis.c4ConnectionDiagnostics?JSON.parse(await c4ConnectionDiagnostics.report()):{};
+          return {relay:c4PeerNetwork?.state.relay,attempts:(report.attempts||[]).map(a=>({
+            mode:a.mode,role:a.role,ice:a.ice,connection:a.connection,local:a.localTypes,remote:a.remoteTypes,
+            errors:[...new Set(a.errors.map(x=>x.code))],route:a.route,dataError:a.dataError
+          }))};
+        }).catch(()=>null);
+        console.log('GATE EVIDENCE',name,JSON.stringify(evidence));
+      }
+    }
+    finally{pages.length=0;await Promise.all(contexts.splice(0).map(c=>c.close().catch(()=>{})))}
   }
   assert.deepEqual(failures,[],'Multiplayer release gate failed');
 }finally{await Promise.all(Object.values(browsers).map(b=>b.close().catch(()=>{})))}
