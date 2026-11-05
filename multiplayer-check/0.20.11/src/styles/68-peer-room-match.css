@@ -1,0 +1,14 @@
+/* Multiplayer Foundation 0.20 — persistent Peer Room lobby + shared match */
+.peerRoomGame{border:1px solid color-mix(in srgb,var(--world-accent,#4fb3c8) 44%,#31404d);border-radius:16px;padding:14px;background:linear-gradient(180deg,color-mix(in srgb,var(--world-surface,#18212b) 94%,transparent),color-mix(in srgb,var(--world-surface-2,#111820) 96%,transparent));box-shadow:0 12px 34px rgba(0,0,0,.16)}
+.peerRoomGameHead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.peerRoomGameHead>div{display:grid;gap:3px}.peerRoomGameHead span{font-size:10px;letter-spacing:.12em;font-weight:850;color:var(--foregroundMuted,#9da9b5)}.peerRoomGameHead strong{font-size:18px;color:var(--foreground,#eef4ff)}
+.peerRoomGameBadge{display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:5px 9px;border:1px solid color-mix(in srgb,var(--world-accent,#4fb3c8) 48%,transparent);border-radius:999px;background:color-mix(in srgb,var(--world-accent,#4fb3c8) 12%,transparent);color:var(--world-accent-soft,#e8edf2)!important;white-space:nowrap}
+.peerRoomGame[data-phase="active"] .peerRoomGameBadge{box-shadow:0 0 0 1px color-mix(in srgb,var(--world-accent,#4fb3c8) 16%,transparent),0 0 20px color-mix(in srgb,var(--world-accent,#4fb3c8) 12%,transparent)}
+.peerRoomGame>p{margin:10px 0 12px;color:#cbd6e7;font-size:13px;line-height:1.45}.peerRoomGame>small{display:block;margin-top:8px;color:#9eabc0;font-size:11px;line-height:1.4}
+.peerRoomGameActions{display:flex;flex-wrap:wrap;gap:8px}.peerRoomGameActions button{min-height:44px;border:1px solid #40516b;border-radius:11px;background:#152034;color:#eef4ff;padding:8px 12px;font-weight:800;cursor:pointer}.peerRoomGameActions .duelPrimary{background:color-mix(in srgb,var(--world-accent,#4fb3c8) 24%,#152034);border-color:color-mix(in srgb,var(--world-accent,#4fb3c8) 64%,#40516b)}.peerRoomGameActions button:disabled{opacity:.48;cursor:not-allowed}
+body.peer-room-match-active .peerRoomPanel{display:none!important}
+body.peer-room-spectator .humanZone .choices{opacity:.38;pointer-events:none;filter:saturate(.55)}
+body.peer-room-spectator .cell.can{cursor:default}
+body.peer-room-spectator .cell.hover{background:transparent;box-shadow:none}
+body.peer-room-spectator .panel.human>.row::after{content:"SPECTATING";position:absolute;right:14px;top:50%;transform:translateY(-50%);padding:5px 8px;border:1px solid color-mix(in srgb,var(--world-accent,#4fb3c8) 42%,#40516b);border-radius:999px;background:color-mix(in srgb,var(--world-accent,#4fb3c8) 10%,#101826);color:#dce8f5;font-size:9px;font-weight:900;letter-spacing:.11em}
+@media(max-width:700px){.peerRoomGame{padding:12px}.peerRoomGameHead strong{font-size:16px}.peerRoomGameActions{display:grid;grid-template-columns:1fr}.peerRoomGameActions button{width:100%}.peerRoomGame>p{font-size:12px}}
+@media(prefers-reduced-motion:reduce){.peerRoomGame,.peerRoomGameBadge{transition:none!important}}

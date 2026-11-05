@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Clash 4 · Multiplayer connection check</title>
+<style>
+:root{color-scheme:dark;font:16px/1.55 system-ui,sans-serif;background:#101621;color:#eef3fc}
+body{max-width:38rem;margin:auto;padding:clamp(1.1rem,5vw,3rem)}
+h1{line-height:1.12;margin:.35rem 0 1rem}p,li{color:#c0cde0}li+li{margin-top:.55rem}
+small{letter-spacing:.13em;text-transform:uppercase;color:#8cb9ff;font-weight:700}
+.builds{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr));gap:.75rem;margin:1.4rem 0}
+.builds a{display:block;padding:.9rem 1rem;border:1px solid #4c678b;border-radius:.65rem;color:#edf5ff;background:#19263a;text-decoration:none}
+.builds a:first-child{background:#214b83;border-color:#689ded}
+.builds a:focus-visible{outline:3px solid #f9c167;outline-offset:3px}
+.builds span{display:block;font-size:.88rem;color:#e0e9f8;margin-top:.15rem}
+</style>
+</head>
+<body>
+<main>
+<small>Clash 4 · Fog of War</small>
+<h1>Multiplayer connection check</h1>
+<p>Both builds run from GitHub Pages. Start with the last build you confirmed working, then try the same match on the current build.</p>
+<nav class="builds" aria-label="Multiplayer builds">
+<a href="./0.20.10/multiplayer-alpha.html"><strong>Play 0.20.10</strong><span>Last confirmed working build</span></a>
+<a href="./0.20.11/multiplayer-alpha.html"><strong>Play 0.20.11</strong><span>Current build for comparison</span></a>
+</nav>
+<ol>
+<li>Keep the same two phones, networks, browser apps, and Player 1 for both builds.</li>
+<li>On 0.20.10, start a fresh <strong>Direct Duel</strong>. Send the invite from Player 1, join on Player 2, and play a move. Then try a fresh <strong>2–4 Player Room</strong> with those same phones.</li>
+<li>Close the game tabs and repeat on 0.20.11 with fresh invites from that build. Keep both screens open during joining.</li>
+<li>If a join fails, copy the report on <strong>both</strong> phones before refreshing: <strong>Copy Test Info</strong> for Direct Duel or <strong>Copy Room Diagnostics</strong> in the shared room. Record the version, the mode, and whether each phone was on Wi-Fi or cellular.</li>
+</ol>
+</main>
+</body>
+</html>
