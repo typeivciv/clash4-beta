@@ -52,7 +52,7 @@ async function startAndMove(host,guest,room,step){
   await mover.locator('.cell.can').first().tap({timeout:10000});
   await Promise.all([host,guest].map(p=>wait(p,()=>s.moveNumber===1&&!busy,undefined,18000)));
 }
-async function pair([host,guest],step,room){
+async function pair([host,guest],step,room,relay=false){
   step('load-live-runtime');
   await host.goto(live,{waitUntil:'domcontentloaded',timeout:25000});
   await wait(host,()=>globalThis.peerRoomGameplayReady&&typeof Peer==='function');
@@ -63,15 +63,31 @@ async function pair([host,guest],step,room){
   const invite=await host.evaluate(room=>room?peerRoomInviteLink():document.getElementById('duelDirectSignal').value,room);
   step('invite-join-and-data-channel');
   await guest.goto(invite,{waitUntil:'domcontentloaded',timeout:25000});
+  await wait(guest,()=>globalThis.peerRoomGameplayReady&&typeof Peer==='function');
   if(room)await wait(guest,()=>peerRoom.active&&peerRoom.seat===2&&peerRoom.conn?.open,undefined,45000);
   else await wait(guest,()=>directPeerSession.opened&&directDuel.channel?.readyState==='open',undefined,45000);
-  await startAndMove(host,guest,room,step);
+  if(room&&!relay){
+    const spectators=[];
+    try{
+      for(const seat of [3,4]){
+        step('join-seat-'+seat);
+        const context=await host.context().browser().newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+        const page=await context.newPage();spectators.push([context,page]);
+        await page.goto(invite,{waitUntil:'domcontentloaded',timeout:25000});
+        await wait(page,()=>globalThis.peerRoomGameplayReady&&typeof Peer==='function');
+        await wait(page,n=>peerRoom.active&&peerRoom.seat===n&&peerRoom.conn?.open,seat,35000);
+      }
+      await startAndMove(host,guest,true,step);
+      step('four-seat-move-propagation');
+      await Promise.all(spectators.map(([,page])=>wait(page,()=>peerRoomMatch.watching&&s.moveNumber===1,undefined,15000)));
+    }finally{await Promise.all(spectators.map(([context])=>context.close()))}
+  }else await startAndMove(host,guest,room,step);
 }
 if(mode==='direct'||mode==='room'){
   const room=mode==='room';
   await test(mode+'-chromium-host','chromium','webkit',false,(pages,step)=>pair(pages,step,room));
   await test(mode+'-webkit-host','webkit','chromium',false,(pages,step)=>pair(pages,step,room));
-  await test(mode+'-relay-required','chromium','chromium',true,(pages,step)=>pair(pages,step,room));
+  await test(mode+'-relay-required','chromium','chromium',true,(pages,step)=>pair(pages,step,room,true));
 }else{
   await test('manual-direct','chromium','webkit',false,async([host,guest],step)=>{
     step('load-live-runtime');await Promise.all([host,guest].map(p=>p.goto(live,{waitUntil:'domcontentloaded',timeout:25000})));
