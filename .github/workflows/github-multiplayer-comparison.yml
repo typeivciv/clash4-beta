@@ -1,0 +1,43 @@
+name: GitHub Pages multiplayer comparison
+on:
+  pull_request:
+    paths:
+      - 'multiplayer-check/**'
+      - 'tests/playtest-github-multiplayer-comparison.mjs'
+      - '.github/workflows/github-multiplayer-comparison.yml'
+jobs:
+  play:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        host: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify archived releases are exact
+        run: |
+          for pair in 0.20.10:63c1287 0.20.11:2ba8f09; do
+            version="${pair%:*}"
+            commit="${pair#*:}"
+            for path in multiplayer-alpha.html src; do
+              test "$(git rev-parse "$commit:$path")" = "$(git rev-parse "HEAD:multiplayer-check/$version/$path")"
+            done
+          done
+      - run: npm install --no-save playwright@1.55.0
+      - run: npx playwright install --with-deps chromium webkit
+      - name: Compare fresh invites and moves across both versions
+        env:
+          C4_HOST: ${{ matrix.host }}
+        run: |
+          python3 -m http.server 8080 --bind 127.0.0.1 > /tmp/clash4-comparison.log 2>&1 &
+          for i in {1..20}; do
+            if curl -fsS http://127.0.0.1:8080/multiplayer-check/ >/dev/null 2>&1; then break; fi
+            sleep 0.5
+          done
+          node tests/playtest-github-multiplayer-comparison.mjs

@@ -1,0 +1,5 @@
+/* Multiplayer Alpha 0.18.7: cross-platform software-keyboard input safeguards. */
+.directChatForm input{font-size:16px;line-height:1.25;-webkit-user-select:text;user-select:text;touch-action:manipulation;pointer-events:auto;position:relative;z-index:1;-webkit-appearance:none;appearance:none}
+.directChatDrawer{-webkit-overflow-scrolling:touch}
+.directChatForm{padding-bottom:max(8px,env(safe-area-inset-bottom))}
+@media(max-width:900px),(pointer:coarse){.directChatForm input{min-height:44px;font-size:16px}}

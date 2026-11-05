@@ -1,0 +1,31 @@
+/* Peer Room 0.20.3: synchronized match presentation and collision-free live controls. */
+.peerRoomMatchUtilityBar{flex:0 0 auto;width:min(100%,1180px);min-height:38px;margin:2px auto 3px;display:flex;align-items:center;justify-content:flex-end;gap:6px;padding:0 2px}.peerRoomMatchUtilityBar[hidden]{display:none!important}
+.peerRoomMatchUtilityBar .peerRoomMatchLobbyButton,.peerRoomMatchUtilityBar .directChatFab{margin:0;box-shadow:none}
+body.peer-room-match-active .topActions #matchDifficultyBadge{display:none!important}
+body.peer-room-match-active .peerRoomMatchUtilityBar .peerRoomMatchLobbyButton{display:inline-flex;align-items:center;justify-content:center}
+body.peer-room-match-active .peerRoomMatchUtilityBar .directChatFab:not([hidden]){display:inline-flex}
+
+/* Keep the brand and turn banner as separate layout responsibilities on narrow screens.
+   Live room utilities no longer share the same horizontal row. */
+@media(max-width:620px){
+  body.peer-room-match-active #appRoot>header{width:100%;height:auto!important;min-height:72px;display:grid!important;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"brand actions" "turn turn";align-items:center;column-gap:6px;row-gap:4px}
+  body.peer-room-match-active #appRoot>header .fogBrand{grid-area:brand;min-width:0;overflow:hidden}
+  body.peer-room-match-active #appRoot>header .fogWordmark{min-width:0;font-size:clamp(19px,6vw,24px);gap:5px;white-space:nowrap}
+  body.peer-room-match-active #appRoot>header .fogWordmark .fogFour{min-width:31px;padding:2px 7px}
+  body.peer-room-match-active #appRoot>header .fogWordmark .fogSub{display:none}
+  body.peer-room-match-active #appRoot>header .fogBuild{display:none}
+  body.peer-room-match-active #appRoot>header .topActions{grid-area:actions;justify-self:end;gap:3px;min-width:0}
+  body.peer-room-match-active #appRoot>header .topActions button{min-width:44px;min-height:36px;padding:4px 6px;font-size:9px}
+  body.peer-room-match-active #fogTurnPill{grid-area:turn;justify-self:stretch;width:100%;min-width:0;min-height:30px;padding:5px 9px;font-size:11px}
+  body.peer-room-match-active .peerRoomMatchUtilityBar{width:100%;min-height:36px;margin:0 0 2px;padding:0 3px;gap:5px}
+  body.peer-room-match-active .peerRoomMatchUtilityBar .peerRoomMatchLobbyButton{min-width:70px;min-height:36px;padding:4px 9px;font-size:10px}
+  body.peer-room-match-active .peerRoomMatchUtilityBar .directChatFab{width:42px;min-width:42px;min-height:36px;height:36px}
+}
+@media(max-width:360px){
+  body.peer-room-match-active #appRoot>header .fogWordmark{font-size:18px}
+  body.peer-room-match-active #appRoot>header .topActions button{min-width:40px;padding-inline:4px}
+  body.peer-room-match-active .peerRoomMatchUtilityBar{min-height:34px}
+  body.peer-room-match-active .peerRoomMatchUtilityBar .peerRoomMatchLobbyButton{min-height:34px}
+  body.peer-room-match-active .peerRoomMatchUtilityBar .directChatFab{min-height:34px;height:34px}
+}
+@media(prefers-reduced-motion:reduce){.peerRoomMatchUtilityBar{scroll-behavior:auto}}
