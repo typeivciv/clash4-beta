@@ -87,10 +87,21 @@ peerRoomScheduleReconnect=function(delay=null){
 };
 globalThis.peerRoomScheduleReconnect=peerRoomScheduleReconnect;
 
+let peerRoomPendingNetworkDial=null;
 peerRoomGuestConnect=function(){
   if(peerRoom.intentionalClose||peerRoom.role!=='guest'||!peerRoom.hostId)return;
   if(peerRoom.conn?.open){peerRoomRecoveryResetSuccess();return}
   if(peerRoomRecoveryState.connecting)return;
+  if(globalThis.c4PeerNetwork&&!c4PeerNetwork.fresh()){
+    const generation=peerRoomNetworkGeneration;
+    if(peerRoomPendingNetworkDial===generation)return;
+    peerRoomPendingNetworkDial=generation;
+    c4PreparePeerNetwork().then(()=>{
+      if(peerRoomPendingNetworkDial===generation)peerRoomPendingNetworkDial=null;
+      if(peerRoomNetworkGeneration===generation)peerRoomGuestConnect()
+    });
+    return
+  }
   let peer=peerRoom.peer;
   if(!peer||peer.destroyed){peer=peerRoomRecoveryCreateGuestPeer();if(!peer)return}
   peerRoomRecoveryBindPeer(peer);

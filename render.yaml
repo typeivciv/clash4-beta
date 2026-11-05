@@ -21,3 +21,7 @@ services:
         value: 180000
       - key: MAX_SIGNAL_SESSIONS
         value: 1000
+      - key: TURN_URLS
+        sync: false
+      - key: TURN_SHARED_SECRET
+        sync: false

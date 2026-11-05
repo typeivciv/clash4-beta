@@ -1,5 +1,5 @@
 'use strict';
-const ALPHA_TESTER_VERSION='0.20.11';
+const ALPHA_TESTER_VERSION='0.20.12';
 function alphaTesterEl(id){return document.getElementById(id)}
 function alphaTesterMode(){
   if(globalThis.peerRoom?.role)return'2–4 Player Room';
@@ -35,6 +35,7 @@ async function alphaTesterInfo(){
     `Mode: ${alphaTesterMode()}`,
     `Role: ${alphaTesterRole()}`,
     `Connection: ${await alphaTesterRoute()}`,
+    `Relay setup: ${globalThis.c4PeerNetwork?.state.relay||'legacy'}`,
     `Pairing broker: ${peer?`open=${!!peer.open}, disconnected=${!!peer.disconnected}, destroyed=${!!peer.destroyed}`:'No current peer'}`,
     `Network status: ${network}`,
     `Viewport: ${viewport}`,
