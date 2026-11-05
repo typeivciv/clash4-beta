@@ -1,0 +1,26 @@
+name: Live Multiplayer Connectivity Diagnostics
+on:
+  pull_request:
+    paths:
+      - 'tests/playtest-connectivity.mjs'
+      - '.github/workflows/connectivity-diagnostics.yml'
+  workflow_dispatch:
+jobs:
+  connectivity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [direct, room, other]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-save playwright@1.55.0
+      - run: npx playwright install --with-deps chromium webkit
+      - name: Check live invites, game connection and first move
+        env:
+          C4_MODE: ${{ matrix.mode }}
+        run: node tests/playtest-connectivity.mjs
