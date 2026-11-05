@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "outputDirectory": "public",
+  "functions": {"api/hosted.mjs": {"includeFiles": "src/js/{10-rules,12-duel-projection}.js"}},
+  "rewrites": [
+    {"source": "/api/health", "destination": "/api/hosted?route=health"},
+    {"source": "/api/lobbies", "destination": "/api/hosted?route=lobbies"},
+    {"source": "/api/lobbies/:code", "destination": "/api/hosted?route=lobbies/:code"},
+    {"source": "/api/lobbies/:code/:action", "destination": "/api/hosted?route=lobbies/:code/:action"}
+  ]
+}
