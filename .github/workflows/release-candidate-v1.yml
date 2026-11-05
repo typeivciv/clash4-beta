@@ -1,0 +1,49 @@
+name: Clash 4 v1 release candidate
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/release-candidate-v1.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+env:
+  CLASH4_RC_COMMIT: fd84f2840b0358ca89d6cf545d7a96b33d6cbf43
+  CLASH4_RC_TAG: clash4-v1-rc1
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CLASH4_RC_COMMIT }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Rebuild and verify the exact candidate
+        run: |
+          python3 tools/build_duel_modes_alpha.py
+          git diff --exit-code -- multiplayer-alpha.html private-duel-alpha.html
+          for suite in tests/test-*.mjs; do node "$suite"; done
+  pin:
+    if: github.ref == 'refs/heads/main'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: write
+    concurrency: clash4-v1-rc1-tag
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CLASH4_RC_COMMIT }}
+          fetch-depth: 0
+      - name: Pin the verified game commit without moving an existing tag
+        run: |
+          if git show-ref --verify --quiet "refs/tags/$CLASH4_RC_TAG"; then
+            test "$(git rev-parse "$CLASH4_RC_TAG^{commit}")" = "$CLASH4_RC_COMMIT"
+          else
+            git tag "$CLASH4_RC_TAG" "$CLASH4_RC_COMMIT"
+            git push origin "refs/tags/$CLASH4_RC_TAG"
+          fi

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Clash 4 · v1 playtest</title>
+<style>
+:root{color-scheme:dark;font:16px/1.55 system-ui,sans-serif;background:#101621;color:#eef3fc}
+body{max-width:40rem;margin:auto;padding:clamp(1rem,5vw,3rem)}
+h1,h2{line-height:1.15}h1{margin:.35rem 0 .75rem}h2{font-size:1.15rem;margin:0 0 .55rem}
+p,li{color:#c0cde0}li+li{margin-top:.45rem}ol,ul{padding-left:1.35rem}
+small{letter-spacing:.13em;text-transform:uppercase;color:#9bc5ff;font-weight:700}
+a{color:#9bc5ff}a:focus-visible,textarea:focus-visible{outline:3px solid #f9c167;outline-offset:3px}
+.play{display:inline-block;padding:.65rem 1rem;border:1px solid #689ded;border-radius:.65rem;background:#214b83;color:#edf5ff;text-decoration:none;font-weight:750}
+section{border-top:1px solid #34465e;margin-top:1.3rem;padding-top:1.15rem}
+textarea{box-sizing:border-box;width:100%;min-height:10.5rem;padding:.7rem;border:1px solid #4c678b;border-radius:.5rem;background:#151e2d;color:inherit;font:inherit}
+</style>
+</head>
+<body>
+<main>
+<small>Clash 4 · Fog of War</small>
+<h1>v1 playtest</h1>
+<p>Start with one iPhone and one Android. Test the normal game link in Safari and Chrome so the results reflect what players will open.</p>
+<a class="play" href="../multiplayer-alpha.html">Open Clash 4</a>
+<section aria-labelledby="first">
+<h2 id="first">First session · two phones</h2>
+<ol>
+<li><strong>Same Wi-Fi:</strong> Use the iPhone to host a Direct Duel. Send a fresh invite, finish the match, and try Rematch.</li>
+<li><strong>Wi-Fi and cellular:</strong> Turn off Wi-Fi on one phone. Have Android host a fresh Direct Duel, then swap who hosts. Record whether each invite worked on the first try or after Retry Connection.</li>
+<li><strong>Shared Room:</strong> Host a 2–4 Player Room and have Player 2 join. Play through a capture and finish the match. Check that Rematch and Return to Lobby do what their labels say. If more phones are available, add Players 3 and 4 and confirm they see the same match without seeing hidden pieces.</li>
+</ol>
+<p>During matches, check that both screens agree on whose turn it is and where pieces land, and that a captured piece disappears when its clash resolves.</p>
+</section>
+<section aria-labelledby="fresh">
+<h2 id="fresh">Second session · new players</h2>
+<p>Send the link to two or three people who haven’t played. Let them find Solo Play or Multiplayer, play a first clash, and invite someone without coaching. Record the first spot where they needed help.</p>
+</section>
+<section aria-labelledby="report">
+<h2 id="report">What to send back</h2>
+<p>Send a short note even if everything passed. If a join fails, copy <strong>Test Info</strong> or <strong>Room Diagnostics</strong> on both phones before refreshing. During a match, note the first turn where the screens disagreed.</p>
+<label for="results">Copy this format into your message:</label>
+<textarea id="results" readonly spellcheck="false">Mode:
+Phones and browsers:
+Who hosted:
+Network on each phone:
+First invite: worked / needed retry / failed
+Match finish, Rematch, Lobby:
+First thing that went wrong (if any):</textarea>
+</section>
+</main>
+</body>
+</html>
