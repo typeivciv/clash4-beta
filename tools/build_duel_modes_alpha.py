@@ -23,6 +23,7 @@ IOS_CHAT_KEYBOARD=ROOT/'src/js/32-ios-chat-keyboard.js'
 DIRECT_CHAT_V2=ROOT/'src/js/33-direct-chat-v2.js'
 DROP_RENDERING=ROOT/'src/js/44-drop-rendering.js'
 CAPTURE_PRESENTATION=ROOT/'src/js/47-capture-presentation.js'
+PEER_NETWORK=ROOT/'src/js/45-peer-network.js'
 CONNECTION_DIAGNOSTICS=ROOT/'src/js/46-connection-diagnostics.js'
 TURN_CSS=ROOT/'src/styles/51-duel-turn-alpha.css'
 DUEL_COLORS_CSS=ROOT/'src/styles/52-duel-colors-share.css'
@@ -40,7 +41,7 @@ SCREEN_CONSISTENCY_CSS=ROOT/'src/styles/63-screen-consistency.css'
 DIRECT_CHAT_CSS=ROOT/'src/styles/64-direct-chat.css'
 IOS_CHAT_KEYBOARD_CSS=ROOT/'src/styles/65-ios-chat-keyboard.css'
 DIRECT_CHAT_V2_CSS=ROOT/'src/styles/66-direct-chat-v2.css'
-VERSION='0.20.11'
+VERSION='0.20.12'
 
 runpy.run_path(str(BASE_BUILDER),run_name='__main__')
 html=OUT.read_text(encoding='utf-8')
@@ -116,7 +117,7 @@ if peerjs not in html:
 anchor='// AI evaluation and decision policy. Hidden-information rules remain bounded here.'
 if html.count(anchor)!=1:
     raise SystemExit(f'Duel extension injection: expected one AI boundary, found {html.count(anchor)}')
-nearby=CONNECTION_DIAGNOSTICS.read_text(encoding='utf-8').rstrip()+'\n\n'+NEARBY_QR.read_text(encoding='utf-8').rstrip()+'\n\n'
+nearby=PEER_NETWORK.read_text(encoding='utf-8').rstrip()+'\n\n'+CONNECTION_DIAGNOSTICS.read_text(encoding='utf-8').rstrip()+'\n\n'+NEARBY_QR.read_text(encoding='utf-8').rstrip()+'\n\n'
 turn=TURN_ALPHA.read_text(encoding='utf-8').rstrip()+'\n\n'
 colors=DUEL_COLORS.read_text(encoding='utf-8').rstrip()+'\n\n'
 postmatch=DUEL_POSTMATCH.read_text(encoding='utf-8').rstrip()+'\n\n'

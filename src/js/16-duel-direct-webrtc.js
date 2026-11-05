@@ -28,7 +28,9 @@ function directWaitForIce(pc,timeout=8000){
   if(pc.iceGatheringState==='complete')return Promise.resolve();
   return new Promise(resolve=>{let done=false;const finish=()=>{if(done)return;done=true;pc.removeEventListener('icegatheringstatechange',onChange);clearTimeout(timer);resolve()};const onChange=()=>{if(pc.iceGatheringState==='complete')finish()};const timer=setTimeout(finish,timeout);pc.addEventListener('icegatheringstatechange',onChange)})
 }
+let directSetupGeneration=0;
 function directClosePeer({notify=false}={}){
+  directSetupGeneration++;
   if(notify&&directDuel.channel?.readyState==='open'){try{directDuel.channel.send(JSON.stringify({kind:'leave'}))}catch{}}
   try{directDuel.channel?.close()}catch{};try{directDuel.pc?.close()}catch{};
   directDuel.active=false;directDuel.role=null;directDuel.pairing=null;directDuel.pc=null;directDuel.channel=null;directDuel.seat=null;directDuel.ready={human:false,ai:false};directDuel.authority=null;directDuel.signalKind=null;
@@ -72,19 +74,25 @@ function directBindChannel(channel){
 function directSend(data){if(directDuel.channel?.readyState==='open')directDuel.channel.send(JSON.stringify(data))}
 async function directCreate(pairing='nearby'){
   directOpenPanel();directDuel.pairing=pairing;directDuel.signalKind='offer';directEl('duelDirectActions').hidden=true;directEl('duelDirectStage').hidden=false;directSetStatus('Creating a direct connection invite…');
+  const pending=directSetupGeneration;
   try{
-    const pc=makeDirectPeer('host'),offer=await pc.createOffer();await pc.setLocalDescription(offer);await directWaitForIce(pc);
+    if(typeof c4PreparePeerNetwork==='function')await c4PreparePeerNetwork();
+    if(pending!==directSetupGeneration)return;
+    const pc=makeDirectPeer('host'),offer=await pc.createOffer();await pc.setLocalDescription(offer);await directWaitForIce(pc);if(pending!==directSetupGeneration)return;
     const signal=await packDirectSignal({protocol:DIRECT_PROTOCOL,kind:'offer',description:{type:pc.localDescription.type,sdp:pc.localDescription.sdp}});directShowSignal(signal,'offer',pairing)
-  }catch(e){directSetStatus(e.message||'Could not create Direct Duel.',{error:true});directClosePeer()}
+  }catch(e){if(pending!==directSetupGeneration)return;directSetStatus(e.message||'Could not create Direct Duel.',{error:true});directClosePeer()}
 }
 globalThis.directCreate=directCreate;
 async function directJoinSignal(raw,pairing='remote'){
   directOpenPanel();directDuel.pairing=pairing;directDuel.signalKind='answer';directEl('duelDirectActions').hidden=true;directEl('duelDirectStage').hidden=false;directSetStatus('Opening the Direct Duel invite…');
+  const pending=directSetupGeneration;
   try{
-    const signal=await unpackDirectSignal(raw);if(signal.kind!=='offer')throw new Error('This is not a host invite.');
-    const pc=makeDirectPeer('guest');await pc.setRemoteDescription(signal.description);const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await directWaitForIce(pc);
+    if(typeof c4PreparePeerNetwork==='function')await c4PreparePeerNetwork();
+    if(pending!==directSetupGeneration)return;
+    const signal=await unpackDirectSignal(raw);if(pending!==directSetupGeneration)return;if(signal.kind!=='offer')throw new Error('This is not a host invite.');
+    const pc=makeDirectPeer('guest');await pc.setRemoteDescription(signal.description);const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await directWaitForIce(pc);if(pending!==directSetupGeneration)return;
     const packed=await packDirectSignal({protocol:DIRECT_PROTOCOL,kind:'answer',description:{type:pc.localDescription.type,sdp:pc.localDescription.sdp}});directShowSignal(packed,'answer',pairing);directSetStatus('Return this response to Player 1. Connection will open after they accept it.')
-  }catch(e){directSetStatus(e.message||'Could not join Direct Duel.',{error:true});directClosePeer()}
+  }catch(e){if(pending!==directSetupGeneration)return;directSetStatus(e.message||'Could not join Direct Duel.',{error:true});directClosePeer()}
 }
 globalThis.directJoinSignal=directJoinSignal;
 async function directAcceptAnswer(raw){

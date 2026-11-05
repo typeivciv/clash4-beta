@@ -6,6 +6,7 @@ import path from 'path';
 import vm from 'vm';
 import {fileURLToPath} from 'url';
 import {createDirectSignalStore,DirectSignalError} from './direct-signal-store.mjs';
+import {createTurnIssuer} from './turn-credentials.mjs';
 
 const __dirname=path.dirname(fileURLToPath(import.meta.url));
 const ROOT=path.resolve(__dirname,'..');
@@ -18,7 +19,8 @@ const RATE_WINDOW_MS=60_000,RATE_LIMIT=Number(process.env.RATE_LIMIT||240);
 const UPDATE_HISTORY_LIMIT=Math.max(4,Math.min(32,Number(process.env.UPDATE_HISTORY_LIMIT||8)));
 const DIRECT_SIGNAL_TTL_MS=Number(process.env.DIRECT_SIGNAL_TTL_MS||180_000);
 const MAX_SIGNAL_SESSIONS=Number(process.env.MAX_SIGNAL_SESSIONS||1000);
-const rateBuckets=new Map();
+const rateBuckets=new Map(),iceRateBuckets=new Map();
+const issueTurnCredentials=createTurnIssuer();
 const CODE_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const H='human',A='ai',T=['rock','paper','scissors','decoy'];
 const other=o=>o===H?A:H;
@@ -45,7 +47,7 @@ function token(){return crypto.randomBytes(24).toString('base64url')}
 function fairStarter(){return crypto.randomInt(0,2)===0?H:A}
 function now(){return Date.now()}
 function touch(room){room.updatedAt=now()}
-function cleanup(){const cutoff=now()-ROOM_TTL_MS;for(const[code,room]of rooms)if(room.updatedAt<cutoff)rooms.delete(code);for(const[ip,b]of rateBuckets)if(b.resetAt<now())rateBuckets.delete(ip);directSignals.cleanup()}
+function cleanup(){const cutoff=now()-ROOM_TTL_MS;for(const[code,room]of rooms)if(room.updatedAt<cutoff)rooms.delete(code);for(const buckets of [rateBuckets,iceRateBuckets])for(const[ip,b]of buckets)if(b.resetAt<now())buckets.delete(ip);directSignals.cleanup()}
 setInterval(cleanup,60_000).unref();
 function json(res,status,data){const body=JSON.stringify(data);res.writeHead(status,{'content-type':'application/json; charset=utf-8','content-length':Buffer.byteLength(body),'access-control-allow-origin':ALLOWED_ORIGIN,'access-control-allow-headers':'content-type,authorization','access-control-allow-methods':'GET,POST,OPTIONS','cache-control':'no-store'});res.end(body)}
 function fail(res,status,error,detail){json(res,status,{ok:false,error,...(detail?{detail}:{})})}
@@ -79,7 +81,7 @@ function projectedPayload(room,player,{since=null}={}){
 }
 function createRoom(){const code=randomCode();const p1={owner:H,token:token(),ready:false};const room={code,createdAt:now(),updatedAt:now(),phase:'lobby',players:[p1],state:null,lastEvents:[],history:[],version:0};rooms.set(code,room);return{room,p1}}
 function startIfReady(room){if(room.players.length===2&&room.players.every(p=>p.ready)&&room.phase==='lobby'){room.state=makeState(fairStarter());room.phase='active';room.version++;room.lastEvents=[];recordUpdate(room,room.state,room.lastEvents);touch(room)}}
-function allowRequest(req){const ip=String(req.headers['x-forwarded-for']||req.socket.remoteAddress||'unknown').split(',')[0].trim();const t=now();let b=rateBuckets.get(ip);if(!b||b.resetAt<=t){b={count:0,resetAt:t+RATE_WINDOW_MS};rateBuckets.set(ip,b)}b.count++;return b.count<=RATE_LIMIT}
+function allowRequest(req,buckets=rateBuckets,limit=RATE_LIMIT){const ip=String(req.headers['x-forwarded-for']||req.socket.remoteAddress||'unknown').split(',')[0].trim();const t=now();let b=buckets.get(ip);if(!b||b.resetAt<=t){b={count:0,resetAt:t+RATE_WINDOW_MS};rateBuckets.set(ip,b)}b.count++;return b.count<=RATE_LIMIT}
 function applyMove(room,player,type,column){
   if(room.phase!=='active'||!room.state)return{error:'match-not-active',status:409};const st=room.state;if(st.winner||st.draw)return{error:'match-complete',status:409};if(st.turn!==player.owner)return{error:'not-your-turn',status:409};if(!T.includes(type))return{error:'invalid-piece',status:400};
   const c=Number(column);if(!Number.isInteger(c)||c<0||c>=8)return{error:'invalid-column',status:400};const critical=new Set(rules.criticalColsFor(st,player.owner));const usedCritical=critical.has(c);const q=rules.resolveRaw(st,player.owner,type,c,{ignoreCooldown:usedCritical});if(q.error)return{error:q.error,status:409};let events=[...q.events];let next=q.state;
@@ -90,7 +92,14 @@ const server=http.createServer(async(req,res)=>{
   if(req.method==='OPTIONS'){res.writeHead(204,{'access-control-allow-origin':ALLOWED_ORIGIN,'access-control-allow-headers':'content-type,authorization','access-control-allow-methods':'GET,POST,OPTIONS'});return res.end()}
   const u=new URL(req.url||'/',`http://${req.headers.host||'localhost'}`);if(!allowRequest(req))return fail(res,429,'rate-limit');
   try{
-    if(req.method==='GET'&&u.pathname==='/api/health')return json(res,200,{ok:true,service:'clash4-duel',rooms:rooms.size,updateHistory:UPDATE_HISTORY_LIMIT,directSignals:directSignals.size(),directSignalTtlMs:directSignals.ttlMs});
+    if(req.method==='GET'&&u.pathname==='/api/health')return json(res,200,{ok:true,service:'clash4-duel',relayConfigured:!!issueTurnCredentials,rooms:rooms.size,updateHistory:UPDATE_HISTORY_LIMIT,directSignals:directSignals.size(),directSignalTtlMs:directSignals.ttlMs});
+
+    if(req.method==='GET'&&u.pathname==='/api/ice'){
+      if(!issueTurnCredentials)return fail(res,503,'relay-not-configured');
+      if(ALLOWED_ORIGIN!=='*'&&req.headers.origin!==ALLOWED_ORIGIN)return fail(res,403,'origin-not-allowed');
+      if(!allowRequest(req,iceRateBuckets,24))return fail(res,429,'rate-limit');
+      return json(res,200,issueTurnCredentials())
+    }
 
     // Direct Duel signaling is intentionally state-blind. These endpoints exchange only
     // WebRTC offer/answer descriptions and short-lived auth tokens; gameplay stays P2P.

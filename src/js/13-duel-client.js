@@ -46,8 +46,18 @@ async function duelRequest(path,{method='GET',body=null,token=duelSession.token}
   return data
 }
 async function duelHealthCheck(){
-  if(!duelSession.server){updateDuelConnectionBadge('offline');return false}
-  try{await duelRequest('/api/health',{token:''});updateDuelConnectionBadge('online');duelStatus('');return true}
+  const session=duelSession;
+  if(!duelSession.server&&globalThis.c4PeerNetwork){
+    const {hostedServer}=await c4PeerNetwork.settings();
+    if(session!==duelSession)return false;
+    if(hostedServer&&!duelSession.server){duelSession.server=hostedServer;duelServerInput.value=hostedServer}
+  }
+  if(!duelSession.server){updateDuelConnectionBadge('offline');duelStatus('Hosted Room needs a server URL. Enter one below or choose another multiplayer mode.',{error:true});return false}
+  try{
+    const health=await duelRequest('/api/health',{token:''});
+    if(health.ok!==true||health.service!=='clash4-duel')throw new Error('Not a Clash 4 server.');
+    updateDuelConnectionBadge('online');duelStatus('');return true
+  }
   catch{updateDuelConnectionBadge('error');duelStatus('Could not reach the Duel server. Check the server URL.',{error:true});return false}
 }
 function resetDuelLobbyUi(){

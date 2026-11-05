@@ -17,6 +17,7 @@ let peerRoom={
 };
 
 globalThis.peerRoom=peerRoom;
+let peerRoomNetworkGeneration=0;
 // Invite auto-join can connect before the asynchronous gameplay extensions load.
 globalThis.peerRoomGameplayReady=false;
 let peerRoomPendingMessages=[];
@@ -179,9 +180,12 @@ function peerRoomHostReleaseSeat(seat,{block=false}={}){
 }
 function peerRoomKickSeat(seat){peerRoomHostReleaseSeat(Number(seat),{block:true});const conn=peerRoom.connections.get(Number(seat));if(conn)try{conn.close()}catch{};peerRoomStatus(`Player ${seat} removed from this room.`,'warn')}
 
-function peerRoomCreateHost(){
+async function peerRoomCreateHost(){
   peerRoomShutdown({notify:false,clearPersistence:false});peerRoom.intentionalClose=false;peerRoom.role='host';peerRoom.seat=1;peerRoom.clientKey='HOST';peerRoom.roomId=peerRoomRandom(6);peerRoom.hostId=`c4r-${peerRoom.roomId.toLowerCase()}-${peerRoomRandom(8).toLowerCase()}`;peerRoom.seats=peerRoomDefaultSeats();peerRoom.privateTokens=peerRoomFreshPrivateTokens();peerRoom.chat=[];peerRoom.roomVersion=1;peerRoom.projectionVersion=1;peerRoom.seatByClient=new Map();peerRoom.connections=new Map();peerRoom.blocked=new Set();peerRoomOpen();peerRoomRender();peerRoomStatus('Opening host rendezvous…');
   if(!globalThis.Peer){peerRoomStatus('PeerJS pairing library is unavailable. Refresh and try again.','error');return}
+  const networkGeneration=peerRoomNetworkGeneration;
+  if(typeof c4PreparePeerNetwork==='function')await c4PreparePeerNetwork();
+  if(networkGeneration!==peerRoomNetworkGeneration)return;
   try{
     const peer=new Peer(peerRoom.hostId,{debug:0,config:peerRoomConnectionConfig()});peerRoom.peer=peer;
     peer.on('open',id=>{peerRoom.active=true;peerRoom.hostId=id;peerRoomSetHash(PEER_ROOM_HOST_PARAM,id);peerRoomRender();peerRoomRenderInvite();peerRoomRenderProjection(peerRoomProjectionFor(1));peerRoomPersistHost();peerRoomStatus('Room is live. Share one invite with up to three players.','ok')});
@@ -190,11 +194,14 @@ function peerRoomCreateHost(){
     peer.on('error',error=>peerRoomStatus(error?.type==='unavailable-id'?'That room identity is still active elsewhere. Close the older host tab, then reload this page.':error?.message||'Could not create Peer Room.','error'))
   }catch(error){peerRoomStatus(error?.message||'Could not create Peer Room.','error')}
 }
-function peerRoomRestoreHost(snapshot){
+async function peerRoomRestoreHost(snapshot){
   if(!snapshot?.hostId)return;peerRoomShutdown({notify:false,clearPersistence:false});peerRoom.intentionalClose=false;peerRoom.role='host';peerRoom.seat=1;peerRoom.clientKey='HOST';peerRoom.hostId=snapshot.hostId;peerRoom.roomId=snapshot.roomId;peerRoom.roomVersion=snapshot.roomVersion||1;peerRoom.projectionVersion=snapshot.projectionVersion||1;peerRoom.privateTokens=snapshot.privateTokens||peerRoomFreshPrivateTokens();peerRoom.chat=Array.isArray(snapshot.chat)?snapshot.chat.slice(-PEER_ROOM_CHAT_MAX):[];peerRoom.seats=peerRoomDefaultSeats();peerRoom.seatByClient=new Map();
   for(const saved of snapshot.seats||[]){if(saved.seat<=1||saved.seat>PEER_ROOM_MAX_SEATS||!saved.clientKey)continue;const rec=peerRoom.seats.find(s=>s.seat===saved.seat);rec.clientKey=saved.clientKey;rec.reserved=!!saved.reserved;rec.connected=false;if(rec.reserved)peerRoom.seatByClient.set(rec.clientKey,rec.seat)}
   peerRoomOpen();peerRoomRender();peerRoomStatus('Restoring host room after reload…','warn');
   if(!globalThis.Peer){peerRoomStatus('PeerJS pairing library is unavailable.','error');return}
+  const networkGeneration=peerRoomNetworkGeneration;
+  if(typeof c4PreparePeerNetwork==='function')await c4PreparePeerNetwork();
+  if(networkGeneration!==peerRoomNetworkGeneration)return;
   const peer=new Peer(peerRoom.hostId,{debug:0,config:peerRoomConnectionConfig()});peerRoom.peer=peer;peer.on('open',id=>{peerRoom.active=true;peerRoomRender();peerRoomRenderInvite();peerRoomRenderProjection(peerRoomProjectionFor(1));peerRoomPersistHost();peerRoomStatus('Host room restored. Reserved guests can reconnect to their previous seats.','ok')});peer.on('connection',peerRoomHostBind);peer.on('disconnected',()=>{try{peer.reconnect()}catch{}});peer.on('error',error=>peerRoomStatus(error?.message||'Host room could not be restored.','error'))
 }
 
@@ -223,9 +230,12 @@ function peerRoomGuestMessage(data){
   if(data.kind==='room-kicked'){peerRoom.intentionalClose=true;peerRoomStatus(data.reason||'Removed from the room.','error');try{peerRoom.conn?.close()}catch{};return}
   if(data.kind==='room-ended'){peerRoom.intentionalClose=true;peerRoomStatus('Host ended the Peer Room.','warn');try{peerRoom.conn?.close()}catch{};return}
 }
-function peerRoomJoin(hostId){
+async function peerRoomJoin(hostId){
   if(!/^[A-Za-z0-9_-]{8,128}$/.test(String(hostId||'')))return;peerRoomShutdown({notify:false,clearPersistence:false});peerRoom.intentionalClose=false;peerRoom.role='guest';peerRoom.hostId=String(hostId);peerRoom.clientKey=peerRoomClientKey();peerRoom.seats=peerRoomDefaultSeats().map(s=>({...s,connected:false,reserved:false,clientKey:''}));peerRoomOpen();peerRoomRender();peerRoomStatus('Connecting directly to the host browser…');
   if(!globalThis.Peer){peerRoomStatus('PeerJS pairing library is unavailable. Refresh and try again.','error');return}
+  const networkGeneration=peerRoomNetworkGeneration;
+  if(typeof c4PreparePeerNetwork==='function')await c4PreparePeerNetwork();
+  if(networkGeneration!==peerRoomNetworkGeneration)return;
   try{const peer=new Peer(undefined,{debug:0,config:peerRoomConnectionConfig()});peerRoom.peer=peer;peer.on('open',peerRoomGuestConnect);peer.on('disconnected',()=>{if(!peerRoom.intentionalClose){try{peer.reconnect()}catch{};peerRoomScheduleReconnect()}});peer.on('error',error=>{if(!peerRoom.intentionalClose){peerRoomStatus(error?.message||'Could not reach the host. Retrying…','warn');peerRoomScheduleReconnect()}})}catch(error){peerRoomStatus(error?.message||'Could not join Peer Room.','error')}
 }
 
@@ -235,6 +245,7 @@ async function peerRoomShareInvite(){const link=peerRoomInviteLink();if(navigato
 async function peerRoomCopyDiagnostics(){const text=await alphaTesterInfo();await alphaTesterCopy(text,'Room connection details copied.')}
 
 function peerRoomShutdown({notify=false,clearPersistence=false}={}){
+  peerRoomNetworkGeneration++;
   peerRoomPendingMessages=[];
   peerRoom.intentionalClose=true;if(peerRoom.reconnectTimer)clearTimeout(peerRoom.reconnectTimer);peerRoom.reconnectTimer=null;
   if(peerRoom.role==='host'&&notify)peerRoomBroadcast({kind:'room-ended',protocol:PEER_ROOM_PROTOCOL});
