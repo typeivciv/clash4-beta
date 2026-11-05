@@ -22,3 +22,20 @@
 
 /* Avoid layout jumps when dynamic Help copy switches between AI/Opponent language. */
 #accessibilityHelp .accessibilityOption small,#helpOverlay .helpGrid p,#fogRulesCard .fogNote span:last-child{text-wrap:pretty}
+
+/* Give the wordmark, turn status, and match controls separate spaces. */
+#appRoot>header .fogWordmark{white-space:nowrap}
+#appRoot>header #fogTurnPill{flex:none}
+@media(max-width:620px){
+  #appRoot>header{
+    display:grid;grid-template-columns:minmax(0,1fr) auto;
+    grid-template-areas:"brand actions" "turn turn";
+    column-gap:8px;row-gap:6px;height:auto
+  }
+  #appRoot>header .fogBrand{grid-area:brand}
+  #appRoot>header .topActions{grid-area:actions;justify-self:end}
+  #appRoot>header #fogTurnPill{
+    grid-area:turn;justify-self:stretch;min-width:0;min-height:30px;
+    padding:5px 9px;border-radius:10px;font-size:12px
+  }
+}
