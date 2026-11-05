@@ -25,7 +25,7 @@ function fail(res,status,error,detail){json(res,status,{ok:false,error,...(detai
 async function readBody(req){return await new Promise((resolve,reject)=>{let s='';req.on('data',c=>{s+=c;if(s.length>100_000){reject(new Error('body too large'));req.destroy()}});req.on('end',()=>{if(!s)return resolve({});try{resolve(JSON.parse(s))}catch{reject(new Error('invalid json'))}});req.on('error',reject)})}
 function roomFor(code){return rooms.get(String(code||'').toUpperCase())}
 function authToken(req,urlObj,body={}){const h=req.headers.authorization||'';return h.startsWith('Bearer ')?h.slice(7):body.token||urlObj.searchParams.get('token')||''}
-function allowRequest(req,buckets=rateBuckets,limit=RATE_LIMIT){const ip=String(req.headers['x-forwarded-for']||req.socket.remoteAddress||'unknown').split(',')[0].trim();const t=now();let b=buckets.get(ip);if(!b||b.resetAt<=t){b={count:0,resetAt:t+RATE_WINDOW_MS};rateBuckets.set(ip,b)}b.count++;return b.count<=RATE_LIMIT}
+function allowRequest(req,buckets=rateBuckets,limit=RATE_LIMIT){const ip=String(req.headers['x-forwarded-for']||req.socket.remoteAddress||'unknown').split(',')[0].trim();const t=now();let b=buckets.get(ip);if(!b||b.resetAt<=t){b={count:0,resetAt:t+RATE_WINDOW_MS};buckets.set(ip,b)}b.count++;return b.count<=limit}
 const server=http.createServer(async(req,res)=>{
   if(req.method==='OPTIONS'){res.writeHead(204,{'access-control-allow-origin':ALLOWED_ORIGIN,'access-control-allow-headers':'content-type,authorization','access-control-allow-methods':'GET,POST,OPTIONS'});return res.end()}
   const u=new URL(req.url||'/',`http://${req.headers.host||'localhost'}`);if(!allowRequest(req))return fail(res,429,'rate-limit');

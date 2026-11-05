@@ -223,6 +223,8 @@ jobs:
         run: node tests/test-duel-server-history.mjs
       - name: Vercel Hosted Room integration
         run: node tests/test-duel-vercel-hosted.mjs
+      - name: Vercel TURN credential integration
+        run: node tests/test-duel-vercel-ice.mjs
       - name: Signaling store isolation
         run: node tests/test-direct-signaling.mjs
       - name: Local authority and Fog parity

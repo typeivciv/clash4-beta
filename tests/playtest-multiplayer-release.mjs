@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 
 const BASE=process.env.C4_TARGET||'http://127.0.0.1:8080/multiplayer-alpha.html';
 const hostName=process.env.C4_HOST||'chromium';
+const suite=process.env.C4_SUITE||'all';
+assert.ok(['all','relay','hosted'].includes(suite),'Unknown multiplayer gate suite');
 const browsers={},contexts=[],pages=[],failures=[];
 const wait=(p,fn,arg=null,timeout=30000)=>p.waitForFunction(fn,arg,{timeout});
 async function client(engine,relay=true){
@@ -91,7 +93,9 @@ async function hosted(){
 }
 try{
   browsers.chromium=await chromium.launch();browsers.webkit=await webkit.launch();
-  for(const [name,run] of [['direct',()=>online('direct')],['room',()=>online('room')],...(hostName==='chromium'?[['manual',()=>online('manual')],['hosted',hosted]]:[])]){
+  const onlineCases=suite!=='hosted'?[['direct',()=>online('direct')],['room',()=>online('room')],...(hostName==='chromium'?[['manual',()=>online('manual')]]:[])]:[];
+  const hostedCases=suite!=='relay'&&hostName==='chromium'?[['hosted',hosted]]:[];
+  for(const [name,run] of [...onlineCases,...hostedCases]){
     try{await run()}catch(error){
       failures.push(name);console.error('FAIL',name,String(error.message).split('\n').slice(0,8).join('\n'));
       for(const page of pages){

@@ -18,6 +18,12 @@ on:
         description: HTTPS game URL for a public release check (empty uses an isolated fixture)
         required: false
         type: string
+      suite:
+        description: Public checks to run (all tests run for pull requests)
+        required: false
+        type: choice
+        default: all
+        options: [all, relay, hosted]
 jobs:
   required-relay:
     runs-on: ubuntu-24.04
@@ -76,4 +82,5 @@ jobs:
         env:
           C4_HOST: ${{ matrix.host }}
           C4_TARGET: ${{ inputs.live_url }}
+          C4_SUITE: ${{ inputs.live_url != '' && inputs.suite || 'all' }}
         run: node tests/playtest-multiplayer-release.mjs
